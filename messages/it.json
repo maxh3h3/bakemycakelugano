@@ -1,0 +1,51 @@
+{
+  "common": {
+    "bakeryName": "Bake My Cake",
+    "tagline": "Dolci artigianali ed eleganti fatti con amore"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Prodotti",
+    "about": "Chi Siamo",
+    "contact": "Contatti",
+    "cart": "Carrello"
+  },
+  "home": {
+    "title": "Bake My Cake",
+    "subtitle": "Dolci artigianali ed eleganti fatti con amore",
+    "underConstruction": "🚧 In costruzione - Prossimamente!",
+    "featuredProducts": "Prodotti in Evidenza",
+    "viewAll": "Vedi Tutti i Prodotti"
+  },
+  "products": {
+    "title": "I Nostri Prodotti",
+    "allProducts": "Tutti i Prodotti",
+    "categories": "Categorie",
+    "sortBy": "Ordina per",
+    "price": "Prezzo",
+    "addToCart": "Aggiungi al Carrello",
+    "outOfStock": "Esaurito",
+    "unavailable": "Non Disponibile"
+  },
+  "cart": {
+    "title": "Il Tuo Carrello",
+    "empty": "Il tuo carrello è vuoto",
+    "continueShopping": "Continua lo Shopping",
+    "checkout": "Procedi al Pagamento",
+    "total": "Totale",
+    "subtotal": "Subtotale",
+    "remove": "Rimuovi"
+  },
+  "footer": {
+    "allRightsReserved": "Tutti i diritti riservati",
+    "builtWith": "Realizzato con",
+    "and": "e"
+  },
+  "language": {
+    "italian": "Italiano",
+    "english": "Inglese",
+    "german": "Tedesco",
+    "selectLanguage": "Seleziona Lingua"
+  }
+}
+

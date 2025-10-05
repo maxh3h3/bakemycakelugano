@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  body {
+    @apply font-body text-charcoal-900 bg-cream-50;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .h1 {
+    @apply text-5xl md:text-6xl font-heading;
+  }
+  
+  .h2 {
+    @apply text-4xl md:text-5xl font-heading;
+  }
+  
+  .h3 {
+    @apply text-3xl md:text-4xl font-heading;
+  }
+}
+

@@ -1,0 +1,51 @@
+{
+  "common": {
+    "bakeryName": "Bake My Cake",
+    "tagline": "Elegante, handgefertigte Kuchen und Gebäck mit Liebe gemacht"
+  },
+  "nav": {
+    "home": "Startseite",
+    "products": "Produkte",
+    "about": "Über Uns",
+    "contact": "Kontakt",
+    "cart": "Warenkorb"
+  },
+  "home": {
+    "title": "Bake My Cake",
+    "subtitle": "Elegante, handgefertigte Kuchen und Gebäck mit Liebe gemacht",
+    "underConstruction": "🚧 Im Aufbau - Demnächst!",
+    "featuredProducts": "Ausgewählte Produkte",
+    "viewAll": "Alle Produkte Anzeigen"
+  },
+  "products": {
+    "title": "Unsere Produkte",
+    "allProducts": "Alle Produkte",
+    "categories": "Kategorien",
+    "sortBy": "Sortieren nach",
+    "price": "Preis",
+    "addToCart": "In den Warenkorb",
+    "outOfStock": "Ausverkauft",
+    "unavailable": "Nicht Verfügbar"
+  },
+  "cart": {
+    "title": "Ihr Warenkorb",
+    "empty": "Ihr Warenkorb ist leer",
+    "continueShopping": "Weiter Einkaufen",
+    "checkout": "Zur Kasse",
+    "total": "Gesamt",
+    "subtotal": "Zwischensumme",
+    "remove": "Entfernen"
+  },
+  "footer": {
+    "allRightsReserved": "Alle Rechte vorbehalten",
+    "builtWith": "Erstellt mit",
+    "and": "und"
+  },
+  "language": {
+    "italian": "Italienisch",
+    "english": "Englisch",
+    "german": "Deutsch",
+    "selectLanguage": "Sprache Wählen"
+  }
+}
+

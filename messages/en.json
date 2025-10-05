@@ -1,0 +1,51 @@
+{
+  "common": {
+    "bakeryName": "Bake My Cake",
+    "tagline": "Elegant, handcrafted cakes and pastries made with love"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "about": "About",
+    "contact": "Contact",
+    "cart": "Cart"
+  },
+  "home": {
+    "title": "Bake My Cake",
+    "subtitle": "Elegant, handcrafted cakes and pastries made with love",
+    "underConstruction": "🚧 Under construction - Coming soon!",
+    "featuredProducts": "Featured Products",
+    "viewAll": "View All Products"
+  },
+  "products": {
+    "title": "Our Products",
+    "allProducts": "All Products",
+    "categories": "Categories",
+    "sortBy": "Sort by",
+    "price": "Price",
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
+    "unavailable": "Unavailable"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "checkout": "Checkout",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "remove": "Remove"
+  },
+  "footer": {
+    "allRightsReserved": "All rights reserved",
+    "builtWith": "Built with",
+    "and": "and"
+  },
+  "language": {
+    "italian": "Italian",
+    "english": "English",
+    "german": "German",
+    "selectLanguage": "Select Language"
+  }
+}
+
