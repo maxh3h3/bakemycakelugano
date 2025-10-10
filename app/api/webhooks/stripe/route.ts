@@ -90,20 +90,39 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   // Extract metadata
   const metadata = session.metadata || {};
   const orderItems = JSON.parse(metadata.orderItems || '[]');
+  const deliveryFee = parseFloat(metadata.deliveryFee || '0');
+  const deliveryRequiresContact = metadata.deliveryRequiresContact === 'true';
 
   // Calculate total from order items
-  const totalAmount = orderItems.reduce((sum: number, item: any) => {
+  const subtotal = orderItems.reduce((sum: number, item: any) => {
     return sum + (item.unitPrice * item.quantity);
   }, 0);
+  const totalAmount = subtotal + deliveryFee;
 
   try {
+    // Map Stripe payment_status to our database values
+    // Stripe Checkout Session returns: 'paid', 'unpaid', 'no_payment_required'
+    // Our DB expects: 'pending', 'processing', 'succeeded', 'failed', 'canceled'
+    const mapPaymentStatus = (stripeStatus: string) => {
+      switch (stripeStatus) {
+        case 'paid':
+          return 'succeeded';
+        case 'unpaid':
+          return 'pending';
+        case 'no_payment_required':
+          return 'succeeded';
+        default:
+          return 'pending';
+      }
+    };
+
     // Create order in Supabase
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
         stripe_session_id: session.id,
         stripe_payment_intent_id: session.payment_intent as string || null,
-        stripe_payment_status: session.payment_status,
+        stripe_payment_status: mapPaymentStatus(session.payment_status),
         customer_email: metadata.customerEmail,
         customer_name: metadata.customerName,
         customer_phone: metadata.customerPhone || null,
@@ -127,11 +146,13 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     console.log('Order created:', (order as any).id);
 
     // Create order items
+    // Note: product_image_url is null since we don't store images in Stripe metadata
+    // Images can be fetched from Sanity using product_id if needed for display
     const orderItemsData = orderItems.map((item: any) => ({
       order_id: (order as any).id,
       product_id: item.productId,
       product_name: item.productName,
-      product_image_url: item.productImageUrl,
+      product_image_url: null, // Not stored in metadata to save space
       quantity: item.quantity,
       unit_price: item.unitPrice,
       subtotal: item.unitPrice * item.quantity,
@@ -162,6 +183,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         deliveryCity: metadata.deliveryCity || null,
         deliveryPostalCode: metadata.deliveryPostalCode || null,
         deliveryCountry: metadata.deliveryCountry || null,
+        deliveryFee,
+        deliveryRequiresContact,
         specialInstructions: metadata.specialInstructions || null,
         locale: metadata.locale || 'it',
       });
@@ -219,12 +242,12 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   console.log('Payment intent succeeded:', paymentIntent.id);
 
   try {
-    // Update order status to 'paid'
+    // Update order status to 'succeeded' (matching DB constraint)
     const { error } = await (supabaseAdmin
       .from('orders') as any)
       .update({
-        stripe_payment_status: 'paid',
-        status: 'paid',
+        stripe_payment_status: 'succeeded',
+        status: 'confirmed',  // Move to confirmed status when payment succeeds
         updated_at: new Date().toISOString(),
       })
       .eq('stripe_payment_intent_id', paymentIntent.id);
@@ -232,7 +255,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     if (error) {
       console.error('Failed to update order status:', error);
     } else {
-      console.log('Order status updated to paid');
+      console.log('Order status updated to confirmed');
     }
   } catch (error) {
     console.error('Error updating order status:', error);

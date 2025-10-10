@@ -17,6 +17,24 @@ export interface ProductSize {
   priceModifier: number;
 }
 
+export interface Ingredient {
+  name: string;
+  isAllergen: boolean;
+}
+
+export interface Flavour {
+  _id: string;
+  name: string;
+  slug: {
+    current: string;
+  };
+  description?: string;
+  image?: SanityImageSource;
+  ingredients?: Ingredient[];
+  available: boolean;
+  order: number;
+}
+
 export interface Product {
   _id: string;
   _createdAt: string;
@@ -30,9 +48,9 @@ export interface Product {
   sizes?: ProductSize[];
   images: SanityImageSource[];
   category: Category;
+  availableFlavours?: Flavour[];
   available: boolean;
   featured: boolean;
-  ingredients?: string[];
-  allergens?: string[];
+  ingredients?: Ingredient[];
 }
 

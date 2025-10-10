@@ -27,6 +27,17 @@ const categoryFields = `
   order
 `;
 
+const flavourFields = `
+  _id,
+  name,
+  slug,
+  description,
+  image,
+  ingredients,
+  available,
+  order
+`;
+
 // Fetch all categories
 export async function getCategories() {
   const query = `*[_type == "category"] | order(order asc) {
@@ -71,6 +82,22 @@ export async function getProductBySlug(slug: string) {
 export async function getCategoryBySlug(slug: string) {
   const query = `*[_type == "category" && slug.current == $slug][0] {
     ${categoryFields}
+  }`;
+  return client.fetch(query, { slug });
+}
+
+// Fetch all available flavours
+export async function getFlavours() {
+  const query = `*[_type == "flavour" && available == true] | order(order asc) {
+    ${flavourFields}
+  }`;
+  return client.fetch(query);
+}
+
+// Fetch single flavour by slug
+export async function getFlavourBySlug(slug: string) {
+  const query = `*[_type == "flavour" && slug.current == $slug][0] {
+    ${flavourFields}
   }`;
   return client.fetch(query, { slug });
 }

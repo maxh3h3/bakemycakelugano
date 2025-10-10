@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 const languages = [
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
   { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
 ];
 
 export default function LanguageSwitcher() {

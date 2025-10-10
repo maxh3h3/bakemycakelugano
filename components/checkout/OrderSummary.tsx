@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
-import { enUS, it, de } from 'date-fns/locale';
+import { enUS, it } from 'date-fns/locale';
 import { useCartStore } from '@/store/cart-store';
 import { urlFor } from '@/lib/sanity/image-url';
 import { formatPrice } from '@/lib/utils';
@@ -12,21 +12,22 @@ import Button from '@/components/ui/Button';
 interface OrderSummaryProps {
   locale: string;
   isProcessing: boolean;
+  deliveryFee?: number;
 }
 
 const localeMap = {
   en: enUS,
   it: it,
-  de: de,
 };
 
-export default function OrderSummary({ locale, isProcessing }: OrderSummaryProps) {
+export default function OrderSummary({ locale, isProcessing, deliveryFee = 0 }: OrderSummaryProps) {
   const t = useTranslations('checkout');
   const tCart = useTranslations('cart');
   const { items, getTotalPrice, getItemPrice } = useCartStore();
 
   const dateLocale = localeMap[locale as keyof typeof localeMap] || enUS;
-  const totalPrice = getTotalPrice();
+  const subtotal = getTotalPrice();
+  const totalPrice = subtotal + deliveryFee;
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -84,13 +85,28 @@ export default function OrderSummary({ locale, isProcessing }: OrderSummaryProps
       </div>
 
       {/* Total */}
-      <div className="border-t border-cream-200 pt-4 mb-6">
-        <div className="flex items-center justify-between mb-2">
+      <div className="border-t border-cream-200 pt-4 mb-6 space-y-3">
+        <div className="flex items-center justify-between">
           <span className="text-sm text-charcoal-900/70">
-            {totalItems} {totalItems === 1 ? t('item') : t('items')}
+            {t('subtotal')} ({totalItems} {totalItems === 1 ? t('item') : t('items')})
+          </span>
+          <span className="text-sm font-medium text-charcoal-900">
+            {formatPrice(subtotal)}
           </span>
         </div>
-        <div className="flex items-center justify-between">
+        
+        {deliveryFee > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-charcoal-900/70">
+              {t('deliveryFee')}
+            </span>
+            <span className="text-sm font-medium text-charcoal-900">
+              {formatPrice(deliveryFee)}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-3 border-t border-cream-200">
           <span className="font-heading text-lg font-semibold text-charcoal-900">
             {t('orderTotal')}
           </span>

@@ -112,6 +112,18 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'availableFlavours',
+      title: 'Available Flavours',
+      type: 'array',
+      of: [
+        {
+          type: 'reference',
+          to: [{ type: 'flavour' }],
+        },
+      ],
+      description: 'Select which flavours are available for this product (optional, leave empty if not applicable)',
+    }),
+    defineField({
       name: 'available',
       title: 'Available for Purchase',
       type: 'boolean',
@@ -128,15 +140,39 @@ export default defineType({
       name: 'ingredients',
       title: 'Ingredients',
       type: 'array',
-      of: [{ type: 'string' }],
-      description: 'List of main ingredients',
-    }),
-    defineField({
-      name: 'allergens',
-      title: 'Allergens',
-      type: 'array',
-      of: [{ type: 'string' }],
-      description: 'Common allergens (e.g., nuts, dairy, eggs)',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            {
+              name: 'name',
+              title: 'Ingredient Name',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'isAllergen',
+              title: 'Is Allergen?',
+              type: 'boolean',
+              description: 'Check if this ingredient is a common allergen',
+              initialValue: false,
+            },
+          ],
+          preview: {
+            select: {
+              name: 'name',
+              isAllergen: 'isAllergen',
+            },
+            prepare({ name, isAllergen }) {
+              return {
+                title: name,
+                subtitle: isAllergen ? '⚠️ Allergen' : 'Regular ingredient',
+              };
+            },
+          },
+        },
+      ],
+      description: 'List of ingredients with allergen flags (optional - can be defined in flavours instead)',
     }),
   ],
   preview: {

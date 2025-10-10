@@ -6,6 +6,7 @@
   "nav": {
     "home": "Home",
     "products": "Prodotti",
+    "flavours": "Gusti",
     "about": "Chi Siamo",
     "contact": "Contatti",
     "cart": "Carrello"
@@ -56,6 +57,7 @@
     "quickLinks": "Link Rapidi",
     "home": "Home",
     "products": "Prodotti",
+    "flavours": "Gusti",
     "about": "Chi Siamo",
     "contact": "Contatti",
     "contactInfo": "Contatti"
@@ -63,7 +65,6 @@
   "language": {
     "italian": "Italiano",
     "english": "Inglese",
-    "german": "Tedesco",
     "selectLanguage": "Seleziona Lingua"
   },
   "productDetail": {
@@ -72,6 +73,7 @@
     "unavailable": "Non Disponibile",
     "featured": "In Evidenza",
     "ingredients": "Ingredienti",
+    "allergen": "Allergene",
     "allergens": "Allergeni",
     "size": "Dimensione",
     "selectSize": "Seleziona Dimensione",
@@ -120,6 +122,10 @@
     "specialInstructionsPlaceholder": "Note per la consegna...",
     "proceedToPayment": "Procedi al Pagamento",
     "processing": "Elaborazione...",
+    "subtotal": "Subtotale",
+    "deliveryFee": "Costo di Consegna",
+    "deliveryFeeInfo": "Consegna nell'area di Lugano: {fee}",
+    "deliveryOutsideArea": "Il tuo indirizzo è fuori dall'area di consegna standard di Lugano. Ti contatteremo per confermare la disponibilità e i costi di consegna.",
     "orderTotal": "Totale Ordine",
     "items": "Articoli",
     "item": "Articolo",
@@ -141,6 +147,38 @@
     "message": "Il pagamento è stato annullato. Nessun addebito è stato effettuato.",
     "returnToCart": "Torna al Carrello",
     "tryAgain": "Riprova"
+  },
+  "flavours": {
+    "title": "I Nostri Gusti",
+    "description": "Scopri i nostri gusti artigianali, ognuno realizzato con ingredienti premium e tecniche tradizionali",
+    "ingredients": "Ingredienti",
+    "allergens": "Allergeni",
+    "noFlavours": "Nessun Gusto Disponibile",
+    "noFlavoursDescription": "Stiamo aggiornando la nostra selezione di gusti. Ricontrolla presto!"
+  },
+  "contact": {
+    "title": "Contattaci",
+    "description": "Ci piacerebbe sentirti! Contattaci per ordini, richieste o semplicemente per salutarci.",
+    "subtitle": "Ci piacerebbe sentirti! Contattaci per ordini, richieste o semplicemente per salutarci.",
+    "name": "Persona di Contatto",
+    "phone": "Telefono",
+    "email": "Email",
+    "address": "Indirizzo",
+    "findUs": "Dove Siamo",
+    "findUsDescription": "Visitaci presso la nostra sede a Massagno, Svizzera",
+    "getDirections": "Ottieni Indicazioni",
+    "viewOnMap": "Visualizza sulla Mappa",
+    "parkingNote": "Parcheggio disponibile nelle vicinanze",
+    "howToOrder": "Come Ordinare",
+    "howToOrderDescription": "Sfoglia i nostri prodotti, aggiungili al carrello e effettua l'ordine online. Prepareremo tutto fresco per la data di consegna selezionata. Puoi anche contattarci direttamente per telefono o email per ordini personalizzati."
+  },
+  "about": {
+    "title": "Chi Siamo",
+    "description": "Scopri la passione e l'arte dietro ogni creazione di Bake My Cake",
+    "pageTitle": "La Nostra Storia",
+    "pageSubtitle": "Dove la passione incontra l'arte, e ogni creazione racconta una storia d'amore e dedizione",
+    "story1Title": "Un Lavoro d'Amore",
+    "story1Text": "C'è qualcosa di magico nelle ore tranquille della notte, quando il mondo dorme e la creatività si risveglia. È in questi momenti che Iryna si sente viva, le sue mani danzano con uno scopo mentre trasforma semplici ingredienti in arte commestibile.\n\nPer Iryna, creare torte non è solo una professione—è una vocazione che riempie il suo cuore di pura gioia. Quelle ore notturne trascorse a realizzare con cura disegni intricati, miscelare i colori perfetti e aggiungere dettagli delicati sono quando si sente più se stessa. Ogni torta è una tela dove le emozioni prendono vita, dove i sogni prendono forma in zucchero e farina.\n\nCiò che le porta la più grande felicità è sapere che le sue creazioni porteranno sorrisi sui volti dei bambini e lacrime di gioia nei momenti di festa. Ogni torta nuziale porta il peso di nuovi inizi, ogni torta di compleanno custodisce la promessa di desideri che si avverano. Quando lavora con le sue mani, modellando il fondente in delicati fiori o dipingendo capolavori commestibili, Iryna mette la sua anima in ogni dettaglio.\n\nNon si tratta solo di creare belle torte—si tratta di creare ricordi, emozioni e momenti che le persone custodiranno per sempre. Questa è la magia che la tiene sveglia durante la notte, spinta dalla passione e dalla gioia di portare felicità agli altri."
   }
 }
 

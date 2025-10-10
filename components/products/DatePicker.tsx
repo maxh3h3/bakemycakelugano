@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
-import { enUS, de, it } from 'date-fns/locale';
+import { enUS, it } from 'date-fns/locale';
 import { useTranslations } from 'next-intl';
 import 'react-day-picker/dist/style.css';
 
@@ -16,7 +16,6 @@ interface DatePickerProps {
 
 const localeMap = {
   en: enUS,
-  de: de,
   it: it,
 };
 

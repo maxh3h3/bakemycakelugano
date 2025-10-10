@@ -19,6 +19,8 @@ interface CustomerConfirmationEmailProps {
   deliveryCity?: string | null;
   deliveryPostalCode?: string | null;
   deliveryCountry?: string | null;
+  deliveryFee?: number;
+  deliveryRequiresContact?: boolean;
   specialInstructions?: string | null;
   locale: string;
 }
@@ -37,6 +39,9 @@ const translations = {
     deliveryInfo: 'Informazioni Consegna',
     pickup: 'Ritiro in negozio',
     delivery: 'Consegna a domicilio',
+    deliveryFee: 'Costo di consegna',
+    deliveryOutsideArea: '⚠️ Il tuo indirizzo è fuori dall\'area di consegna standard di Lugano. Ti contatteremo presto per confermare la disponibilità e i costi di consegna.',
+    subtotal: 'Subtotale',
     size: 'Dimensione',
     deliveryDate: 'Data di consegna',
     specialInstructions: 'Istruzioni Speciali',
@@ -57,32 +62,15 @@ const translations = {
     deliveryInfo: 'Delivery Information',
     pickup: 'Store Pickup',
     delivery: 'Home Delivery',
+    deliveryFee: 'Delivery Fee',
+    deliveryOutsideArea: '⚠️ Your address is outside the standard Lugano delivery area. We will contact you soon to confirm delivery availability and costs.',
+    subtotal: 'Subtotal',
     size: 'Size',
     deliveryDate: 'Delivery date',
     specialInstructions: 'Special Instructions',
     total: 'Total',
     footer: 'If you have any questions about your order, please don\'t hesitate to contact us.',
     thanks: 'Thank you for choosing Bake My Cake!',
-  },
-  de: {
-    subject: '🎂 Bestellung Bestätigt',
-    title: 'Vielen Dank für Ihre Bestellung!',
-    greeting: 'Hallo',
-    intro: 'Wir haben Ihre Bestellung erhalten und werden sie in Kürze vorbereiten.',
-    orderNumber: 'Bestellnummer',
-    orderDetails: 'Bestelldetails',
-    quantity: 'Menge',
-    product: 'Produkt',
-    price: 'Preis',
-    deliveryInfo: 'Lieferinformationen',
-    pickup: 'Abholung im Geschäft',
-    delivery: 'Lieferung nach Hause',
-    size: 'Größe',
-    deliveryDate: 'Lieferdatum',
-    specialInstructions: 'Besondere Anweisungen',
-    total: 'Gesamt',
-    footer: 'Wenn Sie Fragen zu Ihrer Bestellung haben, zögern Sie bitte nicht, uns zu kontaktieren.',
-    thanks: 'Vielen Dank, dass Sie sich für Bake My Cake entschieden haben!',
   },
 };
 
@@ -96,6 +84,8 @@ export function generateCustomerConfirmationEmail({
   deliveryCity,
   deliveryPostalCode,
   deliveryCountry,
+  deliveryFee = 0,
+  deliveryRequiresContact = false,
   specialInstructions,
   locale,
 }: CustomerConfirmationEmailProps): { subject: string; html: string } {
@@ -291,8 +281,16 @@ export function generateCustomerConfirmationEmail({
             ${deliveryAddress ? `<p>${deliveryAddress}</p>` : ''}
             ${deliveryPostalCode && deliveryCity ? `<p>${deliveryPostalCode} ${deliveryCity}</p>` : ''}
             ${deliveryCountry ? `<p>${deliveryCountry}</p>` : ''}
+            ${deliveryFee > 0 ? `<p style="margin-top: 12px;"><strong>${t.deliveryFee}:</strong> ${formatPrice(deliveryFee)}</p>` : ''}
           `}
         </div>
+        ${deliveryRequiresContact ? `
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 15px;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;">
+              ${t.deliveryOutsideArea}
+            </p>
+          </div>
+        ` : ''}
       </div>
 
       ${specialInstructions ? `
@@ -305,6 +303,18 @@ export function generateCustomerConfirmationEmail({
       ` : ''}
 
       <!-- Total -->
+      ${deliveryFee > 0 ? `
+        <div style="background-color: #f5f3f0; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <span style="color: #666;">${t.subtotal}</span>
+            <span style="font-weight: 500;">${formatPrice(totalAmount - deliveryFee)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+            <span style="color: #666;">${t.deliveryFee}</span>
+            <span style="font-weight: 500;">${formatPrice(deliveryFee)}</span>
+          </div>
+        </div>
+      ` : ''}
       <div class="total">
         <span>${t.total}</span>
         <span>${formatPrice(totalAmount)}</span>

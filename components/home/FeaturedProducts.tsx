@@ -10,7 +10,15 @@ interface FeaturedProductsProps {
 
 export default async function FeaturedProducts({ locale }: FeaturedProductsProps) {
   const t = await getTranslations('home');
-  const products = await getFeaturedProducts(8); // Show 8 featured products
+  
+  // Gracefully handle Sanity connection issues
+  let products = [];
+  try {
+    products = await getFeaturedProducts(8); // Show 8 featured products
+  } catch (error) {
+    console.error('Failed to fetch featured products:', error);
+    // Return empty state gracefully
+  }
 
   return (
     <section className="py-16 md:py-24">

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { enUS, de, it } from 'date-fns/locale';
+import { enUS, it } from 'date-fns/locale';
 import type { CartItem as CartItemType } from '@/store/cart-store';
 import { useCartStore } from '@/store/cart-store';
 import { urlFor } from '@/lib/sanity/image-url';
@@ -21,7 +21,6 @@ interface CartItemProps {
 
 const localeMap = {
   en: enUS,
-  de: de,
   it: it,
 };
 

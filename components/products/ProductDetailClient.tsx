@@ -140,39 +140,29 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
               <p className="text-charcoal-900/80 leading-relaxed">{product.description}</p>
             </div>
 
-            {/* Ingredients */}
+            {/* Ingredients with Allergen Highlights */}
             {product.ingredients && product.ingredients.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-charcoal-900 mb-2">
+                <h3 className="text-sm font-semibold text-charcoal-900 mb-2 flex items-center gap-2">
                   {t('ingredients')}
+                  {product.ingredients.some(ing => ing.isAllergen) && (
+                    <span className="text-xs text-rose-500 font-normal">
+                      (⚠️ = {t('allergen')})
+                    </span>
+                  )}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {product.ingredients.map((ingredient, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-cream-100 text-charcoal-900 text-xs rounded-full"
+                      className={`px-3 py-1 text-xs rounded-full font-medium ${
+                        ingredient.isAllergen
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : 'bg-cream-100 text-charcoal-900'
+                      }`}
                     >
-                      {ingredient}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Allergens */}
-            {product.allergens && product.allergens.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-charcoal-900 mb-2 flex items-center gap-2">
-                  <span className="text-rose-500">⚠️</span>
-                  {t('allergens')}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.allergens.map((allergen, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-rose-100 text-rose-800 text-xs rounded-full font-medium"
-                    >
-                      {allergen}
+                      {ingredient.isAllergen && '⚠️ '}
+                      {ingredient.name}
                     </span>
                   ))}
                 </div>

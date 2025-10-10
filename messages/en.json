@@ -6,6 +6,7 @@
   "nav": {
     "home": "Home",
     "products": "Products",
+    "flavours": "Flavours",
     "about": "About",
     "contact": "Contact",
     "cart": "Cart"
@@ -56,6 +57,7 @@
     "quickLinks": "Quick Links",
     "home": "Home",
     "products": "Products",
+    "flavours": "Flavours",
     "about": "About",
     "contact": "Contact",
     "contactInfo": "Contact Info"
@@ -63,7 +65,6 @@
   "language": {
     "italian": "Italian",
     "english": "English",
-    "german": "German",
     "selectLanguage": "Select Language"
   },
   "productDetail": {
@@ -72,6 +73,7 @@
     "unavailable": "Unavailable",
     "featured": "Featured",
     "ingredients": "Ingredients",
+    "allergen": "Allergen",
     "allergens": "Allergens",
     "size": "Size",
     "selectSize": "Select Size",
@@ -120,6 +122,10 @@
     "specialInstructionsPlaceholder": "Delivery notes...",
     "proceedToPayment": "Proceed to Payment",
     "processing": "Processing...",
+    "subtotal": "Subtotal",
+    "deliveryFee": "Delivery Fee",
+    "deliveryFeeInfo": "Delivery to Lugano area: {fee}",
+    "deliveryOutsideArea": "Your address is outside our standard Lugano delivery area. We will contact you to confirm delivery availability and costs.",
     "orderTotal": "Order Total",
     "items": "Items",
     "item": "Item",
@@ -141,6 +147,38 @@
     "message": "Your payment was cancelled. No charges have been made.",
     "returnToCart": "Return to Cart",
     "tryAgain": "Try Again"
+  },
+  "flavours": {
+    "title": "Our Flavours",
+    "description": "Discover our handcrafted flavours, each made with premium ingredients and traditional techniques",
+    "ingredients": "Ingredients",
+    "allergens": "Allergens",
+    "noFlavours": "No Flavours Available",
+    "noFlavoursDescription": "We're currently updating our flavour selection. Please check back soon!"
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "description": "We'd love to hear from you! Contact us for orders, inquiries, or just to say hello.",
+    "subtitle": "We'd love to hear from you! Contact us for orders, inquiries, or just to say hello.",
+    "name": "Contact Person",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "findUs": "Find Us",
+    "findUsDescription": "Visit us at our location in Massagno, Switzerland",
+    "getDirections": "Get Directions",
+    "viewOnMap": "View on Map",
+    "parkingNote": "Parking available nearby",
+    "howToOrder": "How to Order",
+    "howToOrderDescription": "Browse our products, add them to your cart, and place your order online. We'll prepare everything fresh for your selected delivery date. You can also contact us directly by phone or email for custom orders."
+  },
+  "about": {
+    "title": "About Us",
+    "description": "Discover the passion and artistry behind every creation at Bake My Cake",
+    "pageTitle": "Our Story",
+    "pageSubtitle": "Where passion meets artistry, and every creation tells a story of love and dedication",
+    "story1Title": "A Labor of Love",
+    "story1Text": "There's something magical about the quiet hours of the night, when the world sleeps and creativity awakens. This is when Iryna comes alive, her hands dancing with purpose as she transforms simple ingredients into edible art.\n\nFor Iryna, cake making isn't just a profession—it's a calling that fills her heart with pure joy. Those late-night hours spent carefully crafting intricate designs, mixing the perfect colors, and adding delicate details are when she feels most herself. Each cake is a canvas where emotions come to life, where dreams take shape in sugar and flour.\n\nWhat brings her the greatest happiness is knowing that her creations will bring smiles to children's faces and tears of joy to celebratory moments. Every wedding cake carries the weight of new beginnings, every birthday cake holds the promise of wishes coming true. When she works with her hands, molding fondant into delicate flowers or painting edible masterpieces, Iryna pours her soul into every detail.\n\nIt's not just about creating beautiful cakes—it's about creating memories, emotions, and moments that people will cherish forever. That's the magic that keeps her working through the night, driven by passion and the joy of bringing happiness to others."
   }
 }
 

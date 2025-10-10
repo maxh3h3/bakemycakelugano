@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { getDeliveryInfo, getDeliveryMessage, type DeliveryInfo } from '@/lib/delivery';
 import Button from '@/components/ui/Button';
 import OrderSummary from './OrderSummary';
 
@@ -40,6 +41,11 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
   const { items, getTotalPrice } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
+    isLuganoArea: true,
+    deliveryFee: 0,
+    requiresContact: false,
+  });
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -59,6 +65,12 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
       router.push(`/${locale}/cart`);
     }
   }, [items, locale, router]);
+
+  // Calculate delivery info when postal code or delivery type changes
+  useEffect(() => {
+    const newDeliveryInfo = getDeliveryInfo(formData.postalCode, formData.deliveryType);
+    setDeliveryInfo(newDeliveryInfo);
+  }, [formData.postalCode, formData.deliveryType]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -139,6 +151,8 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
             city: formData.deliveryType === 'delivery' ? formData.city : null,
             postalCode: formData.deliveryType === 'delivery' ? formData.postalCode : null,
             country: formData.deliveryType === 'delivery' ? formData.country : null,
+            fee: deliveryInfo.deliveryFee,
+            requiresContact: deliveryInfo.requiresContact,
           },
           specialInstructions: formData.specialInstructions || null,
           items: checkoutItems,
@@ -381,6 +395,61 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                       </div>
                     </div>
 
+                    {/* Delivery Fee Warning/Info */}
+                    {formData.postalCode && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="pt-2"
+                      >
+                        {deliveryInfo.requiresContact ? (
+                          <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div className="flex-shrink-0">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                                className="w-5 h-5 text-amber-600"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                                />
+                              </svg>
+                            </div>
+                            <p className="text-sm text-amber-800">
+                              {t('deliveryOutsideArea')}
+                            </p>
+                          </div>
+                        ) : deliveryInfo.deliveryFee > 0 ? (
+                          <div className="flex gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex-shrink-0">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                                className="w-5 h-5 text-green-600"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                            </div>
+                            <p className="text-sm text-green-800">
+                              {t('deliveryFeeInfo', { fee: formatPrice(deliveryInfo.deliveryFee) })}
+                            </p>
+                          </div>
+                        ) : null}
+                      </motion.div>
+                    )}
+
                     {/* Country */}
                     <div>
                       <label htmlFor="country" className="block text-sm font-medium text-charcoal-900 mb-1">
@@ -464,7 +533,11 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
 
       {/* Right Column - Order Summary */}
       <div className="lg:col-span-1">
-        <OrderSummary locale={locale} isProcessing={isProcessing} />
+        <OrderSummary 
+          locale={locale} 
+          isProcessing={isProcessing}
+          deliveryFee={deliveryInfo.deliveryFee}
+        />
       </div>
     </div>
   );
