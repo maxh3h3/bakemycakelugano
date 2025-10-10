@@ -10,6 +10,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: 'Bake My Cake - Artisan Bakery',
     description: 'Elegant, handcrafted cakes and pastries made with love',
+    icons: {
+      icon: '/images/icons/logo_BMK_no_circle.png',
+      shortcut: '/images/icons/logo_BMK_no_circle.png',
+      apple: '/images/icons/logo_BMK_no_circle.png',
+    },
   };
 }
 
@@ -35,7 +40,11 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${inter.variable} ${playfair.variable}`}>
+    <html 
+      lang={locale} 
+      className={`${inter.variable} ${playfair.variable}`}
+      suppressHydrationWarning
+    >
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
           {children}

@@ -31,3 +31,29 @@
   }
 }
 
+/* Embla Carousel Styles */
+.embla {
+  overflow: hidden;
+  cursor: grab;
+}
+
+.embla:active {
+  cursor: grabbing;
+}
+
+.embla__container {
+  display: flex;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.embla__slide {
+  flex: 0 0 100%; /* For hero carousel - full width */
+  min-width: 0;
+}
+
+/* Category carousel specific - auto width */
+.embla__slide.flex-shrink-0 {
+  flex: 0 0 auto !important;
+}
+

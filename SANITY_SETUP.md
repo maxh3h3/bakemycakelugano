@@ -124,11 +124,14 @@ http://localhost:3000/studio
    Slug: torta-al-cioccolato (click Generate)
    Description: Ricca torta al cioccolato con ganache
    Price: 45.00
+   Minimum Order Quantity (MOQ): 1
    Category: Select "Torte"
    Available: ✓ (checked)
    Featured: ✓ (if you want it on homepage)
    ```
-4. Upload a product image (drag & drop)
+4. Upload product images (drag & drop - you can upload multiple)
+   - First image will be the main display image
+   - Additional images will show on hover
 5. Optionally add ingredients and allergens
 6. Click **Publish**
 
@@ -243,16 +246,17 @@ npx sanity login
 ### **Product Schema:**
 ```typescript
 {
-  name: string;           // Product name
-  slug: slug;            // URL-friendly identifier
-  description: text;     // Product description
-  price: number;         // Price in currency
-  image: image;          // Product photo
-  category: reference;   // Link to Category
-  available: boolean;    // Is product available?
-  featured: boolean;     // Show on homepage?
-  ingredients: string[]; // Optional list
-  allergens: string[];   // Optional list
+  name: string;                    // Product name
+  slug: slug;                     // URL-friendly identifier
+  description: text;              // Product description
+  price: number;                  // Price in currency
+  minimumOrderQuantity: number;   // MOQ (default: 1)
+  images: image[];                // Product photos (multiple)
+  category: reference;            // Link to Category
+  available: boolean;             // Is product available?
+  featured: boolean;              // Show on homepage?
+  ingredients: string[];          // Optional list
+  allergens: string[];            // Optional list
 }
 ```
 

@@ -333,7 +333,8 @@ bakemycake_website/
   slug: { current: string };
   description: string;
   price: number;
-  image: Image;
+  minimumOrderQuantity: number;
+  images: Image[];
   category: Reference<Category>;
   available: boolean;
   featured: boolean;

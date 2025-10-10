@@ -1,20 +1,24 @@
-import { getTranslations } from 'next-intl/server';
+import HeroCarousel from '@/components/home/HeroCarousel';
+import FeaturedProducts from '@/components/home/FeaturedProducts';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
-export default async function HomePage() {
-  const t = await getTranslations('home');
+interface HomePageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function HomePage({ params }: HomePageProps) {
+  const { locale } = await params;
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="h1 text-brown-500 mb-4">{t('title')}</h1>
-        <p className="text-lg text-charcoal-900/70">
-          {t('subtitle')}
-        </p>
-        <p className="text-sm text-charcoal-900/50 mt-4">
-          {t('underConstruction')}
-        </p>
-      </div>
-    </main>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <HeroCarousel locale={locale} />
+        <FeaturedProducts locale={locale} />
+      </main>
+      <Footer locale={locale} />
+    </div>
   );
 }
 

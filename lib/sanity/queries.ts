@@ -8,7 +8,9 @@ const productFields = `
   slug,
   description,
   price,
-  image,
+  minimumOrderQuantity,
+  sizes,
+  images,
   category->,
   available,
   featured,
@@ -42,8 +44,8 @@ export async function getProducts() {
 }
 
 // Fetch featured products
-export async function getFeaturedProducts() {
-  const query = `*[_type == "product" && available == true && featured == true] | order(_createdAt desc) {
+export async function getFeaturedProducts(limit = 8) {
+  const query = `*[_type == "product" && available == true && featured == true] | order(_createdAt desc)[0...${limit}] {
     ${productFields}
   }`;
   return client.fetch(query);

@@ -35,13 +35,74 @@ export default defineType({
       validation: (Rule) => Rule.required().min(0).precision(2),
     }),
     defineField({
-      name: 'image',
-      title: 'Product Image',
-      type: 'image',
-      options: {
-        hotspot: true,
-      },
-      validation: (Rule) => Rule.required(),
+      name: 'minimumOrderQuantity',
+      title: 'Minimum Order Quantity (MOQ)',
+      type: 'number',
+      description: 'Minimum number of items that must be ordered. Set to 1 for individual items.',
+      initialValue: 1,
+      validation: (Rule) => Rule.required().min(1).integer(),
+    }),
+    defineField({
+      name: 'sizes',
+      title: 'Size Options',
+      type: 'array',
+      description: 'Available sizes for this product (e.g., for cakes). Leave empty if product has no size variations.',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            {
+              name: 'label',
+              title: 'Size Label',
+              type: 'string',
+              description: 'What customer sees (e.g., "1 kg for 5-8 persons")',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'value',
+              title: 'Size Value',
+              type: 'string',
+              description: 'Internal identifier (e.g., "1kg", "2kg")',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'priceModifier',
+              title: 'Price Adjustment (CHF)',
+              type: 'number',
+              description: 'Amount to add to base price. Use 0 for base size, positive numbers for larger sizes.',
+              initialValue: 0,
+              validation: (Rule) => Rule.required().min(0),
+            },
+          ],
+          preview: {
+            select: {
+              label: 'label',
+              priceModifier: 'priceModifier',
+            },
+            prepare({ label, priceModifier }) {
+              return {
+                title: label,
+                subtitle: priceModifier > 0 ? `+${priceModifier} CHF` : 'Base price',
+              };
+            },
+          },
+        },
+      ],
+    }),
+    defineField({
+      name: 'images',
+      title: 'Product Images',
+      type: 'array',
+      of: [
+        {
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+        },
+      ],
+      description: 'Upload multiple images. First image will be the main display image.',
+      validation: (Rule) => Rule.required().min(1),
     }),
     defineField({
       name: 'category',
@@ -82,14 +143,14 @@ export default defineType({
     select: {
       title: 'name',
       subtitle: 'category.name',
-      media: 'image',
+      images: 'images',
       available: 'available',
     },
-    prepare({ title, subtitle, media, available }) {
+    prepare({ title, subtitle, images, available }) {
       return {
         title: `${title} ${!available ? '(Unavailable)' : ''}`,
         subtitle: subtitle || 'No category',
-        media,
+        media: images?.[0], // Use first image as preview
       };
     },
   },

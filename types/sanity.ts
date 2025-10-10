@@ -11,6 +11,12 @@ export interface Category {
   order: number;
 }
 
+export interface ProductSize {
+  label: string;
+  value: string;
+  priceModifier: number;
+}
+
 export interface Product {
   _id: string;
   _createdAt: string;
@@ -20,7 +26,9 @@ export interface Product {
   };
   description: string;
   price: number;
-  image: SanityImageSource;
+  minimumOrderQuantity: number;
+  sizes?: ProductSize[];
+  images: SanityImageSource[];
   category: Category;
   available: boolean;
   featured: boolean;
