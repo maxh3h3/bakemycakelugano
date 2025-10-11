@@ -11,6 +11,19 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    optimizePackageImports: ['framer-motion'],
+  },
+  webpack: (config, { isServer }) => {
+    // Fix for framer-motion with React 19
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'framer-motion': require.resolve('framer-motion'),
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = withNextIntl(nextConfig)

@@ -68,7 +68,7 @@ export default async function FlavoursPage({ params }: FlavoursPageProps) {
                     No Flavours Available
                   </h3>
                   <p className="text-charcoal-600">
-                    We're currently updating our flavour selection. Please check back soon!
+                    We&apos;re currently updating our flavour selection. Please check back soon!
                   </p>
                 </div>
               )}
