@@ -27,10 +27,16 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
   let order: any = null;
 
   try {
-    // Retrieve the Stripe session
-    session = await stripe.checkout.sessions.retrieve(session_id);
+    // Check if stripe is properly initialized
+    if (!process.env.STRIPE_SECRET_KEY || !stripe) {
+      console.error('STRIPE_SECRET_KEY is not configured');
+    } else {
+      // Retrieve the Stripe session
+      session = await stripe.checkout.sessions.retrieve(session_id);
+    }
 
     // Retrieve order from database
+    // Note: Order might not exist yet if webhook hasn't processed
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
@@ -38,12 +44,14 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
         order_items (*)
       `)
       .eq('stripe_session_id', session_id)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 results
 
     if (error) {
       console.error('Error fetching order:', error);
-    } else {
+    } else if (data) {
       order = data;
+    } else {
+      console.log('Order not found yet - webhook may still be processing');
     }
   } catch (error) {
     console.error('Error retrieving session:', error);
@@ -82,6 +90,26 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                 {t('orderReceived')}
               </p>
             </div>
+
+            {/* Processing Notice (if order not found yet) */}
+            {!order && session && (
+              <div className="bg-yellow-50 rounded-lg p-6 mb-8 border border-yellow-200">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4">
+                    <svg className="w-6 h-6 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <p className="text-sm text-yellow-900 font-medium mb-2">
+                    {t('processing') || 'Processing your order...'}
+                  </p>
+                  <p className="text-xs text-yellow-800">
+                    {t('processingNote') || 'Your order details will appear here shortly. Please refresh the page in a few moments.'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Order Details */}
             {order && (
