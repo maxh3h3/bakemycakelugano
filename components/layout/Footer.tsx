@@ -20,7 +20,7 @@ export default function Footer({ locale }: FooterProps) {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <Image
-                src="/images/icons/logo_BMK_no_circle.png"
+                src="/images/icons/logo_white_back.png"
                 alt="Bake My Cake"
                 width={32}
                 height={32}
