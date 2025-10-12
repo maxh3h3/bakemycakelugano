@@ -28,9 +28,9 @@ export default function DatePicker({
   const t = useTranslations('productDetail');
   const [isOpen, setIsOpen] = useState(false);
 
-  // Calculate minimum date (tomorrow - no same-day orders)
+  // Calculate minimum date (2 days from now - no same-day or next-day orders)
   const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 1); // Tomorrow
+  minDate.setDate(minDate.getDate() + 2); // Day after tomorrow
   minDate.setHours(0, 0, 0, 0);
 
   // Maximum date (3 months in advance)

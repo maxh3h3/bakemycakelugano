@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CategoryFilter from '@/components/products/CategoryFilter';
 import ProductGrid from '@/components/products/ProductGrid';
+import ProductsHero from '@/components/products/ProductsHero';
 import { getProducts, getCategories, getProductsByCategory } from '@/lib/sanity/queries';
 import type { Category } from '@/types/sanity';
 
@@ -29,16 +30,7 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-16 md:py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-charcoal-900 mb-4">
-              {t('title')}
-            </h1>
-            <p className="text-lg md:text-xl text-charcoal-900/70 max-w-2xl mx-auto">
-              {t('description')}
-            </p>
-          </div>
-        </section>
+        <ProductsHero title={t('title')} description={t('description')} />
 
         {/* Category Filter */}
         <Suspense fallback={<div className="h-24" />}>
@@ -46,7 +38,7 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
         </Suspense>
 
         {/* Products Grid */}
-        <section className="py-12">
+        <section className="py-10 lg:py-12">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {/* Category Title */}
             {category && (

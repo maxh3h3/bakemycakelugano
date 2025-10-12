@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import type { Product } from '@/types/sanity';
 import { urlFor } from '@/lib/sanity/image-url';
-import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -19,9 +18,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, locale }: ProductCardProps) {
   const t = useTranslations('products');
-  const [isAdding, setIsAdding] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
-  const addItem = useCartStore((state) => state.addItem);
 
   // Get image URLs from the images array
   const images = product.images || [];
@@ -30,19 +27,6 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
   const currentImageUrl = images[imageIndex]
     ? urlFor(images[imageIndex]).width(800).height(800).url()
     : '/images/placeholders/product.jpg';
-
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsAdding(true);
-    
-    // Add to cart with minimum quantity and no specific size/date
-    addItem(product, product.minimumOrderQuantity || 1);
-    
-    // Show feedback
-    setTimeout(() => {
-      setIsAdding(false);
-    }, 1000);
-  };
 
   const handleMouseEnter = () => {
     if (hasMultipleImages) {
@@ -95,11 +79,6 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
 
             {/* Badges */}
             <div className="absolute top-3 right-3 flex flex-col gap-2">
-              {product.featured && (
-                <Badge variant="warning" className="shadow-sm">
-                  ⭐ Featured
-                </Badge>
-              )}
               {!product.available && (
                 <Badge variant="error" className="shadow-sm">
                   {t('unavailable')}
@@ -143,42 +122,13 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
               {formatPrice(product.price)}
             </p>
 
-            {/* Add to Cart Button */}
+            {/* Order Now Button */}
             <Button
-              onClick={handleAddToCart}
-              disabled={!product.available || isAdding}
+              disabled={!product.available}
               className="w-full"
               size="sm"
             >
-              {isAdding ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  {t('adding')}...
-                </>
-              ) : (
-                <>
-                  🛒 {t('addToCart')}
-                </>
-              )}
+              {t('orderNow')}
             </Button>
           </div>
         </div>

@@ -656,7 +656,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 # RESEND
 # ============================================
 RESEND_API_KEY=re_...
-RESEND_FROM_EMAIL=orders@yourbakery.com
+RESEND_FROM_EMAIL=info@bakemycakelugano.ch
 
 # ============================================
 # TELEGRAM
@@ -673,7 +673,7 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIza...
 # BAKERY INFO
 # ============================================
 BAKERY_NAME="Bake My Cake"
-BAKERY_EMAIL=info@bakemycake.com
+BAKERY_EMAIL=info@bakemycakelugano.ch
 BAKERY_PHONE="+1 (555) 123-4567"
 BAKERY_ADDRESS="123 Baker Street, Sweet City, SC 12345"
 ```

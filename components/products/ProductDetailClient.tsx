@@ -253,7 +253,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
                     </>
                   ) : (
                     <>
-                      🛒 {t('addToCart')}
+                     {t('addToCart')}
                     </>
                   )}
                 </Button>

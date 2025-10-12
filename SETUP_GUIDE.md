@@ -326,7 +326,7 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIza...
 # BAKERY INFORMATION
 # ============================================
 BAKERY_NAME="Bake My Cake"
-BAKERY_EMAIL=info@bakemycake.com
+BAKERY_EMAIL=info@bakemycakelugano.ch
 BAKERY_PHONE="+1 (555) 123-4567"
 BAKERY_ADDRESS="123 Baker Street, Sweet City, SC 12345"
 BAKERY_COORDINATES_LAT=40.7128

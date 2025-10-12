@@ -42,7 +42,7 @@ Add these to your `.env.local` file:
 RESEND_API_KEY=your_resend_api_key_here  # Get from https://resend.com/api-keys
 
 # Email addresses
-RESEND_FROM_EMAIL=orders@bakemycake.com
+RESEND_FROM_EMAIL=info@bakemycakelugano.ch
 BAKERY_OWNER_EMAIL=your-email@example.com  # ⚠️ CHANGE THIS to your email
 ```
 
@@ -68,7 +68,7 @@ For emails to work in production, you must verify your domain:
 5. **Wait for verification** (usually 5-10 minutes)
 6. **Update `.env.local`**:
    ```bash
-   RESEND_FROM_EMAIL=orders@bakemycake.com  # Use your verified domain
+   RESEND_FROM_EMAIL=info@bakemycakelugano.ch  # Use your verified domain
    ```
 
 ### **Step 2: Development Testing (Using Resend's Test Email)**

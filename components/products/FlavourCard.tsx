@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { urlFor } from '@/lib/sanity/image-url';
 
 interface Ingredient {
@@ -26,6 +27,7 @@ interface FlavourCardProps {
 }
 
 export default function FlavourCard({ flavour, index }: FlavourCardProps) {
+  const t = useTranslations('flavours');
   const isEven = index % 2 === 0;
   const imageUrl = flavour.image ? urlFor(flavour.image).width(800).height(600).url() : null;
 
@@ -108,7 +110,7 @@ export default function FlavourCard({ flavour, index }: FlavourCardProps) {
             className="mb-6"
           >
             <h3 className="text-sm font-semibold text-charcoal-900 uppercase tracking-wider mb-3">
-              Ingredients
+              {t('ingredients')}
             </h3>
             <div className="flex flex-wrap gap-2">
               {regularIngredients.map((ingredient, idx) => (
@@ -147,7 +149,7 @@ export default function FlavourCard({ flavour, index }: FlavourCardProps) {
                   d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
                 />
               </svg>
-              Allergens
+              {t('allergens')}
             </h3>
             <div className="flex flex-wrap gap-2">
               {allergens.map((allergen, idx) => (

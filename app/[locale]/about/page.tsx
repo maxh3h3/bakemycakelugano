@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import AboutCard from '@/components/about/AboutCard';
+import AboutHero from '@/components/about/AboutHero';
 
 export async function generateMetadata({
   params,
@@ -40,21 +41,10 @@ export default async function AboutPage({ params }: AboutPageProps) {
       <Header />
       <main className="flex-1 bg-gradient-to-b from-cream-50 to-white">
         {/* Hero Section */}
-        <section className="relative py-16 lg:py-24 bg-gradient-to-r from-brown-50 via-cream-100 to-rose-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl lg:text-5xl font-heading font-bold text-brown-500 mb-6">
-                {t('pageTitle')}
-              </h1>
-              <p className="text-lg lg:text-xl text-charcoal-700 leading-relaxed">
-                {t('pageSubtitle')}
-              </p>
-            </div>
-          </div>
-        </section>
+        <AboutHero title={t('pageTitle')} subtitle={t('pageSubtitle')} />
 
         {/* Stories Section */}
-        <section className="py-16 lg:py-24">
+        <section className="py-10 lg:py-12">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto space-y-24 lg:space-y-32">
               {stories.map((story, index) => (

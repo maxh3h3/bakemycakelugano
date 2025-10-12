@@ -44,7 +44,7 @@ NEXT_PUBLIC_APP_URL=https://your-app.railway.app  # Your actual Railway URL!
 # RESEND (Email Notifications)
 # ============================================
 RESEND_API_KEY=re_xxxxx
-RESEND_FROM_EMAIL=orders@bakemycake.com
+RESEND_FROM_EMAIL=info@bakemycakelugano.ch
 BAKERY_OWNER_EMAIL=your-email@example.com
 
 # ============================================
@@ -178,7 +178,7 @@ The app doesn't know its own URL for redirects and webhooks.
 
 2. **Update Environment Variables:**
    ```bash
-   RESEND_FROM_EMAIL=orders@bakemycake.com  # Use verified domain
+   RESEND_FROM_EMAIL=info@bakemycakelugano.ch  # Use verified domain
    BAKERY_OWNER_EMAIL=your-actual-email@example.com
    ```
 

@@ -69,7 +69,12 @@ export default function CategoryFilter({ categories, locale }: CategoryFilterPro
     : categoriesWithIcons;  // Original for larger lists
 
   return (
-    <div className="relative w-full py-12">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="relative w-full py-12"
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Carousel Container - Centered with max width and edge fade */}
         <div className="relative max-w-5xl mx-auto">
@@ -121,7 +126,7 @@ export default function CategoryFilter({ categories, locale }: CategoryFilterPro
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

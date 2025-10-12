@@ -16,7 +16,7 @@ dist/
 *.log
 
 # Local env files
-.env
+.env.railway
 .env.local
 .env.production
 
