@@ -9,7 +9,7 @@ interface ProductsHeroProps {
 
 export default function ProductsHero({ title, description }: ProductsHeroProps) {
   return (
-    <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-12 lg:py-16">
+    <section className="relative py-12 lg:py-16">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}

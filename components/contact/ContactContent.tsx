@@ -103,7 +103,7 @@ export default function ContactContent({ locale }: ContactContentProps) {
   const t = useTranslations('contact');
 
   return (
-    <section className="relative py-16 lg:py-24 bg-gradient-to-br from-cream-50 via-white to-brown-50">
+    <section className="relative py-16 lg:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div

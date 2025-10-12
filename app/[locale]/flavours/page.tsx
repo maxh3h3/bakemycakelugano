@@ -41,7 +41,7 @@ export default async function FlavoursPage({ params }: FlavoursPageProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 bg-gradient-to-b from-cream-50 to-white">
+      <main className="flex-1">
         {/* Hero Section */}
         <FlavoursHero title={t('title')} description={t('description')} />
 

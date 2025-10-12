@@ -31,12 +31,17 @@ const config: Config = {
           700: '#533D29',
         },
         charcoal: {
+          500: '#6B6B6B',
+          700: '#4A4A4A',
           900: '#2C2C2C',
         },
       },
       fontFamily: {
         heading: ['Playfair Display', 'serif'],
         body: ['Inter', 'sans-serif'],
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
     },
   },
