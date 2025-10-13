@@ -124,18 +124,18 @@ export default function HeroCarousel({ locale }: HeroCarouselProps) {
                     !isImageLeft ? 'lg:grid-flow-dense' : ''
                   }`}>
                     {/* Image Side */}
-                    <motion.div
-                      initial={{ opacity: 0, x: isImageLeft ? -30 : 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                    <div
                       className={`relative w-full ${!isImageLeft ? 'lg:col-start-2' : ''}`}
+                      style={{ 
+                        willChange: 'transform',
+                      }}
                     >
                       {/* Consistent Frame Size */}
                       <div className={`relative w-full aspect-[3/4] max-w-md mx-auto ${
                         isImageLeft ? 'lg:ml-auto lg:mr-0' : 'lg:mr-auto lg:ml-0'
                       }`}>
                         {/* Image Container with Rounded Corners */}
-                        <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl bg-white p-3">
+                        <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-xl md:shadow-2xl bg-white p-3">
                           <div className="relative w-full h-full rounded-2xl overflow-hidden">
                             <Image
                               src={slide.image}
@@ -148,58 +148,38 @@ export default function HeroCarousel({ locale }: HeroCarouselProps) {
                             />
                           </div>
                         </div>
-                        {/* Subtle Shadow Effect */}
-                        <div className="absolute -inset-4 bg-gradient-to-br from-chocolate-200/20 to-cream-300/20 rounded-3xl blur-2xl -z-10" />
+                        {/* Subtle Shadow Effect - hidden on mobile for performance */}
+                        <div className="hidden md:block absolute -inset-4 bg-gradient-to-br from-chocolate-200/20 to-cream-300/20 rounded-3xl blur-2xl -z-10" />
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Content Side */}
-                    <motion.div
-                      initial={{ opacity: 0, x: isImageLeft ? 30 : -30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+                    <div
                       className={`flex flex-col justify-center space-y-6 text-center lg:text-left ${
                         !isImageLeft ? 'lg:col-start-1 lg:row-start-1' : ''
                       }`}
                     >
                       {/* Story Title */}
                       <div className="space-y-4">
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.6, delay: 0.4 }}
-                        >
-                          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-chocolate-900 leading-tight">
-                            {t(`heroStories.${slide.storyKey}.title`)}
-                          </h2>
-                        </motion.div>
+                        <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-chocolate-900 leading-tight">
+                          {t(`heroStories.${slide.storyKey}.title`)}
+                        </h2>
 
                         {/* Story Description */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.6, delay: 0.6 }}
-                        >
-                          <p className="text-lg sm:text-xl text-chocolate-700 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                            {t(`heroStories.${slide.storyKey}.description`)}
-                          </p>
-                        </motion.div>
+                        <p className="text-lg sm:text-xl text-chocolate-700 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                          {t(`heroStories.${slide.storyKey}.description`)}
+                        </p>
                       </div>
 
                       {/* CTA Button */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.8 }}
-                        className="flex justify-center lg:justify-start"
-                      >
+                      <div className="flex justify-center lg:justify-start">
                         <Link href={`/${locale}/products`}>
                           <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
                             {t('viewAll')} →
                           </Button>
                         </Link>
-                      </motion.div>
-                    </motion.div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -214,7 +194,7 @@ export default function HeroCarousel({ locale }: HeroCarouselProps) {
         whileTap={{ scale: 0.95 }}
         onClick={scrollPrev}
         disabled={!canScrollPrev}
-        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm border border-chocolate-200 flex items-center justify-center text-chocolate-700 transition-all duration-200 hover:bg-white hover:shadow-lg disabled:opacity-0 disabled:pointer-events-none"
+        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/95 md:bg-white/90 md:backdrop-blur-sm border border-chocolate-200 flex items-center justify-center text-chocolate-700 transition-all duration-200 hover:bg-white hover:shadow-lg disabled:opacity-0 disabled:pointer-events-none"
         aria-label="Previous slide"
       >
         <svg
@@ -238,7 +218,7 @@ export default function HeroCarousel({ locale }: HeroCarouselProps) {
         whileTap={{ scale: 0.95 }}
         onClick={scrollNext}
         disabled={!canScrollNext}
-        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm border border-chocolate-200 flex items-center justify-center text-chocolate-700 transition-all duration-200 hover:bg-white hover:shadow-lg disabled:opacity-0 disabled:pointer-events-none"
+        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/95 md:bg-white/90 md:backdrop-blur-sm border border-chocolate-200 flex items-center justify-center text-chocolate-700 transition-all duration-200 hover:bg-white hover:shadow-lg disabled:opacity-0 disabled:pointer-events-none"
         aria-label="Next slide"
       >
         <svg
