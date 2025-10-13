@@ -5,6 +5,7 @@
   },
   "nav": {
     "home": "Home",
+    "categories": "Categories",
     "products": "Products",
     "flavours": "Flavours",
     "about": "About",
@@ -87,6 +88,7 @@
     "and": "and",
     "quickLinks": "Quick Links",
     "home": "Home",
+    "categories": "Categories",
     "products": "Products",
     "flavours": "Flavours",
     "about": "About",
@@ -210,6 +212,13 @@
     "pageSubtitle": "Where passion meets artistry, and every creation tells a story of love and dedication",
     "story1Title": "A Labor of Love",
     "story1Text": "There's something magical about the quiet hours of the night, when the world sleeps and creativity awakens. This is when Iryna comes alive, her hands dancing with purpose as she transforms simple ingredients into edible art.\n\nFor Iryna, cake making isn't just a profession—it's a calling that fills her heart with pure joy. Those late-night hours spent carefully crafting intricate designs, mixing the perfect colors, and adding delicate details are when she feels most herself. Each cake is a canvas where emotions come to life, where dreams take shape in sugar and flour.\n\nWhat brings her the greatest happiness is knowing that her creations will bring smiles to children's faces and tears of joy to celebratory moments. Every wedding cake carries the weight of new beginnings, every birthday cake holds the promise of wishes coming true. When she works with her hands, molding fondant into delicate flowers or painting edible masterpieces, Iryna pours her soul into every detail.\n\nIt's not just about creating beautiful cakes—it's about creating memories, emotions, and moments that people will cherish forever. That's the magic that keeps her working through the night, driven by passion and the joy of bringing happiness to others."
+  },
+  "categories": {
+    "title": "Our Categories",
+    "description": "Explore our diverse collection of handcrafted pastries, cakes, and desserts organized by category",
+    "browseCategory": "Browse Products",
+    "noCategories": "No Categories Available",
+    "noCategoriesDescription": "We're currently updating our categories. Please check back soon!"
   }
 }
 

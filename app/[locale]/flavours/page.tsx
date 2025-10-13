@@ -32,7 +32,7 @@ export default async function FlavoursPage({ params }: FlavoursPageProps) {
   // Gracefully handle Sanity connection issues
   let flavours = [];
   try {
-    flavours = await getFlavours();
+    flavours = await getFlavours(locale as 'en' | 'it');
   } catch (error) {
     console.error('Failed to fetch flavours:', error);
     // Return empty state gracefully

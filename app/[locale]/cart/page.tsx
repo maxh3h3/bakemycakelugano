@@ -2,7 +2,6 @@
 
 import { use } from 'react';
 import { useTranslations } from 'next-intl';
-import { AnimatePresence } from 'framer-motion';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import EmptyCart from '@/components/cart/EmptyCart';
@@ -44,16 +43,14 @@ export default function CartPage({ params }: CartPageProps) {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Cart Items (Left Side) */}
                 <div className="lg:col-span-2 space-y-4">
-                  <AnimatePresence>
-                    {items.map((item, index) => (
-                      <CartItem
-                        key={`${item.product._id}-${item.selectedSize}-${item.deliveryDate}-${index}`}
-                        item={item}
-                        index={index}
-                        locale={locale}
-                      />
-                    ))}
-                  </AnimatePresence>
+                  {items.map((item, index) => (
+                    <CartItem
+                      key={`${item.product._id}-${item.selectedSize}-${item.deliveryDate}-${index}`}
+                      item={item}
+                      index={index}
+                      locale={locale}
+                    />
+                  ))}
                 </div>
 
                 {/* Cart Summary (Right Side) */}

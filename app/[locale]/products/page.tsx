@@ -18,11 +18,12 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
   const { category } = await searchParams;
   const t = await getTranslations('products');
 
-  // Fetch categories and products
-  const categories = await getCategories();
+  // Fetch categories and products with locale
+  const localeParam = locale as 'en' | 'it';
+  const categories = await getCategories(localeParam);
   const products = category 
-    ? await getProductsByCategory(category)
-    : await getProducts();
+    ? await getProductsByCategory(category, localeParam)
+    : await getProducts(localeParam);
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -49,6 +49,14 @@ export default function Footer({ locale }: FooterProps) {
               </li>
               <li>
                 <Link
+                  href={`/${locale}/categories`}
+                  className="text-charcoal-900/70 hover:text-brown-500 transition-colors"
+                >
+                  {t('categories')}
+                </Link>
+              </li>
+              <li>
+                <Link
                   href={`/${locale}/products`}
                   className="text-charcoal-900/70 hover:text-brown-500 transition-colors"
                 >

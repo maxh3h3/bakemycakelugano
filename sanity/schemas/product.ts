@@ -6,8 +6,14 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
-      name: 'name',
-      title: 'Product Name',
+      name: 'name_en',
+      title: 'Product Name (English)',
+      type: 'string',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'name_it',
+      title: 'Product Name (Italian)',
       type: 'string',
       validation: (Rule) => Rule.required(),
     }),
@@ -16,14 +22,21 @@ export default defineType({
       title: 'Slug',
       type: 'slug',
       options: {
-        source: 'name',
+        source: 'name_en',
         maxLength: 96,
       },
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'description',
-      title: 'Description',
+      name: 'description_en',
+      title: 'Description (English)',
+      type: 'text',
+      rows: 4,
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'description_it',
+      title: 'Description (Italian)',
       type: 'text',
       rows: 4,
       validation: (Rule) => Rule.required(),
@@ -52,10 +65,17 @@ export default defineType({
           type: 'object',
           fields: [
             {
-              name: 'label',
-              title: 'Size Label',
+              name: 'label_en',
+              title: 'Size Label (English)',
               type: 'string',
               description: 'What customer sees (e.g., "1 kg for 5-8 persons")',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'label_it',
+              title: 'Size Label (Italian)',
+              type: 'string',
+              description: 'What customer sees (e.g., "1 kg per 5-8 persone")',
               validation: (Rule) => Rule.required(),
             },
             {
@@ -76,12 +96,13 @@ export default defineType({
           ],
           preview: {
             select: {
-              label: 'label',
+              label_en: 'label_en',
+              label_it: 'label_it',
               priceModifier: 'priceModifier',
             },
-            prepare({ label, priceModifier }) {
+            prepare({ label_en, label_it, priceModifier }) {
               return {
-                title: label,
+                title: `${label_en} / ${label_it}`,
                 subtitle: priceModifier > 0 ? `+${priceModifier} CHF` : 'Base price',
               };
             },
@@ -145,8 +166,14 @@ export default defineType({
           type: 'object',
           fields: [
             {
-              name: 'name',
-              title: 'Ingredient Name',
+              name: 'name_en',
+              title: 'Ingredient Name (English)',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'name_it',
+              title: 'Ingredient Name (Italian)',
               type: 'string',
               validation: (Rule) => Rule.required(),
             },
@@ -160,12 +187,13 @@ export default defineType({
           ],
           preview: {
             select: {
-              name: 'name',
+              name_en: 'name_en',
+              name_it: 'name_it',
               isAllergen: 'isAllergen',
             },
-            prepare({ name, isAllergen }) {
+            prepare({ name_en, name_it, isAllergen }) {
               return {
-                title: name,
+                title: `${name_en} / ${name_it}`,
                 subtitle: isAllergen ? '⚠️ Allergen' : 'Regular ingredient',
               };
             },
@@ -177,8 +205,8 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'name',
-      subtitle: 'category.name',
+      title: 'name_en',
+      subtitle: 'category.name_en',
       images: 'images',
       available: 'available',
     },

@@ -15,7 +15,8 @@ interface ProductPageProps {
 // Important: Must return BOTH locale and slug since route is /[locale]/products/[slug]
 export async function generateStaticParams() {
   try {
-    const products = await getProducts();
+    // Use English locale to get all product slugs (slugs are language-neutral)
+    const products = await getProducts('en');
     
     // Generate all combinations of locale + slug
     const params = locales.flatMap((locale) =>
@@ -44,8 +45,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     // Enable static rendering for next-intl
     setRequestLocale(locale);
     
-    console.log(`📦 Fetching product with slug: ${slug}`);
-    const product = await getProductBySlug(slug);
+    console.log(`📦 Fetching product with slug: ${slug} for locale: ${locale}`);
+    const product = await getProductBySlug(slug, locale as 'en' | 'it');
 
     if (!product) {
       console.warn(`⚠️ Product not found: ${slug}`);

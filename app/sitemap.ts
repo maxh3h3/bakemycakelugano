@@ -10,10 +10,10 @@ import { locales } from '@/i18n';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://bakemycakelugano.ch';
 
-  // Fetch all products from Sanity
+  // Fetch all products from Sanity (using English locale for slugs)
   let products = [];
   try {
-    products = await getProducts();
+    products = await getProducts('en');
   } catch (error) {
     console.error('Failed to fetch products for sitemap:', error);
   }
@@ -21,6 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages for each locale
   const staticPages = [
     '',
+    '/categories',
     '/products',
     '/about',
     '/contact',

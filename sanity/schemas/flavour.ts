@@ -6,10 +6,17 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
-      name: 'name',
-      title: 'Flavour Name',
+      name: 'name_en',
+      title: 'Flavour Name (English)',
       type: 'string',
       description: 'E.g., "Chocolate", "Vanilla", "Strawberry"',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'name_it',
+      title: 'Flavour Name (Italian)',
+      type: 'string',
+      description: 'E.g., "Cioccolato", "Vaniglia", "Fragola"',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -17,17 +24,24 @@ export default defineType({
       title: 'Slug',
       type: 'slug',
       options: {
-        source: 'name',
+        source: 'name_en',
         maxLength: 96,
       },
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'description',
-      title: 'Description',
+      name: 'description_en',
+      title: 'Description (English)',
       type: 'text',
       rows: 4,
       description: 'Describe this flavour (e.g., "Rich dark chocolate with hints of coffee")',
+    }),
+    defineField({
+      name: 'description_it',
+      title: 'Description (Italian)',
+      type: 'text',
+      rows: 4,
+      description: 'Describe this flavour in Italian',
     }),
     defineField({
       name: 'image',
@@ -47,8 +61,14 @@ export default defineType({
           type: 'object',
           fields: [
             {
-              name: 'name',
-              title: 'Ingredient Name',
+              name: 'name_en',
+              title: 'Ingredient Name (English)',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'name_it',
+              title: 'Ingredient Name (Italian)',
               type: 'string',
               validation: (Rule) => Rule.required(),
             },
@@ -62,12 +82,13 @@ export default defineType({
           ],
           preview: {
             select: {
-              name: 'name',
+              name_en: 'name_en',
+              name_it: 'name_it',
               isAllergen: 'isAllergen',
             },
-            prepare({ name, isAllergen }) {
+            prepare({ name_en, name_it, isAllergen }) {
               return {
-                title: name,
+                title: `${name_en} / ${name_it}`,
                 subtitle: isAllergen ? '⚠️ Allergen' : 'Regular ingredient',
               };
             },
@@ -93,8 +114,8 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'name',
-      subtitle: 'description',
+      title: 'name_en',
+      subtitle: 'description_en',
       media: 'image',
       available: 'available',
     },

@@ -1,56 +1,92 @@
 import { client } from './client';
 
-// GROQ query fragments
-const productFields = `
-  _id,
-  _createdAt,
-  name,
-  slug,
-  description,
-  price,
-  minimumOrderQuantity,
-  sizes,
-  images,
-  category->,
-  available,
-  featured,
-  ingredients,
-  allergens
-`;
+type Locale = 'en' | 'it';
 
-const categoryFields = `
-  _id,
-  name,
-  slug,
-  description,
-  image,
-  order
-`;
-
-const flavourFields = `
-  _id,
-  name,
-  slug,
-  description,
-  image,
-  ingredients,
-  available,
-  order
-`;
+// Helper function to create locale-aware projections
+function getLocalizedFields(locale: Locale = 'en') {
+  const nameSuffix = `_${locale}`;
+  
+  return {
+    product: `
+      _id,
+      _createdAt,
+      "name": name${nameSuffix},
+      name_en,
+      name_it,
+      slug,
+      "description": description${nameSuffix},
+      description_en,
+      description_it,
+      price,
+      minimumOrderQuantity,
+      "sizes": sizes[]{
+        "label": label${nameSuffix},
+        label_en,
+        label_it,
+        value,
+        priceModifier
+      },
+      images,
+      category->,
+      available,
+      featured,
+      "ingredients": ingredients[]{
+        "name": name${nameSuffix},
+        name_en,
+        name_it,
+        isAllergen
+      },
+      allergens
+    `,
+    category: `
+      _id,
+      "name": name${nameSuffix},
+      name_en,
+      name_it,
+      slug,
+      "description": description${nameSuffix},
+      description_en,
+      description_it,
+      image,
+      order
+    `,
+    flavour: `
+      _id,
+      "name": name${nameSuffix},
+      name_en,
+      name_it,
+      slug,
+      "description": description${nameSuffix},
+      description_en,
+      description_it,
+      image,
+      "ingredients": ingredients[]{
+        "name": name${nameSuffix},
+        name_en,
+        name_it,
+        isAllergen
+      },
+      available,
+      order
+    `
+  };
+}
 
 // Fetch all categories
-export async function getCategories() {
+export async function getCategories(locale: Locale = 'en') {
+  const fields = getLocalizedFields(locale);
   const query = `*[_type == "category"] | order(order asc) {
-    ${categoryFields}
+    ${fields.category}
   }`;
   return client.fetch(query);
 }
 
 // Fetch all available products
-export async function getProducts() {
+export async function getProducts(locale: Locale = 'en') {
   try {
+    const fields = getLocalizedFields(locale);
     const query = `*[_type == "product" && available == true] | order(_createdAt desc) {
-      ${productFields}
+      ${fields.product}
     }`;
     return await client.fetch(query);
   } catch (error) {
@@ -61,26 +97,29 @@ export async function getProducts() {
 }
 
 // Fetch featured products
-export async function getFeaturedProducts(limit = 8) {
+export async function getFeaturedProducts(limit = 8, locale: Locale = 'en') {
+  const fields = getLocalizedFields(locale);
   const query = `*[_type == "product" && available == true && featured == true] | order(_createdAt desc)[0...${limit}] {
-    ${productFields}
+    ${fields.product}
   }`;
   return client.fetch(query);
 }
 
 // Fetch products by category
-export async function getProductsByCategory(categorySlug: string) {
+export async function getProductsByCategory(categorySlug: string, locale: Locale = 'en') {
+  const fields = getLocalizedFields(locale);
   const query = `*[_type == "product" && available == true && category->slug.current == $categorySlug] | order(_createdAt desc) {
-    ${productFields}
+    ${fields.product}
   }`;
   return client.fetch(query, { categorySlug });
 }
 
 // Fetch single product by slug
-export async function getProductBySlug(slug: string) {
+export async function getProductBySlug(slug: string, locale: Locale = 'en') {
   try {
+    const fields = getLocalizedFields(locale);
     const query = `*[_type == "product" && slug.current == $slug][0] {
-      ${productFields}
+      ${fields.product}
     }`;
     const result = await client.fetch(query, { slug });
     
@@ -96,25 +135,28 @@ export async function getProductBySlug(slug: string) {
 }
 
 // Fetch single category by slug
-export async function getCategoryBySlug(slug: string) {
+export async function getCategoryBySlug(slug: string, locale: Locale = 'en') {
+  const fields = getLocalizedFields(locale);
   const query = `*[_type == "category" && slug.current == $slug][0] {
-    ${categoryFields}
+    ${fields.category}
   }`;
   return client.fetch(query, { slug });
 }
 
 // Fetch all available flavours
-export async function getFlavours() {
+export async function getFlavours(locale: Locale = 'en') {
+  const fields = getLocalizedFields(locale);
   const query = `*[_type == "flavour" && available == true] | order(order asc) {
-    ${flavourFields}
+    ${fields.flavour}
   }`;
   return client.fetch(query);
 }
 
 // Fetch single flavour by slug
-export async function getFlavourBySlug(slug: string) {
+export async function getFlavourBySlug(slug: string, locale: Locale = 'en') {
+  const fields = getLocalizedFields(locale);
   const query = `*[_type == "flavour" && slug.current == $slug][0] {
-    ${flavourFields}
+    ${fields.flavour}
   }`;
   return client.fetch(query, { slug });
 }

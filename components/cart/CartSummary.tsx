@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import Button from '@/components/ui/Button';
@@ -19,12 +18,7 @@ export default function CartSummary({ locale }: CartSummaryProps) {
   const itemCount = getTotalItems();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      className="bg-white rounded-lg p-6 shadow-sm border border-cream-200 sticky top-24"
-    >
+    <div className="bg-white rounded-lg p-6 shadow-sm border border-cream-200 sticky top-24">
       {/* Summary Title */}
       <h2 className="font-heading text-2xl font-bold text-charcoal-900 mb-6">
         {t('title')}
@@ -73,7 +67,6 @@ export default function CartSummary({ locale }: CartSummaryProps) {
           Tutti i prezzi sono in CHF (franco svizzero)
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }
-

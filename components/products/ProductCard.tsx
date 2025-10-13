@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { motion } from 'framer-motion';
 import type { Product } from '@/types/sanity';
 import { urlFor } from '@/lib/sanity/image-url';
 import { formatPrice } from '@/lib/utils';
@@ -14,9 +14,10 @@ import Badge from '@/components/ui/Badge';
 interface ProductCardProps {
   product: Product;
   locale: string;
+  index?: number;
 }
 
-export default function ProductCard({ product, locale }: ProductCardProps) {
+export default function ProductCard({ product, locale, index = 0 }: ProductCardProps) {
   const t = useTranslations('products');
   const [imageIndex, setImageIndex] = useState(0);
 
@@ -40,42 +41,28 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: index * 0.1 }}
       className="group"
     >
       <Link href={`/${locale}/products/${product.slug.current}`}>
-        <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200">
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
           {/* Image Container */}
           <div 
             className="relative aspect-square overflow-hidden bg-cream-100"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-              className="w-full h-full relative"
-            >
-              <AnimatePresence initial={false}>
-                <motion.div
-                  key={imageIndex}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute inset-0"
-                >
-                  <Image
-                    src={currentImageUrl}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
+            <div className="w-full h-full relative">
+              <Image
+                src={currentImageUrl}
+                alt={product.name}
+                fill
+                className="object-cover transition-all duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+            </div>
 
             {/* Badges */}
             <div className="absolute top-3 right-3 flex flex-col gap-2">
@@ -136,4 +123,3 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
     </motion.div>
   );
 }
-

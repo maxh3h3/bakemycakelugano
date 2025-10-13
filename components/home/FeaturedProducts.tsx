@@ -14,7 +14,7 @@ export default async function FeaturedProducts({ locale }: FeaturedProductsProps
   // Gracefully handle Sanity connection issues
   let products = [];
   try {
-    products = await getFeaturedProducts(8); // Show 8 featured products
+    products = await getFeaturedProducts(8, locale as 'en' | 'it'); // Show 8 featured products
   } catch (error) {
     console.error('Failed to fetch featured products:', error);
     // Return empty state gracefully

@@ -5,6 +5,7 @@
   },
   "nav": {
     "home": "Home",
+    "categories": "Categorie",
     "products": "Prodotti",
     "flavours": "Gusti",
     "about": "Chi Siamo",
@@ -87,6 +88,7 @@
     "and": "e",
     "quickLinks": "Link Rapidi",
     "home": "Home",
+    "categories": "Categorie",
     "products": "Prodotti",
     "flavours": "Gusti",
     "about": "Chi Siamo",
@@ -210,6 +212,13 @@
     "pageSubtitle": "Dove la passione incontra l'arte, e ogni creazione racconta una storia d'amore e dedizione",
     "story1Title": "Un Lavoro d'Amore",
     "story1Text": "C'è qualcosa di magico nelle ore tranquille della notte, quando il mondo dorme e la creatività si risveglia. È in questi momenti che Iryna si sente viva, le sue mani danzano con uno scopo mentre trasforma semplici ingredienti in arte commestibile.\n\nPer Iryna, creare torte non è solo una professione—è una vocazione che riempie il suo cuore di pura gioia. Quelle ore notturne trascorse a realizzare con cura disegni intricati, miscelare i colori perfetti e aggiungere dettagli delicati sono quando si sente più se stessa. Ogni torta è una tela dove le emozioni prendono vita, dove i sogni prendono forma in zucchero e farina.\n\nCiò che le porta la più grande felicità è sapere che le sue creazioni porteranno sorrisi sui volti dei bambini e lacrime di gioia nei momenti di festa. Ogni torta nuziale porta il peso di nuovi inizi, ogni torta di compleanno custodisce la promessa di desideri che si avverano. Quando lavora con le sue mani, modellando il fondente in delicati fiori o dipingendo capolavori commestibili, Iryna mette la sua anima in ogni dettaglio.\n\nNon si tratta solo di creare belle torte—si tratta di creare ricordi, emozioni e momenti che le persone custodiranno per sempre. Questa è la magia che la tiene sveglia durante la notte, spinta dalla passione e dalla gioia di portare felicità agli altri."
+  },
+  "categories": {
+    "title": "Le Nostre Categorie",
+    "description": "Esplora la nostra vasta collezione di dolci artigianali, torte e dessert organizzati per categoria",
+    "browseCategory": "Sfoglia Prodotti",
+    "noCategories": "Nessuna Categoria Disponibile",
+    "noCategoriesDescription": "Stiamo aggiornando le nostre categorie. Ricontrolla presto!"
   }
 }
 

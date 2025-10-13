@@ -36,6 +36,7 @@ export default function Header() {
 
   const navLinks = [
     { href: `/${locale}`, label: t('home') },
+    { href: `/${locale}/categories`, label: t('categories') },
     { href: `/${locale}/products`, label: t('products') },
     { href: `/${locale}/flavours`, label: t('flavours') },
     { href: `/${locale}/about`, label: t('about') },
@@ -76,7 +77,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-brown-500 ${
+                className={`text-base font-medium transition-colors hover:text-brown-500 px-2 py-1 ${
                   pathname === link.href
                     ? 'text-brown-500'
                     : 'text-charcoal-900/70'
@@ -169,7 +170,7 @@ export default function Header() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${
                       pathname === link.href
                         ? 'bg-brown-50 text-brown-500'
                         : 'text-charcoal-900/70 hover:bg-cream-100'

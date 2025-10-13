@@ -6,8 +6,14 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
-      name: 'name',
-      title: 'Category Name',
+      name: 'name_en',
+      title: 'Category Name (English)',
+      type: 'string',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'name_it',
+      title: 'Category Name (Italian)',
       type: 'string',
       validation: (Rule) => Rule.required(),
     }),
@@ -16,14 +22,20 @@ export default defineType({
       title: 'Slug',
       type: 'slug',
       options: {
-        source: 'name',
+        source: 'name_en',
         maxLength: 96,
       },
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'description',
-      title: 'Description',
+      name: 'description_en',
+      title: 'Description (English)',
+      type: 'text',
+      rows: 3,
+    }),
+    defineField({
+      name: 'description_it',
+      title: 'Description (Italian)',
       type: 'text',
       rows: 3,
     }),
@@ -45,8 +57,8 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'name',
-      subtitle: 'description',
+      title: 'name_en',
+      subtitle: 'description_en',
       media: 'image',
     },
   },
