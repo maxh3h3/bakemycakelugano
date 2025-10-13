@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductDetailClient from '@/components/products/ProductDetailClient';
@@ -40,6 +40,9 @@ export const dynamicParams = true;
 export default async function ProductPage({ params }: ProductPageProps) {
   try {
     const { locale, slug } = await params;
+    
+    // Enable static rendering for next-intl
+    setRequestLocale(locale);
     
     console.log(`📦 Fetching product with slug: ${slug}`);
     const product = await getProductBySlug(slug);
