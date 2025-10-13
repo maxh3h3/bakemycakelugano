@@ -17,7 +17,37 @@
     "underConstruction": "🚧 Under construction - Coming soon!",
     "featuredProducts": "Featured Products",
     "featuredProductsDescription": "Discover our most beloved products, made with fresh ingredients and traditional recipes.",
-    "viewAll": "View All Products"
+    "viewAll": "View All Products",
+    "heroStories": {
+      "story1": {
+        "title": "Learn Together",
+        "description": "Masterclasses for children, to learn and have fun together"
+      },
+      "story2": {
+        "title": "Your Vision, Our Creation",
+        "description": "Personalized cakes to turn your ideas to reality"
+      },
+      "story3": {
+        "title": "Passion & Excellence",
+        "description": "Iryna is passionate about cake, pushing limits to what she can deliver"
+      },
+      "story4": {
+        "title": "Crafted to Perfection",
+        "description": "Attention to detail, professionalism at its core"
+      },
+      "story5": {
+        "title": "Sweet Moments",
+        "description": "Sometimes just to make your weekend a bit sweeter"
+      },
+      "story6": {
+        "title": "Endless Possibilities",
+        "description": "Chocolate, vanilla, caramel, banana... many flavours, many shapes"
+      },
+      "story7": {
+        "title": "Celebrate Love",
+        "description": "Make your wedding day sweet and elegant"
+      }
+    }
   },
   "products": {
     "title": "Our Products",

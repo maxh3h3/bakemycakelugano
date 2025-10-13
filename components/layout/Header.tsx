@@ -58,7 +58,7 @@ export default function Header() {
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
           >
             <Image
-              src="/images/icons/logo_white_back.png"
+              src="/images/icons/bmk_logo.png"
               alt="Bake My Cake"
               width={40}
               height={40}

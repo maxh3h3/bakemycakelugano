@@ -26,9 +26,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       telephone: false,
     },
     icons: {
-      icon: '/images/icons/logo_white_back.png',
-      shortcut: '/images/icons/logo_white_back.png',
-      apple: '/images/icons/logo_white_back.png',
+      icon: '/images/icons/bmk_logo.png',
+      shortcut: '/images/icons/bmk_logo.png',
+      apple: '/images/icons/bmk_logo.png',
     },
     openGraph: {
       type: 'website',

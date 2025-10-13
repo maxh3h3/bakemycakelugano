@@ -17,7 +17,37 @@
     "underConstruction": "🚧 In costruzione - Prossimamente!",
     "featuredProducts": "Prodotti in Evidenza",
     "featuredProductsDescription": "Scopri i nostri prodotti più amati, realizzati con ingredienti freschi e ricette tradizionali.",
-    "viewAll": "Vedi Tutti i Prodotti"
+    "viewAll": "Vedi Tutti i Prodotti",
+    "heroStories": {
+      "story1": {
+        "title": "Imparare Insieme",
+        "description": "Masterclass per bambini, per imparare e divertirsi insieme"
+      },
+      "story2": {
+        "title": "La Tua Visione, La Nostra Creazione",
+        "description": "Torte personalizzate per trasformare le tue idee in realtà"
+      },
+      "story3": {
+        "title": "Passione ed Eccellenza",
+        "description": "Iryna è appassionata di torte, spingendo i limiti di ciò che può realizzare"
+      },
+      "story4": {
+        "title": "Creato alla Perfezione",
+        "description": "Attenzione ai dettagli, professionalità al centro"
+      },
+      "story5": {
+        "title": "Momenti Dolci",
+        "description": "A volte solo per rendere il tuo weekend un po' più dolce"
+      },
+      "story6": {
+        "title": "Possibilità Infinite",
+        "description": "Cioccolato, vaniglia, caramello, banana... tanti gusti, tante forme"
+      },
+      "story7": {
+        "title": "Celebra l'Amore",
+        "description": "Rendi il tuo giorno del matrimonio dolce ed elegante"
+      }
+    }
   },
   "products": {
     "title": "I Nostri Prodotti",
