@@ -69,3 +69,4 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
   );
 }
 
+// TO DO: implement loading state for the products grid
