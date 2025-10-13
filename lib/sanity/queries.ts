@@ -48,10 +48,16 @@ export async function getCategories() {
 
 // Fetch all available products
 export async function getProducts() {
-  const query = `*[_type == "product" && available == true] | order(_createdAt desc) {
-    ${productFields}
-  }`;
-  return client.fetch(query);
+  try {
+    const query = `*[_type == "product" && available == true] | order(_createdAt desc) {
+      ${productFields}
+    }`;
+    return await client.fetch(query);
+  } catch (error) {
+    console.error('❌ Error fetching products:', error);
+    // Return empty array to prevent build failures
+    return [];
+  }
 }
 
 // Fetch featured products
@@ -72,10 +78,21 @@ export async function getProductsByCategory(categorySlug: string) {
 
 // Fetch single product by slug
 export async function getProductBySlug(slug: string) {
-  const query = `*[_type == "product" && slug.current == $slug][0] {
-    ${productFields}
-  }`;
-  return client.fetch(query, { slug });
+  try {
+    const query = `*[_type == "product" && slug.current == $slug][0] {
+      ${productFields}
+    }`;
+    const result = await client.fetch(query, { slug });
+    
+    if (!result) {
+      console.warn(`⚠️ Product not found for slug: ${slug}`);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error fetching product by slug:', error);
+    throw error;
+  }
 }
 
 // Fetch single category by slug
