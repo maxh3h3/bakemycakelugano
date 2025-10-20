@@ -6,12 +6,13 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedSize?: string; // Size value (e.g., "1kg")
+  selectedFlavour?: string; // Flavour ID
   deliveryDate?: string; // ISO date string
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product, quantity: number, selectedSize?: string, deliveryDate?: string) => void;
+  addItem: (product: Product, quantity: number, selectedSize?: string, selectedFlavour?: string, deliveryDate?: string) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   updateDeliveryDate: (itemId: string, date: string) => void;
@@ -36,23 +37,23 @@ export const useCartStore = create<CartStore>()(
         return basePrice + (sizeOption?.priceModifier || 0);
       },
 
-      addItem: (product, quantity, selectedSize, deliveryDate) => {
+      addItem: (product, quantity, selectedSize, selectedFlavour, deliveryDate) => {
         set((state) => {
-          // Generate unique ID for cart item (product + size + date combination)
-          const itemId = `${product._id}-${selectedSize || 'default'}-${deliveryDate || 'no-date'}`;
+          // Generate unique ID for cart item (product + size + flavour + date combination)
+          const itemId = `${product._id}-${selectedSize || 'default'}-${selectedFlavour || 'default'}-${deliveryDate || 'no-date'}`;
           
           const existingItem = state.items.find(
             (item) => {
-              const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.deliveryDate || 'no-date'}`;
+              const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}-${item.deliveryDate || 'no-date'}`;
               return existingItemId === itemId;
             }
           );
 
           if (existingItem) {
-            // If same product with same size and date exists, increase quantity
+            // If same product with same size, flavour and date exists, increase quantity
             return {
               items: state.items.map((item) => {
-                const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.deliveryDate || 'no-date'}`;
+                const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}-${item.deliveryDate || 'no-date'}`;
                 return existingItemId === itemId
                   ? { ...item, quantity: item.quantity + quantity }
                   : item;
@@ -62,7 +63,7 @@ export const useCartStore = create<CartStore>()(
 
           // Add new item to cart
           return {
-            items: [...state.items, { product, quantity, selectedSize, deliveryDate }],
+            items: [...state.items, { product, quantity, selectedSize, selectedFlavour, deliveryDate }],
           };
         });
       },

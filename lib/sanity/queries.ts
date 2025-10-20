@@ -28,6 +28,10 @@ function getLocalizedFields(locale: Locale = 'en') {
       },
       images,
       category->,
+      "availableFlavours": availableFlavours[]->{
+        _id,
+        "name": name${nameSuffix}
+      },
       available,
       featured,
       "ingredients": ingredients[]{

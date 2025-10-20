@@ -44,6 +44,11 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
     ? item.product.sizes.find(s => s.value === item.selectedSize)?.label
     : null;
 
+  // Get flavour name
+  const flavourName = item.selectedFlavour && item.product.availableFlavours
+    ? item.product.availableFlavours.find(f => f._id === item.selectedFlavour)?.name
+    : null;
+
   const handleRemove = () => {
     setIsRemoving(true);
     setTimeout(() => {
@@ -93,8 +98,15 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
 
               {/* Size (if applicable) */}
               {sizeLabel && (
-                <p className="text-sm text-charcoal-900/70 mb-2">
+                <p className="text-sm text-charcoal-900/70 mb-1">
                   {t('size')}: {sizeLabel}
+                </p>
+              )}
+
+              {/* Flavour (if applicable) */}
+              {flavourName && (
+                <p className="text-sm text-charcoal-900/70 mb-2">
+                  {t('flavour')}: {flavourName}
                 </p>
               )}
 

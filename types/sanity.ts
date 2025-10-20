@@ -33,18 +33,6 @@ export interface Ingredient {
 export interface Flavour {
   _id: string;
   name: string; // Localized based on query locale
-  name_en: string;
-  name_it: string;
-  slug: {
-    current: string;
-  };
-  description?: string; // Localized based on query locale
-  description_en?: string;
-  description_it?: string;
-  image?: SanityImageSource;
-  ingredients?: Ingredient[];
-  available: boolean;
-  order: number;
 }
 
 export interface Product {

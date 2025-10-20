@@ -30,7 +30,7 @@
       },
       "story3": {
         "title": "Passione ed Eccellenza",
-        "description": "Iryna è appassionata di torte, spingendo i limiti di ciò che può realizzare"
+        "description": "Il nostro team è appassionato di torte, spingendo i limiti di ciò che può realizzare"
       },
       "story4": {
         "title": "Creato alla Perfezione",
@@ -39,10 +39,6 @@
       "story5": {
         "title": "Momenti Dolci",
         "description": "A volte solo per rendere il tuo weekend un po' più dolce"
-      },
-      "story6": {
-        "title": "Possibilità Infinite",
-        "description": "Cioccolato, vaniglia, caramello, banana... tanti gusti, tante forme"
       },
       "story7": {
         "title": "Celebra l'Amore",
@@ -77,6 +73,7 @@
     "quantity": "Quantità",
     "deliveryDate": "Data di Consegna",
     "size": "Dimensione",
+    "flavour": "Gusto",
     "each": "cad.",
     "itemRemoved": "Prodotto rimosso dal carrello",
     "undo": "Annulla",
@@ -111,6 +108,9 @@
     "size": "Dimensione",
     "selectSize": "Seleziona Dimensione",
     "sizeRequired": "Seleziona una dimensione",
+    "flavour": "Gusto",
+    "selectFlavour": "Seleziona Gusto",
+    "flavourRequired": "Seleziona un gusto",
     "quantity": "Quantità",
     "minimumOrder": "Ordine minimo",
     "deliveryDate": "Data di Consegna",

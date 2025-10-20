@@ -11,13 +11,13 @@ import Button from '@/components/ui/Button';
 
 const heroSlides = [
   {
-    image: '/images/hero/57b41089-f16c-483e-b1fe-479c553b528e.JPG',
-    alt: 'Iryna holding a handcrafted cake',
+    image: '/images/hero/57b41089-f16c-483e-b1fe-479c553b528e.jpeg',
+    alt: 'Professional baker holding a handcrafted cake',
     storyKey: 'story3',
   },
   {
-    image: '/images/hero/9e717507-7d58-4168-85b4-d5a56d0b2aac.JPG',
-    alt: 'Personalized elegant cake with flowers',
+    image: '/images/hero/9e717507-7d58-4168-85b4-d5a56d0b2aac.jpeg',
+    alt: 'Personalized candy-rainbow cake',
     storyKey: 'story2',
   },
   {
@@ -36,12 +36,7 @@ const heroSlides = [
     storyKey: 'story5',
   },
   {
-    image: '/images/hero/acb6e178-1242-4162-8c6b-454ec1a28483.JPG',
-    alt: 'Chocolate cake slice with roses',
-    storyKey: 'story6',
-  },
-  {
-    image: '/images/hero/c2f7e4a8-7f75-4cd5-b64a-b56f4cf2c241.JPG',
+    image: '/images/hero/c2f7e4a8-7f75-4cd5-b64a-b56f4cf2c241.jpeg',
     alt: 'Elegant wedding cake with gold decorations',
     storyKey: 'story7',
   },

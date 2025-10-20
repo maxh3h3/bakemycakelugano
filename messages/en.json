@@ -30,7 +30,7 @@
       },
       "story3": {
         "title": "Passion & Excellence",
-        "description": "Iryna is passionate about cake, pushing limits to what she can deliver"
+        "description": "Our team is passionate about cake, pushing limits to what we can deliver"
       },
       "story4": {
         "title": "Crafted to Perfection",
@@ -39,10 +39,6 @@
       "story5": {
         "title": "Sweet Moments",
         "description": "Sometimes just to make your weekend a bit sweeter"
-      },
-      "story6": {
-        "title": "Endless Possibilities",
-        "description": "Chocolate, vanilla, caramel, banana... many flavours, many shapes"
       },
       "story7": {
         "title": "Celebrate Love",
@@ -77,6 +73,7 @@
     "quantity": "Quantity",
     "deliveryDate": "Delivery Date",
     "size": "Size",
+    "flavour": "Flavour",
     "each": "each",
     "itemRemoved": "Item removed from cart",
     "undo": "Undo",
@@ -111,6 +108,9 @@
     "size": "Size",
     "selectSize": "Select Size",
     "sizeRequired": "Please select a size",
+    "flavour": "Flavour",
+    "selectFlavour": "Select Flavour",
+    "flavourRequired": "Please select a flavour",
     "quantity": "Quantity",
     "minimumOrder": "Minimum order",
     "deliveryDate": "Delivery Date",

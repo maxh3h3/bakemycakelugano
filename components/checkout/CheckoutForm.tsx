@@ -130,6 +130,10 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
         sizeLabel: item.selectedSize 
           ? item.product.sizes?.find(s => s.value === item.selectedSize)?.label || null
           : null,
+        selectedFlavour: item.selectedFlavour || null,
+        flavourName: item.selectedFlavour
+          ? item.product.availableFlavours?.find(f => f._id === item.selectedFlavour)?.name || null
+          : null,
         deliveryDate: item.deliveryDate || null,
       }));
 

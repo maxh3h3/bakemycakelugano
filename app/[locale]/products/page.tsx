@@ -3,9 +3,10 @@ import { getTranslations } from 'next-intl/server';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CategoryFilter from '@/components/products/CategoryFilter';
-import ProductGrid from '@/components/products/ProductGrid';
+import ProductsSection from '@/components/products/ProductsSection';
+import ProductGridSkeleton from '@/components/products/ProductGridSkeleton';
 import ProductsHero from '@/components/products/ProductsHero';
-import { getProducts, getCategories, getProductsByCategory } from '@/lib/sanity/queries';
+import { getCategories } from '@/lib/sanity/queries';
 import type { Category } from '@/types/sanity';
 
 interface ProductsPageProps {
@@ -18,12 +19,9 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
   const { category } = await searchParams;
   const t = await getTranslations('products');
 
-  // Fetch categories and products with locale
+  // Fetch only categories (fast) - products will be fetched in ProductsSection
   const localeParam = locale as 'en' | 'it';
   const categories = await getCategories(localeParam);
-  const products = category 
-    ? await getProductsByCategory(category, localeParam)
-    : await getProducts(localeParam);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -38,7 +36,7 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
           <CategoryFilter categories={categories} locale={locale} />
         </Suspense>
 
-        {/* Products Grid */}
+        {/* Products Grid with Loading State */}
         <section className="py-10 lg:py-12">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {/* Category Title */}
@@ -48,18 +46,10 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
               </h2>
             )}
             
-            {products.length > 0 ? (
-              <ProductGrid products={products} locale={locale} />
-            ) : (
-              <div className="text-center py-20">
-                <p className="text-2xl font-heading text-charcoal-900/60 mb-2">
-                  {t('noProducts')}
-                </p>
-                <p className="text-charcoal-900/50">
-                  {t('noProductsDescription')}
-                </p>
-              </div>
-            )}
+            {/* Suspense boundary for products - shows skeleton while loading */}
+            <Suspense key={category} fallback={<ProductGridSkeleton />}>
+              <ProductsSection category={category} locale={locale} />
+            </Suspense>
           </div>
         </section>
       </main>
@@ -68,5 +58,3 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
     </div>
   );
 }
-
-// TO DO: implement loading state for the products grid

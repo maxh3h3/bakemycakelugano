@@ -33,27 +33,41 @@ export async function POST(request: NextRequest) {
       unitPrice: item.unitPrice,
       selectedSize: item.selectedSize || null,
       sizeLabel: item.sizeLabel || null,
+      selectedFlavour: item.selectedFlavour || null,
+      flavourName: item.flavourName || null,
       deliveryDate: item.deliveryDate || null,
     }));
 
     // Prepare line items with delivery fee if applicable
     const lineItems = [
-      ...items.map((item: any) => ({
-        price_data: {
-          currency: 'chf',
-          product_data: {
-            name: item.productName,
-            description: item.sizeLabel 
-              ? `Size: ${item.sizeLabel}${item.deliveryDate ? ` | Delivery: ${item.deliveryDate}` : ''}`
-              : item.deliveryDate ? `Delivery: ${item.deliveryDate}` : undefined,
-            images: item.productImageUrl 
-              ? [urlFor(item.productImageUrl).width(500).height(500).url()]
-              : undefined,
+      ...items.map((item: any) => {
+        // Build description with size, flavour, and delivery date
+        const descriptionParts: string[] = [];
+        if (item.sizeLabel) {
+          descriptionParts.push(`Size: ${item.sizeLabel}`);
+        }
+        if (item.flavourName) {
+          descriptionParts.push(`Flavour: ${item.flavourName}`);
+        }
+        if (item.deliveryDate) {
+          descriptionParts.push(`Delivery: ${item.deliveryDate}`);
+        }
+        
+        return {
+          price_data: {
+            currency: 'chf',
+            product_data: {
+              name: item.productName,
+              description: descriptionParts.length > 0 ? descriptionParts.join(' | ') : undefined,
+              images: item.productImageUrl 
+                ? [urlFor(item.productImageUrl).width(500).height(500).url()]
+                : undefined,
+            },
+            unit_amount: Math.round(item.unitPrice * 100), // Convert to cents
           },
-          unit_amount: Math.round(item.unitPrice * 100), // Convert to cents
-        },
-        quantity: item.quantity,
-      })),
+          quantity: item.quantity,
+        };
+      }),
     ];
 
     // Add delivery fee as a line item if applicable

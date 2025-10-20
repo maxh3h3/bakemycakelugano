@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import ProductImageGallery from './ProductImageGallery';
 import SizeSelector from './SizeSelector';
+import FlavourSelector from './FlavourSelector';
 import QuantitySelector from './QuantitySelector';
 import DatePicker from './DatePicker';
 
@@ -26,11 +27,14 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
   const [selectedSize, setSelectedSize] = useState<string | null>(
     product.sizes && product.sizes.length > 0 ? product.sizes[0].value : null
   );
+  const [selectedFlavour, setSelectedFlavour] = useState<string | null>(
+    product.availableFlavours && product.availableFlavours.length > 0 ? product.availableFlavours[0]._id : null
+  );
   const [quantity, setQuantity] = useState(product.minimumOrderQuantity || 1);
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [errors, setErrors] = useState<{ size?: string; date?: string }>({});
+  const [errors, setErrors] = useState<{ size?: string; flavour?: string; date?: string }>({});
 
   // Calculate current price based on selected size
   const getCurrentPrice = () => {
@@ -46,10 +50,14 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
   // Validation
   const validate = () => {
-    const newErrors: { size?: string; date?: string } = {};
+    const newErrors: { size?: string; flavour?: string; date?: string } = {};
 
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       newErrors.size = t('sizeRequired');
+    }
+
+    if (product.availableFlavours && product.availableFlavours.length > 0 && !selectedFlavour) {
+      newErrors.flavour = t('flavourRequired');
     }
 
     if (!deliveryDate) {
@@ -73,6 +81,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
         product,
         quantity,
         selectedSize || undefined,
+        selectedFlavour || undefined,
         deliveryDate?.toISOString()
       );
 
@@ -186,6 +195,21 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
                   />
                   {errors.size && (
                     <p className="text-xs text-rose-500 mt-1">{errors.size}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Flavour Selector */}
+              {product.availableFlavours && product.availableFlavours.length > 0 && (
+                <div>
+                  <FlavourSelector
+                    flavours={product.availableFlavours}
+                    selectedFlavour={selectedFlavour}
+                    onFlavourChange={setSelectedFlavour}
+                    required
+                  />
+                  {errors.flavour && (
+                    <p className="text-xs text-rose-500 mt-1">{errors.flavour}</p>
                   )}
                 </div>
               )}
