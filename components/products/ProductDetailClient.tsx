@@ -124,18 +124,6 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
                 {product.name}
               </h1>
 
-              {/* Price */}
-              <div className="flex items-baseline gap-3 mb-6">
-                <span className="text-4xl font-bold text-brown-600">
-                  {formatPrice(currentPrice)}
-                </span>
-                {product.sizes && product.sizes.length > 0 && selectedSize && (
-                  <span className="text-sm text-charcoal-900/60">
-                    {product.sizes.find((s) => s.value === selectedSize)?.label}
-                  </span>
-                )}
-              </div>
-
               {/* Availability Badge */}
               {!product.available && (
                 <Badge variant="error" className="mb-4">
@@ -152,13 +140,8 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
             {/* Ingredients with Allergen Highlights */}
             {product.ingredients && product.ingredients.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-charcoal-900 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-charcoal-900 mb-2">
                   {t('ingredients')}
-                  {product.ingredients.some(ing => ing.isAllergen) && (
-                    <span className="text-xs text-rose-500 font-normal">
-                      (⚠️ = {t('allergen')})
-                    </span>
-                  )}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {product.ingredients.map((ingredient, index) => (
@@ -166,11 +149,10 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
                       key={index}
                       className={`px-3 py-1 text-xs rounded-full font-medium ${
                         ingredient.isAllergen
-                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          ? 'bg-red-50 text-red-700 border border-red-100'
                           : 'bg-cream-100 text-charcoal-900'
                       }`}
                     >
-                      {ingredient.isAllergen && '⚠️ '}
                       {ingredient.name}
                     </span>
                   ))}
