@@ -55,6 +55,7 @@ export interface Product {
   availableFlavours?: Flavour[];
   available: boolean;
   featured: boolean;
+  order?: number; // Display order (lower numbers appear first)
   ingredients?: Ingredient[];
 }
 

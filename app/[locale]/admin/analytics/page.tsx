@@ -1,0 +1,315 @@
+import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { validateSession } from '@/lib/auth/session';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import AdminHeader from '@/components/admin/AdminHeader';
+import { format } from 'date-fns';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+interface CheckoutAttempt {
+  id: string;
+  customer_email: string;
+  customer_name: string;
+  customer_phone: string | null;
+  cart_items: any[];
+  total_amount: number;
+  currency: string;
+  converted: boolean;
+  created_at: string;
+  converted_at: string | null;
+}
+
+export default async function AdminAnalyticsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Await params
+  const { locale } = await params;
+
+  // Get translations
+  const t = await getTranslations('admin');
+
+  // Check authentication
+  const isAuthenticated = await validateSession();
+  if (!isAuthenticated) {
+    redirect(`/${locale}/admin/login`);
+  }
+
+  // Fetch all checkout attempts
+  const { data: attempts, error } = await (supabaseAdmin
+    .from('checkout_attempts') as any)
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching checkout attempts:', error);
+  }
+
+  const checkoutAttempts: CheckoutAttempt[] = attempts || [];
+
+  // Calculate metrics
+  const totalAttempts = checkoutAttempts.length;
+  const convertedAttempts = checkoutAttempts.filter((a) => a.converted);
+  const abandonedAttempts = checkoutAttempts.filter((a) => !a.converted);
+  
+  const conversionRate = totalAttempts > 0 
+    ? (convertedAttempts.length / totalAttempts) * 100 
+    : 0;
+
+  const totalRevenue = convertedAttempts.reduce((sum, a) => sum + a.total_amount, 0);
+  const lostRevenue = abandonedAttempts.reduce((sum, a) => sum + a.total_amount, 0);
+
+  const averageCartValue = totalAttempts > 0
+    ? checkoutAttempts.reduce((sum, a) => sum + a.total_amount, 0) / totalAttempts
+    : 0;
+
+  // Recent abandoned (last 24 hours)
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentAbandoned = abandonedAttempts.filter(
+    (a) => new Date(a.created_at) > oneDayAgo
+  );
+
+  // Most abandoned products
+  const productAbandonment: { [key: string]: { count: number; quantity: number } } = {};
+  
+  abandonedAttempts.forEach((attempt) => {
+    attempt.cart_items.forEach((item: any) => {
+      const productName = item.productName;
+      if (!productAbandonment[productName]) {
+        productAbandonment[productName] = { count: 0, quantity: 0 };
+      }
+      productAbandonment[productName].count += 1;
+      productAbandonment[productName].quantity += item.quantity;
+    });
+  });
+
+  const topAbandonedProducts = Object.entries(productAbandonment)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 5);
+
+  const formatCurrency = (amount: number, currency: string = 'CHF') => {
+    return new Intl.NumberFormat('de-CH', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
+  return (
+    <div className="min-h-screen bg-cream-50">
+      <AdminHeader />
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-heading font-bold text-brown-500 mb-2">
+              {t('analyticsTitle')}
+            </h1>
+            <p className="text-charcoal-600">
+              {t('analyticsDescription')}
+            </p>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Total Checkouts */}
+            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+              <p className="text-sm text-charcoal-500 mb-1">{t('totalCheckouts')}</p>
+              <p className="text-3xl font-mono font-bold text-brown-500 tabular-nums">
+                {totalAttempts}
+              </p>
+              <p className="text-xs text-charcoal-500 mt-2">
+                {convertedAttempts.length} {t('converted')}, {abandonedAttempts.length} {t('abandoned')}
+              </p>
+            </div>
+
+            {/* Conversion Rate */}
+            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+              <p className="text-sm text-charcoal-500 mb-1">{t('conversionRate')}</p>
+              <p className="text-3xl font-mono font-bold text-green-600 tabular-nums">
+                {conversionRate.toFixed(1)}%
+              </p>
+              <p className="text-xs text-charcoal-500 mt-2">
+                {convertedAttempts.length} {t('successfulPayments')}
+              </p>
+            </div>
+
+            {/* Lost Revenue */}
+            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+              <p className="text-sm text-charcoal-500 mb-1">{t('lostRevenue')}</p>
+              <p className="text-3xl font-mono font-bold text-rose-500 tabular-nums">
+                {formatCurrency(lostRevenue)}
+              </p>
+              <p className="text-xs text-charcoal-500 mt-2">
+                {t('fromAbandonedCarts', { count: abandonedAttempts.length })}
+              </p>
+            </div>
+
+            {/* Average Cart Value */}
+            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+              <p className="text-sm text-charcoal-500 mb-1">{t('avgCartValue')}</p>
+              <p className="text-3xl font-mono font-bold text-brown-500 tabular-nums">
+                {formatCurrency(averageCartValue)}
+              </p>
+              <p className="text-xs text-charcoal-500 mt-2">
+                {t('acrossAllAttempts')}
+              </p>
+            </div>
+          </div>
+
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Recent Abandoned Carts */}
+            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+              <h2 className="text-2xl font-heading font-bold text-brown-500 mb-4">
+                {t('recentAbandoned')}
+                <span className="text-sm font-body font-normal text-charcoal-500 ml-2">
+                  {t('last24Hours')}
+                </span>
+              </h2>
+              
+              {recentAbandoned.length === 0 ? (
+                <p className="text-charcoal-500 text-center py-8">
+                  {t('noRecentAbandoned')}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {recentAbandoned.slice(0, 5).map((attempt) => (
+                    <div
+                      key={attempt.id}
+                      className="border border-cream-300 rounded-xl p-4 hover:bg-cream-50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-semibold text-charcoal-900">
+                            {attempt.customer_name}
+                          </p>
+                          <p className="text-xs text-charcoal-500">
+                            {attempt.customer_email}
+                          </p>
+                        </div>
+                        <p className="font-bold text-brown-500">
+                          {formatCurrency(attempt.total_amount)}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-charcoal-500">
+                        <span>{attempt.cart_items.length} {t('items')}</span>
+                        <span>{format(new Date(attempt.created_at), 'HH:mm')}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Most Abandoned Products */}
+            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+              <h2 className="text-2xl font-heading font-bold text-brown-500 mb-4">
+                {t('mostAbandonedProducts')}
+              </h2>
+              
+              {topAbandonedProducts.length === 0 ? (
+                <p className="text-charcoal-500 text-center py-8">
+                  {t('noAbandonedProducts')}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {topAbandonedProducts.map(([productName, data], index) => (
+                    <div
+                      key={productName}
+                      className="flex items-center justify-between border border-cream-300 rounded-xl p-4"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
+                          <span className="text-sm font-bold text-rose-600">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-charcoal-900">
+                            {productName}
+                          </p>
+                          <p className="text-xs text-charcoal-500">
+                            {data.quantity} {t('unitsInAbandonedCarts')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-rose-500">{data.count}</p>
+                        <p className="text-xs text-charcoal-500">{t('times')}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* All Abandoned Carts Table */}
+          <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+            <h2 className="text-2xl font-heading font-bold text-brown-500 mb-4">
+              {t('allAbandonedCarts')} ({abandonedAttempts.length})
+            </h2>
+
+            {abandonedAttempts.length === 0 ? (
+              <p className="text-charcoal-500 text-center py-8">
+                {t('noAbandonedCarts')}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-cream-300">
+                      <th className="text-left py-3 px-2 text-sm font-semibold text-charcoal-700">
+                        {t('customer')}
+                      </th>
+                      <th className="text-left py-3 px-2 text-sm font-semibold text-charcoal-700">
+                        {t('email')}
+                      </th>
+                      <th className="text-center py-3 px-2 text-sm font-semibold text-charcoal-700">
+                        {t('items')}
+                      </th>
+                      <th className="text-right py-3 px-2 text-sm font-semibold text-charcoal-700">
+                        {t('amount')}
+                      </th>
+                      <th className="text-right py-3 px-2 text-sm font-semibold text-charcoal-700">
+                        {t('date')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {abandonedAttempts.map((attempt) => (
+                      <tr
+                        key={attempt.id}
+                        className="border-b border-cream-200 hover:bg-cream-50 transition-colors"
+                      >
+                        <td className="py-3 px-2 text-sm text-charcoal-900">
+                          {attempt.customer_name}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-charcoal-600">
+                          {attempt.customer_email}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-center text-charcoal-600">
+                          {attempt.cart_items.length}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-right font-semibold text-brown-500">
+                          {formatCurrency(attempt.total_amount)}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-right text-charcoal-600">
+                          {format(new Date(attempt.created_at), 'MMM dd, yyyy HH:mm')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+

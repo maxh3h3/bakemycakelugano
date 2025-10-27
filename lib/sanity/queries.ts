@@ -34,6 +34,7 @@ function getLocalizedFields(locale: Locale = 'en') {
       },
       available,
       featured,
+      order,
       "ingredients": ingredients[]{
         "name": name${nameSuffix},
         name_en,
@@ -85,11 +86,11 @@ export async function getCategories(locale: Locale = 'en') {
   return client.fetch(query);
 }
 
-// Fetch all available products
+// Fetch all available products (limited to 40)
 export async function getProducts(locale: Locale = 'en') {
   try {
     const fields = getLocalizedFields(locale);
-    const query = `*[_type == "product" && available == true] | order(_createdAt desc) {
+    const query = `*[_type == "product" && available == true] | order(order asc, _createdAt desc)[0...40] {
       ${fields.product}
     }`;
     return await client.fetch(query);
@@ -103,7 +104,7 @@ export async function getProducts(locale: Locale = 'en') {
 // Fetch featured products
 export async function getFeaturedProducts(limit = 8, locale: Locale = 'en') {
   const fields = getLocalizedFields(locale);
-  const query = `*[_type == "product" && available == true && featured == true] | order(_createdAt desc)[0...${limit}] {
+  const query = `*[_type == "product" && available == true && featured == true] | order(order asc, _createdAt desc)[0...${limit}] {
     ${fields.product}
   }`;
   return client.fetch(query);
@@ -112,7 +113,7 @@ export async function getFeaturedProducts(limit = 8, locale: Locale = 'en') {
 // Fetch products by category
 export async function getProductsByCategory(categorySlug: string, locale: Locale = 'en') {
   const fields = getLocalizedFields(locale);
-  const query = `*[_type == "product" && available == true && category->slug.current == $categorySlug] | order(_createdAt desc) {
+  const query = `*[_type == "product" && available == true && category->slug.current == $categorySlug] | order(order asc, _createdAt desc) {
     ${fields.product}
   }`;
   return client.fetch(query, { categorySlug });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
 import { urlFor } from '@/lib/sanity/image-url';
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 
@@ -109,6 +110,40 @@ export async function POST(request: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/checkout/cancel`,
     });
+
+    // Create checkout attempt record for analytics
+    try {
+      const { error: attemptError } = await (supabaseAdmin
+        .from('checkout_attempts') as any)
+        .insert({
+          stripe_session_id: session.id,
+          customer_email: customerInfo.email,
+          customer_name: customerInfo.name,
+          customer_phone: customerInfo.phone || null,
+          cart_items: simplifiedItems, // Store as JSONB
+          total_amount: totalAmount,
+          currency: 'chf',
+          delivery_type: deliveryInfo.type || null,
+          delivery_address: deliveryInfo.address || null,
+          delivery_city: deliveryInfo.city || null,
+          delivery_postal_code: deliveryInfo.postalCode || null,
+          delivery_country: deliveryInfo.country || 'Switzerland',
+          delivery_fee: deliveryFee,
+          special_instructions: specialInstructions || null,
+          locale: locale || 'it',
+          converted: false, // Will be set to true if payment succeeds
+        });
+
+      if (attemptError) {
+        console.error('Failed to create checkout attempt:', attemptError);
+        // Don't fail the checkout - this is for analytics only
+      } else {
+        console.log('Checkout attempt created:', session.id);
+      }
+    } catch (attemptError) {
+      console.error('Error creating checkout attempt:', attemptError);
+      // Don't fail the checkout - user can still proceed to Stripe
+    }
 
     return NextResponse.json({ sessionUrl: session.url });
   } catch (error) {

@@ -158,6 +158,13 @@ export default defineType({
       initialValue: false,
     }),
     defineField({
+      name: 'order',
+      title: 'Display Order',
+      type: 'number',
+      description: 'Control the display order (lower numbers appear first). Leave empty to sort by creation date.',
+      validation: (Rule) => Rule.min(0).integer(),
+    }),
+    defineField({
       name: 'ingredients',
       title: 'Ingredients',
       type: 'array',

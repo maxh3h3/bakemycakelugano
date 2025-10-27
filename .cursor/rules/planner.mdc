@@ -1,0 +1,4 @@
+---
+alwaysApply: false
+---
+with this rule you just have to plan the change, analyze the current implemenation and see what is the best way to achieve a solid, organized and maintainable implementation. find issues in the current architecture, prioritize organization. do not implement any changes yet. just provde an implmentation plan in your resposne so you and the user can think about an intelligent solution.

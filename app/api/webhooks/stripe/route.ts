@@ -171,6 +171,28 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
     console.log(`Created ${orderItemsData.length} order items`);
 
+    // Mark checkout attempt as converted
+    try {
+      const { error: attemptError } = await (supabaseAdmin
+        .from('checkout_attempts') as any)
+        .update({
+          converted: true,
+          order_id: (order as any).id,
+          converted_at: new Date().toISOString(),
+        })
+        .eq('stripe_session_id', session.id);
+
+      if (attemptError) {
+        console.error('Failed to update checkout attempt:', attemptError);
+        // Don't throw - order is already created, this is just analytics
+      } else {
+        console.log('Checkout attempt marked as converted:', session.id);
+      }
+    } catch (attemptError) {
+      console.error('Error updating checkout attempt:', attemptError);
+      // Don't throw - order creation succeeded, analytics update is not critical
+    }
+
     // Send confirmation email to customer
     try {
       const customerEmail = generateCustomerConfirmationEmail({

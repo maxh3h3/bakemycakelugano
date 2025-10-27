@@ -10,6 +10,7 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    qualities: [50, 75, 90, 100], // Configure allowed image quality values
   },
   experimental: {
     optimizePackageImports: ['framer-motion'],
