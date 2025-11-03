@@ -166,3 +166,25 @@ export async function getFlavourBySlug(slug: string, locale: Locale = 'en') {
   return client.fetch(query, { slug });
 }
 
+// Fetch all products grouped by category
+export async function getProductsGroupedByCategory(locale: Locale = 'en') {
+  try {
+    const fields = getLocalizedFields(locale);
+    // First, fetch all categories with their products
+    const query = `*[_type == "category"] | order(order asc) {
+      ${fields.category},
+      "products": *[_type == "product" && available == true && category._ref == ^._id] | order(order asc, _createdAt desc) {
+        ${fields.product}
+      }
+    }`;
+    
+    const categoriesWithProducts = await client.fetch(query);
+    
+    // Filter out categories with no products
+    return categoriesWithProducts.filter((category: any) => category.products && category.products.length > 0);
+  } catch (error) {
+    console.error('❌ Error fetching products grouped by category:', error);
+    return [];
+  }
+}
+
