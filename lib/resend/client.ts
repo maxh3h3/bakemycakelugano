@@ -12,6 +12,10 @@ export const resend = new Resend(resendApiKey);
 // Email configuration
 export const emailConfig = {
   from: process.env.RESEND_FROM_EMAIL || 'info@bakemycakelugano.ch',
-  ownerEmail: process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch',
+  // Owner emails - send notifications to both addresses
+  ownerEmails: [
+    'info@bakemycakelugano.ch',
+    'luganobakemycake@gmail.com',
+  ],
 };
 

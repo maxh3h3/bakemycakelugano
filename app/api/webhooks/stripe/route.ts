@@ -6,6 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { resend, emailConfig } from '@/lib/resend/client';
 import { generateCustomerConfirmationEmail } from '@/lib/resend/templates/customer-confirmation';
 import { generateOwnerNotificationEmail } from '@/lib/resend/templates/owner-notification';
+import { sendTelegramMessage } from '@/lib/telegram/client';
+import { generateOrderNotificationMessage } from '@/lib/telegram/templates/order-notification';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
@@ -224,7 +226,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       // Don't throw - order is already created, email is not critical
     }
 
-    // Send notification to bakery owner
+    // Send notification to bakery owners (both email addresses)
     try {
       const ownerEmail = generateOwnerNotificationEmail({
         orderNumber: (order as any).id.slice(0, 8).toUpperCase(),
@@ -241,17 +243,47 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         specialInstructions: metadata.specialInstructions || null,
       });
 
-      await resend.emails.send({
-        from: emailConfig.from,
-        to: emailConfig.ownerEmail,
-        subject: ownerEmail.subject,
-        html: ownerEmail.html,
-      });
-
-      console.log('Owner notification email sent');
+      // Send to all owner email addresses
+      for (const ownerEmailAddress of emailConfig.ownerEmails) {
+        await resend.emails.send({
+          from: emailConfig.from,
+          to: ownerEmailAddress,
+          subject: ownerEmail.subject,
+          html: ownerEmail.html,
+        });
+        console.log(`Owner notification email sent to ${ownerEmailAddress}`);
+      }
     } catch (emailError) {
       console.error('Failed to send owner notification email:', emailError);
       // Don't throw - order is already created, email is not critical
+    }
+
+    // Send Telegram notification to owner
+    try {
+      const telegramMessage = generateOrderNotificationMessage({
+        orderNumber: (order as any).id.slice(0, 8).toUpperCase(),
+        customerName: metadata.customerName,
+        customerEmail: metadata.customerEmail,
+        customerPhone: metadata.customerPhone || null,
+        orderItems: orderItemsData,
+        totalAmount,
+        deliveryType: metadata.deliveryType,
+        deliveryAddress: metadata.deliveryAddress || null,
+        deliveryCity: metadata.deliveryCity || null,
+        deliveryPostalCode: metadata.deliveryPostalCode || null,
+        deliveryCountry: metadata.deliveryCountry || null,
+        specialInstructions: metadata.specialInstructions || null,
+      });
+
+      await sendTelegramMessage({
+        text: telegramMessage,
+        parse_mode: 'HTML',
+      });
+
+      console.log('Owner Telegram notification sent');
+    } catch (telegramError) {
+      console.error('Failed to send Telegram notification:', telegramError);
+      // Don't throw - order is already created, Telegram is not critical
     }
 
   } catch (error) {
