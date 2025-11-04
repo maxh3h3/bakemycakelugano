@@ -111,6 +111,15 @@ export async function POST(request: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/checkout/cancel`,
     });
 
+    // DEBUG: Log session details
+    console.log('🔍 Stripe session created:', {
+      id: session.id,
+      url: session.url,
+      payment_status: session.payment_status,
+      status: session.status,
+      mode: session.mode
+    });
+
     // Create checkout attempt record for analytics
     try {
       const { error: attemptError } = await (supabaseAdmin

@@ -173,7 +173,9 @@
     "confirmationEmail": "We've sent a confirmation email to",
     "orderDetails": "Order Details",
     "continueShopping": "Continue Shopping",
-    "orderReceived": "We've received your order and will start preparing it shortly."
+    "orderReceived": "We've received your order and will start preparing it shortly.",
+    "processing": "Processing your order...",
+    "processingNote": "Your order details will appear here shortly. Please refresh the page in a few moments."
   },
   "checkoutCancel": {
     "title": "Payment Cancelled",

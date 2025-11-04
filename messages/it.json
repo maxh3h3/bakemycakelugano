@@ -173,7 +173,9 @@
     "confirmationEmail": "Ti abbiamo inviato un'email di conferma a",
     "orderDetails": "Dettagli Ordine",
     "continueShopping": "Continua lo Shopping",
-    "orderReceived": "Abbiamo ricevuto il tuo ordine e inizieremo a prepararlo a breve."
+    "orderReceived": "Abbiamo ricevuto il tuo ordine e inizieremo a prepararlo a breve.",
+    "processing": "Elaborazione del tuo ordine...",
+    "processingNote": "I dettagli del tuo ordine appariranno qui a breve. Aggiorna la pagina tra qualche istante."
   },
   "checkoutCancel": {
     "title": "Pagamento Annullato",

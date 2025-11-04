@@ -226,7 +226,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       // Don't throw - order is already created, email is not critical
     }
 
-    // Send notification to bakery owners (both email addresses)
+    // Small delay to respect rate limits (500ms between emails)
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Send notification to bakery owners (both email addresses in one request)
     try {
       const ownerEmail = generateOwnerNotificationEmail({
         orderNumber: (order as any).id.slice(0, 8).toUpperCase(),
@@ -243,16 +246,15 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         specialInstructions: metadata.specialInstructions || null,
       });
 
-      // Send to all owner email addresses
-      for (const ownerEmailAddress of emailConfig.ownerEmails) {
-        await resend.emails.send({
-          from: emailConfig.from,
-          to: ownerEmailAddress,
-          subject: ownerEmail.subject,
-          html: ownerEmail.html,
-        });
-        console.log(`Owner notification email sent to ${ownerEmailAddress}`);
-      }
+      // Send ONE email to BOTH owner addresses (saves API requests)
+      await resend.emails.send({
+        from: emailConfig.from,
+        to: emailConfig.ownerEmails, // Send to array of emails in single request
+        subject: ownerEmail.subject,
+        html: ownerEmail.html,
+      });
+      
+      console.log(`Owner notification email sent to: ${emailConfig.ownerEmails.join(', ')}`);
     } catch (emailError) {
       console.error('Failed to send owner notification email:', emailError);
       // Don't throw - order is already created, email is not critical
