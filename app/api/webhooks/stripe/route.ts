@@ -160,6 +160,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       subtotal: item.unitPrice * item.quantity,
       selected_size: item.selectedSize || null,
       size_label: item.sizeLabel || null,
+      selected_flavour: item.selectedFlavour || null,
+      flavour_name: item.flavourName || null,
       delivery_date: item.deliveryDate || null,
     }));
 

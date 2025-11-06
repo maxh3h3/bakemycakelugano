@@ -285,6 +285,11 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                                   <span className="text-charcoal-500">Size:</span> {item.size_label}
                                 </p>
                               )}
+                              {item.flavour_name && (
+                                <p>
+                                  <span className="text-charcoal-500">Flavour:</span> {item.flavour_name}
+                                </p>
+                              )}
                               {item.delivery_date && (
                                 <p>
                                   <span className="text-charcoal-500">Delivery Date:</span>{' '}

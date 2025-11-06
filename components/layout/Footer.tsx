@@ -31,7 +31,15 @@ export default function Footer({ locale }: FooterProps) {
               </h3>
             </div>
             <p className="text-sm text-charcoal-900/70">
-              {t('builtWith')} ❤️ {t('and')} 🎂
+              {t('builtWith')} 🎂 {t('by')}{' '}
+              <a
+                href="https://madesimplestudio.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brown-500 hover:text-brown-600 font-medium transition-colors underline decoration-dotted underline-offset-2"
+              >
+                madeSimple
+              </a>
             </p>
           </div>
 

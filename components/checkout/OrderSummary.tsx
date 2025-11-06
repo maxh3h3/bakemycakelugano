@@ -65,6 +65,11 @@ export default function OrderSummary({ locale, isProcessing, deliveryFee = 0 }: 
                     {item.product.sizes?.find(s => s.value === item.selectedSize)?.label}
                   </p>
                 )}
+                {item.selectedFlavour && (
+                  <p className="text-xs text-charcoal-900/60">
+                    {item.product.availableFlavours?.find(f => f._id === item.selectedFlavour)?.name}
+                  </p>
+                )}
                 {item.deliveryDate && (
                   <p className="text-xs text-charcoal-900/60">
                     {format(new Date(item.deliveryDate), 'PP', { locale: dateLocale })}

@@ -6,6 +6,7 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   size_label?: string | null;
+  flavour_name?: string | null;
   delivery_date?: string | null;
 }
 
@@ -86,6 +87,9 @@ export function generateOrderNotificationMessage({
     message += `   Quantità: ${item.quantity}x\n`;
     if (item.size_label) {
       message += `   Dimensione: ${item.size_label}\n`;
+    }
+    if (item.flavour_name) {
+      message += `   Gusto: ${item.flavour_name}\n`;
     }
     message += `   Prezzo: CHF ${item.unit_price.toFixed(2)}\n`;
     if (item.delivery_date) {

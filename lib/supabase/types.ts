@@ -84,6 +84,8 @@ export interface Database {
           subtotal: number
           selected_size: string | null
           size_label: string | null
+          selected_flavour: string | null
+          flavour_name: string | null
           delivery_date: string | null
           created_at: string
         }
@@ -98,6 +100,8 @@ export interface Database {
           subtotal: number
           selected_size?: string | null
           size_label?: string | null
+          selected_flavour?: string | null
+          flavour_name?: string | null
           delivery_date?: string | null
           created_at?: string
         }
@@ -112,6 +116,8 @@ export interface Database {
           subtotal: number
           selected_size: string | null
           size_label: string | null
+          selected_flavour: string | null
+          flavour_name: string | null
           delivery_date: string | null
           created_at: string
         }>

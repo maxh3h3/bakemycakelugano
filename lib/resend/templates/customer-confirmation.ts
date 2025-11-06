@@ -6,6 +6,7 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   size_label?: string | null;
+  flavour_name?: string | null;
   delivery_date?: string | null;
 }
 
@@ -43,6 +44,7 @@ const translations = {
     deliveryOutsideArea: '⚠️ Il tuo indirizzo è fuori dall\'area di consegna standard di Lugano. Ti contatteremo presto per confermare la disponibilità e i costi di consegna.',
     subtotal: 'Subtotale',
     size: 'Dimensione',
+    flavour: 'Gusto',
     deliveryDate: 'Data di consegna',
     specialInstructions: 'Istruzioni Speciali',
     total: 'Totale',
@@ -66,6 +68,7 @@ const translations = {
     deliveryOutsideArea: '⚠️ Your address is outside the standard Lugano delivery area. We will contact you soon to confirm delivery availability and costs.',
     subtotal: 'Subtotal',
     size: 'Size',
+    flavour: 'Flavour',
     deliveryDate: 'Delivery date',
     specialInstructions: 'Special Instructions',
     total: 'Total',
@@ -259,6 +262,7 @@ export function generateCustomerConfirmationEmail({
                 <td>
                   <div class="item-name">${item.product_name}</div>
                   ${item.size_label ? `<div class="item-meta">📏 ${t.size}: ${item.size_label}</div>` : ''}
+                  ${item.flavour_name ? `<div class="item-meta">🍰 ${t.flavour}: ${item.flavour_name}</div>` : ''}
                   ${item.delivery_date ? `<div class="item-meta">📅 ${t.deliveryDate}: ${new Date(item.delivery_date).toLocaleDateString()}</div>` : ''}
                 </td>
                 <td style="text-align: right; font-weight: 500;">

@@ -6,6 +6,7 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   size_label?: string | null;
+  flavour_name?: string | null;
   delivery_date?: string | null;
 }
 
@@ -303,6 +304,7 @@ export function generateOwnerNotificationEmail({
                 <td>
                   <div class="item-name">${item.product_name}</div>
                   ${item.size_label ? `<div class="item-meta">📏 Dimensione: ${item.size_label}</div>` : ''}
+                  ${item.flavour_name ? `<div class="item-meta">🍰 Gusto: ${item.flavour_name}</div>` : ''}
                   ${item.delivery_date ? `
                     <div class="item-meta" style="color: #dc2626; font-weight: 600;">
                       📅 DA PREPARARE PER: ${new Date(item.delivery_date).toLocaleDateString('it-IT', { 
