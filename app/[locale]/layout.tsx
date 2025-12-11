@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import { locales } from '@/i18n';
 import { inter, playfair } from '@/lib/fonts';
 import AnimatedBackground from '@/components/background/AnimatedBackground';
@@ -103,6 +104,21 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${playfair.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Google Tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-16933032154"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-16933032154');
+          `}
+        </Script>
+      </head>
       <body className="antialiased">
         <LocalBusinessSchema />
         <AnimatedBackground />
