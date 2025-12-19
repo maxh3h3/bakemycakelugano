@@ -12,7 +12,7 @@ if (!stripeSecretKey) {
 // Use this ONLY in API routes and server components
 export const stripe = stripeSecretKey 
   ? new Stripe(stripeSecretKey, {
-      apiVersion: '2025-09-30.clover',
+      apiVersion: '2025-10-29.clover',
       typescript: true,
     })
   : null as any; // Gracefully handle missing key
