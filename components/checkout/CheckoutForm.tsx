@@ -98,7 +98,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
 
     // Delivery date validation
     if (!formData.deliveryDate) {
-      newErrors.deliveryDate = t('deliveryDateRequired') || 'Delivery/pickup date is required';
+      newErrors.deliveryDate = t('deliveryDateRequired');
     }
 
     // Delivery-specific validation
