@@ -122,7 +122,8 @@
     "total": "Total",
     "addToCart": "Add to Cart",
     "adding": "Adding",
-    "addedToCart": "Added to cart!"
+    "addedToCart": "Added to cart!",
+    "dateNote": "You will choose the delivery date during checkout"
   },
   "checkout": {
     "title": "Checkout",

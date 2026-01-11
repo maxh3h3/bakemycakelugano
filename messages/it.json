@@ -122,7 +122,8 @@
     "total": "Totale",
     "addToCart": "Aggiungi al Carrello",
     "adding": "Aggiunta in corso",
-    "addedToCart": "Aggiunto al carrello!"
+    "addedToCart": "Aggiunto al carrello!",
+    "dateNote": "Sceglierai la data di consegna durante il checkout"
   },
   "checkout": {
     "title": "Checkout",

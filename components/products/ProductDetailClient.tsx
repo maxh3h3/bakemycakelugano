@@ -12,7 +12,6 @@ import ProductImageGallery from './ProductImageGallery';
 import SizeSelector from './SizeSelector';
 import FlavourSelector from './FlavourSelector';
 import QuantitySelector from './QuantitySelector';
-import DatePicker from './DatePicker';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -31,10 +30,9 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
     product.availableFlavours && product.availableFlavours.length > 0 ? product.availableFlavours[0]._id : null
   );
   const [quantity, setQuantity] = useState(product.minimumOrderQuantity || 1);
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [errors, setErrors] = useState<{ size?: string; flavour?: string; date?: string }>({});
+  const [errors, setErrors] = useState<{ size?: string; flavour?: string }>({});
 
   // Calculate current price based on selected size
   const getCurrentPrice = () => {
@@ -50,7 +48,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
   // Validation
   const validate = () => {
-    const newErrors: { size?: string; flavour?: string; date?: string } = {};
+    const newErrors: { size?: string; flavour?: string } = {};
 
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       newErrors.size = t('sizeRequired');
@@ -58,10 +56,6 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
     if (product.availableFlavours && product.availableFlavours.length > 0 && !selectedFlavour) {
       newErrors.flavour = t('flavourRequired');
-    }
-
-    if (!deliveryDate) {
-      newErrors.date = t('dateRequired');
     }
 
     setErrors(newErrors);
@@ -81,17 +75,12 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
         product,
         quantity,
         selectedSize || undefined,
-        selectedFlavour || undefined,
-        deliveryDate?.toISOString()
+        selectedFlavour || undefined
       );
 
       // Show success feedback
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-
-      // Reset form (optional - you might want to keep the selection)
-      // setQuantity(product.minimumOrderQuantity || 1);
-      // setDeliveryDate(undefined);
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -204,17 +193,11 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
                 available={product.available}
               />
 
-              {/* Date Picker */}
-              <div>
-                <DatePicker
-                  selectedDate={deliveryDate}
-                  onDateChange={setDeliveryDate}
-                  locale={locale}
-                  required
-                />
-                {errors.date && (
-                  <p className="text-xs text-rose-500 mt-1">{errors.date}</p>
-                )}
+              {/* Delivery Date Note */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  {t('dateNote')}
+                </p>
               </div>
 
               {/* Total Price */}

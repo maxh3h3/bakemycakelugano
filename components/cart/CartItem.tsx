@@ -3,14 +3,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { format } from 'date-fns';
-import { enUS, it } from 'date-fns/locale';
 import type { CartItem as CartItemType } from '@/store/cart-store';
 import { useCartStore } from '@/store/cart-store';
 import { urlFor } from '@/lib/sanity/image-url';
 import { formatPrice } from '@/lib/utils';
 import QuantitySelector from '@/components/products/QuantitySelector';
-import DatePicker from '@/components/products/DatePicker';
 
 interface CartItemProps {
   item: CartItemType;
@@ -18,21 +15,14 @@ interface CartItemProps {
   locale: string;
 }
 
-const localeMap = {
-  en: enUS,
-  it: it,
-};
-
 export default function CartItem({ item, index, locale }: CartItemProps) {
   const t = useTranslations('cart');
-  const { updateQuantity, updateDeliveryDate, removeItem, getItemPrice } = useCartStore();
+  const { updateQuantity, removeItem, getItemPrice } = useCartStore();
   
   const [isRemoving, setIsRemoving] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const itemPrice = getItemPrice(item);
   const subtotal = itemPrice * item.quantity;
-  const dateLocale = localeMap[locale as keyof typeof localeMap] || enUS;
 
   // Get the first image
   const imageUrl = item.product.images?.[0]
@@ -58,13 +48,6 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
 
   const handleQuantityChange = (newQuantity: number) => {
     updateQuantity(index.toString(), newQuantity);
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      updateDeliveryDate(index.toString(), date.toISOString());
-      setShowDatePicker(false);
-    }
   };
 
   return (
@@ -108,32 +91,6 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
                 <p className="text-sm text-charcoal-900/70 mb-2">
                   {t('flavour')}: {flavourName}
                 </p>
-              )}
-
-              {/* Delivery Date */}
-              {item.deliveryDate && (
-                <div className="flex items-center gap-2 mb-3">
-                  <p className="text-sm text-charcoal-900/70">
-                    {t('deliveryDate')}: {format(new Date(item.deliveryDate), 'PPP', { locale: dateLocale })}
-                  </p>
-                  <button
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                    className="text-xs text-brown-500 hover:text-brown-600 underline"
-                  >
-                    {t('updateDate')}
-                  </button>
-                </div>
-              )}
-
-              {/* Date Picker (if open) */}
-              {showDatePicker && (
-                <div className="mb-3">
-                  <DatePicker
-                    selectedDate={item.deliveryDate ? new Date(item.deliveryDate) : undefined}
-                    onDateChange={handleDateChange}
-                    locale={locale}
-                  />
-                </div>
               )}
 
               {/* Unit Price */}
