@@ -159,7 +159,9 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
           },
           deliveryInfo: {
             type: formData.deliveryType,
-            date: formData.deliveryDate?.toISOString().split('T')[0] || null,
+            date: formData.deliveryDate 
+              ? `${formData.deliveryDate.getFullYear()}-${String(formData.deliveryDate.getMonth() + 1).padStart(2, '0')}-${String(formData.deliveryDate.getDate()).padStart(2, '0')}`
+              : null,
             address: formData.deliveryType === 'delivery' ? formData.address : null,
             city: formData.deliveryType === 'delivery' ? formData.city : null,
             postalCode: formData.deliveryType === 'delivery' ? formData.postalCode : null,
