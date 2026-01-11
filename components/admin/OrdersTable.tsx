@@ -224,6 +224,14 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                             {order.delivery_type || 'N/A'}
                           </span>
                         </p>
+                        {order.delivery_date && (
+                          <p>
+                            <span className="text-charcoal-500">Date:</span>{' '}
+                            <span className="font-medium">
+                              {format(new Date(order.delivery_date), 'MMMM dd, yyyy')}
+                            </span>
+                          </p>
+                        )}
                         {order.delivery_address && (
                           <>
                             <p>
@@ -288,12 +296,6 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                               {item.flavour_name && (
                                 <p>
                                   <span className="text-charcoal-500">Flavour:</span> {item.flavour_name}
-                                </p>
-                              )}
-                              {item.delivery_date && (
-                                <p>
-                                  <span className="text-charcoal-500">Delivery Date:</span>{' '}
-                                  {format(new Date(item.delivery_date), 'MMMM dd, yyyy')}
                                 </p>
                               )}
                               <p>
