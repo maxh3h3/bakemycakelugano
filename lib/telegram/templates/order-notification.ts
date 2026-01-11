@@ -7,7 +7,6 @@ interface OrderItem {
   subtotal: number;
   size_label?: string | null;
   flavour_name?: string | null;
-  delivery_date?: string | null;
 }
 
 interface OrderNotificationProps {
@@ -18,6 +17,7 @@ interface OrderNotificationProps {
   orderItems: OrderItem[];
   totalAmount: number;
   deliveryType: string;
+  deliveryDate?: string | null;
   deliveryAddress?: string | null;
   deliveryCity?: string | null;
   deliveryPostalCode?: string | null;
@@ -37,6 +37,7 @@ export function generateOrderNotificationMessage({
   orderItems,
   totalAmount,
   deliveryType,
+  deliveryDate,
   deliveryAddress,
   deliveryCity,
   deliveryPostalCode,
@@ -92,10 +93,6 @@ export function generateOrderNotificationMessage({
       message += `   Gusto: ${item.flavour_name}\n`;
     }
     message += `   Prezzo: CHF ${item.unit_price.toFixed(2)}\n`;
-    if (item.delivery_date) {
-      const formattedDate = formatDate(item.delivery_date);
-      message += `   ${icons.calendar} Consegna: ${formattedDate}\n`;
-    }
     message += `   Subtotale: CHF ${item.subtotal.toFixed(2)}\n`;
     if (index < orderItems.length - 1) {
       message += '\n';
@@ -118,6 +115,12 @@ export function generateOrderNotificationMessage({
     }
   } else if (deliveryType === 'pickup') {
     message += `${icons.pickup} <b>Ritiro in negozio</b>\n`;
+  }
+  
+  // Delivery/pickup date
+  if (deliveryDate) {
+    const formattedDate = formatDate(deliveryDate);
+    message += `\n${icons.calendar} <b>DATA: ${formattedDate}</b>\n`;
   }
   message += '\n';
 

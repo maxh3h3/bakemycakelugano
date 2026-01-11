@@ -147,7 +147,7 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                   <h3 className="text-sm font-semibold text-charcoal-900 mb-3">
                     {tCheckout('deliveryInfo')}
                   </h3>
-                  <div className="text-sm text-charcoal-900/70">
+                  <div className="text-sm text-charcoal-900/70 space-y-2">
                     {order.delivery_type === 'pickup' ? (
                       <p>🏪 {tCheckout('pickup')}</p>
                     ) : (
@@ -159,6 +159,11 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                         </p>
                         {order.delivery_country && <p>{order.delivery_country}</p>}
                       </div>
+                    )}
+                    {order.delivery_date && (
+                      <p className="font-medium">
+                        📅 {new Date(order.delivery_date).toLocaleDateString()}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -184,9 +189,9 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                                 {item.size_label}
                               </p>
                             )}
-                            {item.delivery_date && (
+                            {item.flavour_name && (
                               <p className="text-xs text-charcoal-900/60">
-                                📅 {new Date(item.delivery_date).toLocaleDateString()}
+                                {item.flavour_name}
                               </p>
                             )}
                           </div>

@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
   
   -- Product information (snapshot from Sanity at time of order)
-  product_id TEXT NOT NULL,  -- Sanity product _id
+  product_id TEXT NOT NULL,n  -- Sanity product _id
   product_name TEXT NOT NULL,
   product_image_url TEXT,
   

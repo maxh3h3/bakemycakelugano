@@ -23,6 +23,7 @@ export interface Database {
           currency: string
           status: string
           delivery_type: string | null
+          delivery_date: string | null
           delivery_address: string | null
           delivery_city: string | null
           delivery_postal_code: string | null
@@ -43,6 +44,7 @@ export interface Database {
           currency?: string
           status?: string
           delivery_type?: string | null
+          delivery_date?: string | null
           delivery_address?: string | null
           delivery_city?: string | null
           delivery_postal_code?: string | null
@@ -63,6 +65,7 @@ export interface Database {
           currency: string
           status: string
           delivery_type: string | null
+          delivery_date: string | null
           delivery_address: string | null
           delivery_city: string | null
           delivery_postal_code: string | null
@@ -86,7 +89,6 @@ export interface Database {
           size_label: string | null
           selected_flavour: string | null
           flavour_name: string | null
-          delivery_date: string | null
           created_at: string
         }
         Insert: {
@@ -102,7 +104,6 @@ export interface Database {
           size_label?: string | null
           selected_flavour?: string | null
           flavour_name?: string | null
-          delivery_date?: string | null
           created_at?: string
         }
         Update: Partial<{
@@ -118,7 +119,6 @@ export interface Database {
           size_label: string | null
           selected_flavour: string | null
           flavour_name: string | null
-          delivery_date: string | null
           created_at: string
         }>
       }

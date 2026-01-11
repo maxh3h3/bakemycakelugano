@@ -7,7 +7,6 @@ interface OrderItem {
   subtotal: number;
   size_label?: string | null;
   flavour_name?: string | null;
-  delivery_date?: string | null;
 }
 
 interface OwnerNotificationEmailProps {
@@ -18,6 +17,7 @@ interface OwnerNotificationEmailProps {
   orderItems: OrderItem[];
   totalAmount: number;
   deliveryType: string;
+  deliveryDate?: string | null;
   deliveryAddress?: string | null;
   deliveryCity?: string | null;
   deliveryPostalCode?: string | null;
@@ -33,6 +33,7 @@ export function generateOwnerNotificationEmail({
   orderItems,
   totalAmount,
   deliveryType,
+  deliveryDate,
   deliveryAddress,
   deliveryCity,
   deliveryPostalCode,
@@ -284,6 +285,21 @@ export function generateOwnerNotificationEmail({
             ` : ''}
           </div>
         `}
+        ${deliveryDate ? `
+          <div style="background-color: #fef2f2; border: 2px solid #dc2626; padding: 16px; border-radius: 8px; margin-top: 15px;">
+            <div style="color: #dc2626; font-weight: 700; font-size: 16px; margin-bottom: 4px;">
+              📅 DATA DI CONSEGNA/RITIRO
+            </div>
+            <div style="color: #991b1b; font-size: 18px; font-weight: 600;">
+              ${new Date(deliveryDate).toLocaleDateString('it-IT', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </div>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Order Items -->
@@ -305,16 +321,6 @@ export function generateOwnerNotificationEmail({
                   <div class="item-name">${item.product_name}</div>
                   ${item.size_label ? `<div class="item-meta">📏 Dimensione: ${item.size_label}</div>` : ''}
                   ${item.flavour_name ? `<div class="item-meta">🍰 Gusto: ${item.flavour_name}</div>` : ''}
-                  ${item.delivery_date ? `
-                    <div class="item-meta" style="color: #dc2626; font-weight: 600;">
-                      📅 DA PREPARARE PER: ${new Date(item.delivery_date).toLocaleDateString('it-IT', { 
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </div>
-                  ` : ''}
                 </td>
                 <td style="text-align: right; font-weight: 600; font-size: 16px;">
                   ${formatPrice(item.subtotal)}

@@ -7,7 +7,6 @@ interface OrderItem {
   subtotal: number;
   size_label?: string | null;
   flavour_name?: string | null;
-  delivery_date?: string | null;
 }
 
 interface CustomerConfirmationEmailProps {
@@ -16,6 +15,7 @@ interface CustomerConfirmationEmailProps {
   orderItems: OrderItem[];
   totalAmount: number;
   deliveryType: string;
+  deliveryDate?: string | null;
   deliveryAddress?: string | null;
   deliveryCity?: string | null;
   deliveryPostalCode?: string | null;
@@ -83,6 +83,7 @@ export function generateCustomerConfirmationEmail({
   orderItems,
   totalAmount,
   deliveryType,
+  deliveryDate,
   deliveryAddress,
   deliveryCity,
   deliveryPostalCode,
@@ -263,7 +264,6 @@ export function generateCustomerConfirmationEmail({
                   <div class="item-name">${item.product_name}</div>
                   ${item.size_label ? `<div class="item-meta">📏 ${t.size}: ${item.size_label}</div>` : ''}
                   ${item.flavour_name ? `<div class="item-meta">🍰 ${t.flavour}: ${item.flavour_name}</div>` : ''}
-                  ${item.delivery_date ? `<div class="item-meta">📅 ${t.deliveryDate}: ${new Date(item.delivery_date).toLocaleDateString()}</div>` : ''}
                 </td>
                 <td style="text-align: right; font-weight: 500;">
                   ${formatPrice(item.subtotal)}
@@ -287,6 +287,9 @@ export function generateCustomerConfirmationEmail({
             ${deliveryCountry ? `<p>${deliveryCountry}</p>` : ''}
             ${deliveryFee > 0 ? `<p style="margin-top: 12px;"><strong>${t.deliveryFee}:</strong> ${formatPrice(deliveryFee)}</p>` : ''}
           `}
+          ${deliveryDate ? `
+            <p style="margin-top: 12px;"><strong>📅 ${t.deliveryDate}:</strong> ${new Date(deliveryDate).toLocaleDateString()}</p>
+          ` : ''}
         </div>
         ${deliveryRequiresContact ? `
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 15px;">

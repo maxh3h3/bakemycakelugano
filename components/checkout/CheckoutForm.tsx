@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/utils';
 import { getDeliveryInfo, getDeliveryMessage, type DeliveryInfo } from '@/lib/delivery';
 import Button from '@/components/ui/Button';
 import OrderSummary from './OrderSummary';
+import DatePicker from '@/components/products/DatePicker';
 
 interface CheckoutFormProps {
   locale: string;
@@ -19,6 +20,7 @@ interface FormData {
   email: string;
   phone: string;
   deliveryType: 'pickup' | 'delivery';
+  deliveryDate?: Date;
   address: string;
   city: string;
   postalCode: string;
@@ -30,6 +32,7 @@ interface FormErrors {
   name?: string;
   email?: string;
   phone?: string;
+  deliveryDate?: string;
   address?: string;
   city?: string;
   postalCode?: string;
@@ -52,6 +55,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     email: '',
     phone: '',
     deliveryType: 'pickup',
+    deliveryDate: undefined,
     address: '',
     city: '',
     postalCode: '',
@@ -90,6 +94,11 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     // Phone validation
     if (!formData.phone.trim()) {
       newErrors.phone = t('phoneRequired');
+    }
+
+    // Delivery date validation
+    if (!formData.deliveryDate) {
+      newErrors.deliveryDate = t('deliveryDateRequired') || 'Delivery/pickup date is required';
     }
 
     // Delivery-specific validation
@@ -134,7 +143,6 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
         flavourName: item.selectedFlavour
           ? item.product.availableFlavours?.find(f => f._id === item.selectedFlavour)?.name || null
           : null,
-        deliveryDate: item.deliveryDate || null,
       }));
 
       // Call API to create checkout session
@@ -151,6 +159,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
           },
           deliveryInfo: {
             type: formData.deliveryType,
+            date: formData.deliveryDate?.toISOString().split('T')[0] || null,
             address: formData.deliveryType === 'delivery' ? formData.address : null,
             city: formData.deliveryType === 'delivery' ? formData.city : null,
             postalCode: formData.deliveryType === 'delivery' ? formData.postalCode : null,
@@ -316,6 +325,24 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                     <div className="font-medium">{t('delivery')}</div>
                   </motion.button>
                 </div>
+              </div>
+
+              {/* Delivery/Pickup Date */}
+              <div>
+                <DatePicker
+                  selectedDate={formData.deliveryDate}
+                  onDateChange={(date) => {
+                    setFormData(prev => ({ ...prev, deliveryDate: date }));
+                    if (errors.deliveryDate) {
+                      setErrors(prev => ({ ...prev, deliveryDate: undefined }));
+                    }
+                  }}
+                  locale={locale}
+                  required
+                />
+                {errors.deliveryDate && (
+                  <p className="text-xs text-rose-500 mt-1">{errors.deliveryDate}</p>
+                )}
               </div>
 
               {/* Delivery Address Fields (only if delivery selected) */}

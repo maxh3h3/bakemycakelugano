@@ -132,6 +132,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         currency: 'chf',
         status: 'pending',
         delivery_type: metadata.deliveryType || null,
+        delivery_date: metadata.deliveryDate || null,
         delivery_address: metadata.deliveryAddress || null,
         delivery_city: metadata.deliveryCity || null,
         delivery_postal_code: metadata.deliveryPostalCode || null,
@@ -162,7 +163,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       size_label: item.sizeLabel || null,
       selected_flavour: item.selectedFlavour || null,
       flavour_name: item.flavourName || null,
-      delivery_date: item.deliveryDate || null,
     }));
 
     const { error: itemsError } = await supabaseAdmin
@@ -205,6 +205,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         orderItems: orderItemsData,
         totalAmount,
         deliveryType: metadata.deliveryType,
+        deliveryDate: metadata.deliveryDate || null,
         deliveryAddress: metadata.deliveryAddress || null,
         deliveryCity: metadata.deliveryCity || null,
         deliveryPostalCode: metadata.deliveryPostalCode || null,
@@ -241,6 +242,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         orderItems: orderItemsData,
         totalAmount,
         deliveryType: metadata.deliveryType,
+        deliveryDate: metadata.deliveryDate || null,
         deliveryAddress: metadata.deliveryAddress || null,
         deliveryCity: metadata.deliveryCity || null,
         deliveryPostalCode: metadata.deliveryPostalCode || null,
@@ -272,6 +274,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         orderItems: orderItemsData,
         totalAmount,
         deliveryType: metadata.deliveryType,
+        deliveryDate: metadata.deliveryDate || null,
         deliveryAddress: metadata.deliveryAddress || null,
         deliveryCity: metadata.deliveryCity || null,
         deliveryPostalCode: metadata.deliveryPostalCode || null,

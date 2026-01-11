@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
         customerEmail: customerInfo.email,
         customerPhone: customerInfo.phone,
         deliveryType: deliveryInfo.type,
+        deliveryDate: deliveryInfo.date || '',
         deliveryAddress: deliveryInfo.address || '',
         deliveryCity: deliveryInfo.city || '',
         deliveryPostalCode: deliveryInfo.postalCode || '',
