@@ -141,6 +141,7 @@
     "phonePlaceholder": "+41 79 123 4567",
     "phoneRequired": "Phone is required",
     "deliveryType": "Delivery Type",
+    "deliveryDateRequired": "Delivery date is required",
     "pickup": "Store Pickup",
     "delivery": "Home Delivery",
     "address": "Address",
