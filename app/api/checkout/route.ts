@@ -26,32 +26,29 @@ export async function POST(request: NextRequest) {
     const totalAmount = subtotal + deliveryFee;
 
     // Simplify items for metadata (Stripe has 500 char limit per field)
-    // Only store essential order info - images can be fetched from Sanity if needed
+    // Only store essential order info - minimize to fit within 500 char limit
     const simplifiedItems = items.map((item: any) => ({
       productId: item.productId,
       productName: item.productName,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
-      selectedSize: item.selectedSize || null,
-      sizeLabel: item.sizeLabel || null,
-      selectedFlavour: item.selectedFlavour || null,
-      flavourName: item.flavourName || null,
-      deliveryDate: item.deliveryDate || null,
+      // Only include optional fields if present to save space
+      ...(item.selectedSize && { selectedSize: item.selectedSize }),
+      ...(item.sizeLabel && { sizeLabel: item.sizeLabel }),
+      ...(item.selectedFlavour && { selectedFlavour: item.selectedFlavour }),
+      ...(item.flavourName && { flavourName: item.flavourName }),
     }));
 
     // Prepare line items with delivery fee if applicable
     const lineItems = [
       ...items.map((item: any) => {
-        // Build description with size, flavour, and delivery date
+        // Build description with size and flavour
         const descriptionParts: string[] = [];
         if (item.sizeLabel) {
           descriptionParts.push(`Size: ${item.sizeLabel}`);
         }
         if (item.flavourName) {
           descriptionParts.push(`Flavour: ${item.flavourName}`);
-        }
-        if (item.deliveryDate) {
-          descriptionParts.push(`Delivery: ${item.deliveryDate}`);
         }
         
         return {
