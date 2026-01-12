@@ -1,4 +1,5 @@
 import { formatPrice } from '@/lib/utils';
+import { formatDeliveryAddress, type DeliveryAddress } from '@/lib/schemas/delivery';
 
 interface OrderItem {
   product_name: string;
@@ -18,10 +19,8 @@ interface OwnerNotificationEmailProps {
   totalAmount: number;
   deliveryType: string;
   deliveryDate?: string | null;
-  deliveryAddress?: string | null;
-  deliveryCity?: string | null;
-  deliveryPostalCode?: string | null;
-  deliveryCountry?: string | null;
+  deliveryTime?: string | null;
+  deliveryAddress?: DeliveryAddress | null;
   specialInstructions?: string | null;
 }
 
@@ -34,10 +33,8 @@ export function generateOwnerNotificationEmail({
   totalAmount,
   deliveryType,
   deliveryDate,
+  deliveryTime,
   deliveryAddress,
-  deliveryCity,
-  deliveryPostalCode,
-  deliveryCountry,
   specialInstructions,
 }: OwnerNotificationEmailProps): { subject: string; html: string } {
   const html = `
@@ -268,19 +265,7 @@ export function generateOwnerNotificationEmail({
             ${deliveryAddress ? `
               <div class="info-row">
                 <span class="info-label">Indirizzo:</span>
-                <span class="info-value">${deliveryAddress}</span>
-              </div>
-            ` : ''}
-            ${deliveryPostalCode && deliveryCity ? `
-              <div class="info-row">
-                <span class="info-label">Città:</span>
-                <span class="info-value">${deliveryPostalCode} ${deliveryCity}</span>
-              </div>
-            ` : ''}
-            ${deliveryCountry ? `
-              <div class="info-row">
-                <span class="info-label">Paese:</span>
-                <span class="info-value">${deliveryCountry}</span>
+                <span class="info-value">${formatDeliveryAddress(deliveryAddress)}</span>
               </div>
             ` : ''}
           </div>
@@ -296,7 +281,7 @@ export function generateOwnerNotificationEmail({
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-              })}
+              })}${deliveryTime ? ` at ${deliveryTime}` : ''}
             </div>
           </div>
         ` : ''}

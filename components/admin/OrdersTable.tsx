@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import type { Database } from '@/lib/supabase/types';
+import { formatDeliveryAddress } from '@/lib/schemas/delivery';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -35,6 +36,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
     const matchesSearch =
       order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.order_number && order.order_number.toLowerCase().includes(searchQuery.toLowerCase())) ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
@@ -122,15 +124,20 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                 className="w-full p-6 text-left hover:bg-cream-50/50 transition-colors"
               >
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                  {/* Order ID & Date */}
+                  {/* Order Number & Date */}
                   <div>
-                    <p className="text-xs text-charcoal-500 mb-1">Order ID</p>
-                    <p className="font-mono text-sm font-semibold text-charcoal-900">
-                      {order.id.slice(0, 8)}...
+                    <p className="text-xs text-charcoal-500 mb-1">Order #</p>
+                    <p className="font-mono text-lg font-bold text-brown-500">
+                      {order.order_number || order.id.slice(0, 8) + '...'}
                     </p>
                     <p className="text-xs text-charcoal-500 mt-1">
-                      {format(new Date(order.created_at), 'MMM dd, yyyy HH:mm')}
+                      {format(new Date(order.created_at), 'MMM dd, HH:mm')}
                     </p>
+                    {order.delivery_date && (
+                      <p className="text-xs font-semibold text-blue-600 mt-1">
+                        Delivery: {format(new Date(order.delivery_date), 'MMM dd')}
+                      </p>
+                    )}
                   </div>
 
                   {/* Customer */}
@@ -140,12 +147,21 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                     <p className="text-xs text-charcoal-500">{order.customer_email}</p>
                   </div>
 
-                  {/* Total */}
+                  {/* Total & Payment */}
                   <div>
                     <p className="text-xs text-charcoal-500 mb-1">Total</p>
                     <p className="text-lg font-bold text-brown-500">
                       {formatCurrency(order.total_amount, order.currency)}
                     </p>
+                    {order.paid ? (
+                      <p className="text-xs font-semibold text-green-600 mt-1">
+                        ✓ Paid {order.payment_method ? `(${order.payment_method})` : ''}
+                      </p>
+                    ) : (
+                      <p className="text-xs font-semibold text-orange-600 mt-1">
+                        ⚠ Unpaid
+                      </p>
+                    )}
                   </div>
 
                   {/* Delivery Type */}
@@ -233,31 +249,29 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                           </p>
                         )}
                         {order.delivery_address && (
-                          <>
-                            <p>
-                              <span className="text-charcoal-500">Address:</span>{' '}
-                              <span className="font-medium">{order.delivery_address}</span>
-                            </p>
-                            <p>
-                              <span className="text-charcoal-500">City:</span>{' '}
-                              <span className="font-medium">
-                                {order.delivery_city} {order.delivery_postal_code}
-                              </span>
-                            </p>
-                          </>
+                          <p>
+                            <span className="text-charcoal-500">Address:</span>{' '}
+                            <span className="font-medium">{formatDeliveryAddress(order.delivery_address)}</span>
+                          </p>
+                        )}
+                        {order.delivery_time && (
+                          <p>
+                            <span className="text-charcoal-500">Time:</span>{' '}
+                            <span className="font-medium">{order.delivery_time}</span>
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Special Instructions */}
-                  {order.special_instructions && (
+                  {/* Customer Notes */}
+                  {order.customer_notes && (
                     <div className="mb-6">
                       <h4 className="font-heading font-semibold text-brown-500 mb-3">
-                        Special Instructions
+                        Customer Notes
                       </h4>
                       <p className="text-sm text-charcoal-700 bg-white p-4 rounded-xl border border-cream-300">
-                        {order.special_instructions}
+                        {order.customer_notes}
                       </p>
                     </div>
                   )}
@@ -301,6 +315,12 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                               <p>
                                 <span className="text-charcoal-500">Quantity:</span> {item.quantity}
                               </p>
+                              {item.writing_on_cake && (
+                                <div className="mt-2 bg-purple-50 border border-purple-300 rounded px-2 py-1">
+                                  <p className="text-xs text-purple-600 font-semibold">Writing on Cake:</p>
+                                  <p className="text-sm text-purple-900 font-bold">{item.writing_on_cake}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -320,10 +340,19 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
 
                   {/* Payment Info */}
                   <div className="mt-6 pt-6 border-t border-cream-300">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-charcoal-500">
-                        Payment Status: {order.stripe_payment_status}
-                      </span>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm">
+                        <span className="text-charcoal-500">Payment:</span>{' '}
+                        {order.paid ? (
+                          <span className="font-semibold text-green-600">
+                            ✓ Paid {order.payment_method ? `(${order.payment_method})` : ''}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-orange-600">
+                            Unpaid
+                          </span>
+                        )}
+                      </div>
                       <span className="text-lg font-bold text-brown-500">
                         Total: {formatCurrency(order.total_amount, order.currency)}
                       </span>

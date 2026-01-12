@@ -1,11 +1,19 @@
 import { getIronSession, IronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 
+export type UserRole = 'owner' | 'cook' | 'delivery';
+
 export interface SessionData {
-  isAdmin: boolean;
+  isLoggedIn: boolean;
+  role: UserRole | null;
   rememberMe: boolean;
   createdAt: number;
   expiresAt: number;
+}
+
+// Legacy support
+export interface LegacySessionData extends SessionData {
+  isAdmin?: boolean; // For backward compatibility
 }
 
 // Validate SESSION_SECRET on startup
@@ -37,22 +45,26 @@ const sessionOptions = {
 };
 
 // Get session from cookies
-export async function getSession(): Promise<IronSession<SessionData>> {
+export async function getSession(): Promise<IronSession<LegacySessionData>> {
   const cookieStore = await cookies();
-  return getIronSession<SessionData>(cookieStore, sessionOptions);
+  return getIronSession<LegacySessionData>(cookieStore, sessionOptions);
 }
 
-// Create a new admin session
-export async function createSession(rememberMe: boolean = true): Promise<void> {
+// Create a new session with role
+export async function createSession(role: UserRole, rememberMe: boolean = true): Promise<void> {
   const session = await getSession();
   const now = Date.now();
   const expirationDays = rememberMe ? 7 : 1; // 7 days if remembered, 1 day otherwise
   const expiresAt = now + expirationDays * 24 * 60 * 60 * 1000;
 
-  session.isAdmin = true;
+  session.isLoggedIn = true;
+  session.role = role;
   session.rememberMe = rememberMe;
   session.createdAt = now;
   session.expiresAt = expiresAt;
+  
+  // Legacy support
+  session.isAdmin = true;
 
   await session.save();
 }
@@ -61,7 +73,7 @@ export async function createSession(rememberMe: boolean = true): Promise<void> {
 export async function validateSession(): Promise<boolean> {
   const session = await getSession();
 
-  if (!session.isAdmin) {
+  if (!session.isLoggedIn && !session.isAdmin) {
     return false;
   }
 
@@ -74,25 +86,71 @@ export async function validateSession(): Promise<boolean> {
   return true;
 }
 
+// Get current user role
+export async function getUserRole(): Promise<UserRole | null> {
+  const session = await getSession();
+  
+  // Legacy support: if isAdmin but no role, assume owner
+  if (session.isAdmin && !session.role) {
+    return 'owner';
+  }
+  
+  return session.role || null;
+}
+
+// Check if user has specific role
+export async function hasRole(role: UserRole): Promise<boolean> {
+  const userRole = await getUserRole();
+  return userRole === role;
+}
+
+// Check if user is owner (has full access)
+export async function isOwner(): Promise<boolean> {
+  return await hasRole('owner');
+}
+
 // Destroy the session (logout)
 export async function destroySession(): Promise<void> {
   const session = await getSession();
   session.destroy();
 }
 
-// Verify password against environment variable
-export function verifyPassword(password: string): boolean {
-  const adminPassword = process.env.ADMIN_PASSWORD;
+// Verify password and role
+export function verifyPassword(password: string, role: UserRole): boolean {
+  let correctPassword: string | undefined;
   
-  if (!adminPassword) {
+  switch (role) {
+    case 'owner':
+      correctPassword = process.env.OWNER_PASSWORD;
+      break;
+    case 'cook':
+      correctPassword = process.env.COOK_PASSWORD;
+      break;
+    case 'delivery':
+      correctPassword = process.env.DELIVERY_PASSWORD;
+      break;
+    default:
+      return false;
+  }
+  
+  if (!correctPassword) {
     throw new Error(
-      '❌ ADMIN_PASSWORD environment variable is not set. ' +
-      'Set this to your desired login password (can be any length, e.g., 6+ characters).'
+      `❌ ${role.toUpperCase()}_PASSWORD environment variable is not set. ` +
+      `Add ${role.toUpperCase()}_PASSWORD=your_password to .env.local`
     );
   }
 
-  // Note: ADMIN_PASSWORD can be any length you want (e.g., 6 characters)
-  // Don't confuse this with SESSION_SECRET which must be 32+ characters
+  return password === correctPassword;
+}
+
+// Legacy support: verify admin password (maps to owner)
+export function verifyAdminPassword(password: string): boolean {
+  const adminPassword = process.env.ADMIN_PASSWORD || process.env.OWNER_PASSWORD;
+  
+  if (!adminPassword) {
+    return false;
+  }
+
   return password === adminPassword;
 }
 

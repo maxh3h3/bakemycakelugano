@@ -21,6 +21,7 @@ interface FormData {
   phone: string;
   deliveryType: 'pickup' | 'delivery';
   deliveryDate?: Date;
+  deliveryTime: string;
   address: string;
   city: string;
   postalCode: string;
@@ -56,6 +57,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     phone: '',
     deliveryType: 'pickup',
     deliveryDate: undefined,
+    deliveryTime: '',
     address: '',
     city: '',
     postalCode: '',
@@ -162,6 +164,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
             date: formData.deliveryDate 
               ? `${formData.deliveryDate.getFullYear()}-${String(formData.deliveryDate.getMonth() + 1).padStart(2, '0')}-${String(formData.deliveryDate.getDate()).padStart(2, '0')}`
               : null,
+            time: formData.deliveryTime || null,
             address: formData.deliveryType === 'delivery' ? formData.address : null,
             city: formData.deliveryType === 'delivery' ? formData.city : null,
             postalCode: formData.deliveryType === 'delivery' ? formData.postalCode : null,
@@ -345,6 +348,25 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                 {errors.deliveryDate && (
                   <p className="text-xs text-rose-500 mt-1">{errors.deliveryDate}</p>
                 )}
+              </div>
+
+              {/* Delivery/Pickup Time (optional) */}
+              <div>
+                <label htmlFor="deliveryTime" className="block text-sm font-medium text-charcoal-900 mb-1">
+                  {t('deliveryTime')} <span className="text-charcoal-900/60">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="deliveryTime"
+                  name="deliveryTime"
+                  value={formData.deliveryTime}
+                  onChange={handleInputChange}
+                  placeholder={locale === 'it' ? "es: 14:30, pomeriggio" : "e.g. 14:30, afternoon"}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-cream-200 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 transition-colors"
+                />
+                <p className="text-xs text-charcoal-900/60 mt-1">
+                  {locale === 'it' ? 'Orario preferito per la consegna/ritiro' : 'Preferred time for delivery/pickup'}
+                </p>
               </div>
 
               {/* Delivery Address Fields (only if delivery selected) */}

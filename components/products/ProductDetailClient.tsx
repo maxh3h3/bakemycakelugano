@@ -30,6 +30,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
     product.availableFlavours && product.availableFlavours.length > 0 ? product.availableFlavours[0]._id : null
   );
   const [quantity, setQuantity] = useState(product.minimumOrderQuantity || 1);
+  const [writingOnCake, setWritingOnCake] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errors, setErrors] = useState<{ size?: string; flavour?: string }>({});
@@ -75,12 +76,16 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
         product,
         quantity,
         selectedSize || undefined,
-        selectedFlavour || undefined
+        selectedFlavour || undefined,
+        writingOnCake || undefined
       );
 
       // Show success feedback
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
+      
+      // Reset writing field after successful add
+      setWritingOnCake('');
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -184,6 +189,25 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
                   )}
                 </div>
               )}
+
+              {/* Writing on Cake */}
+              <div>
+                <label htmlFor="writing" className="block text-sm font-semibold text-charcoal-900 mb-2">
+                  {t('writingOnCake')} <span className="text-charcoal-500 font-normal">({t('optional')})</span>
+                </label>
+                <input
+                  id="writing"
+                  type="text"
+                  value={writingOnCake}
+                  onChange={(e) => setWritingOnCake(e.target.value)}
+                  placeholder={t('writingPlaceholder')}
+                  maxLength={50}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 transition-all text-charcoal-900 placeholder:text-charcoal-400"
+                />
+                <p className="text-xs text-charcoal-500 mt-1">
+                  {t('writingHelp')}
+                </p>
+              </div>
 
               {/* Quantity Selector */}
               <QuantitySelector

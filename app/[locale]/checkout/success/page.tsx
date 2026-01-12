@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import Button from '@/components/ui/Button';
 import { stripe } from '@/lib/stripe/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { formatDeliveryAddress } from '@/lib/schemas/delivery';
 
 interface SuccessPageProps {
   params: Promise<{ locale: string }>;
@@ -124,8 +125,8 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                     <span className="text-sm font-medium text-charcoal-900">
                       {t('orderNumber')}
                     </span>
-                    <span className="font-mono text-sm text-charcoal-900 bg-cream-100 px-3 py-1 rounded">
-                      {order.id.slice(0, 8).toUpperCase()}
+                    <span className="font-mono text-lg font-bold text-brown-500 bg-cream-100 px-4 py-2 rounded-lg">
+                      #{order.order_number || order.id.slice(0, 8).toUpperCase()}
                     </span>
                   </div>
                 </div>
@@ -153,16 +154,15 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                     ) : (
                       <div className="space-y-1">
                         <p>🚚 {tCheckout('delivery')}</p>
-                        <p>{order.delivery_address}</p>
-                        <p>
-                          {order.delivery_postal_code} {order.delivery_city}
-                        </p>
-                        {order.delivery_country && <p>{order.delivery_country}</p>}
+                        {order.delivery_address && (
+                          <p>{formatDeliveryAddress(order.delivery_address)}</p>
+                        )}
                       </div>
                     )}
                     {order.delivery_date && (
                       <p className="font-medium">
                         📅 {new Date(order.delivery_date).toLocaleDateString()}
+                        {order.delivery_time && ` at ${order.delivery_time}`}
                       </p>
                     )}
                   </div>

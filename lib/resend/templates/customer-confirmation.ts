@@ -1,4 +1,5 @@
 import { formatPrice } from '@/lib/utils';
+import { formatDeliveryAddress, type DeliveryAddress } from '@/lib/schemas/delivery';
 
 interface OrderItem {
   product_name: string;
@@ -16,10 +17,8 @@ interface CustomerConfirmationEmailProps {
   totalAmount: number;
   deliveryType: string;
   deliveryDate?: string | null;
-  deliveryAddress?: string | null;
-  deliveryCity?: string | null;
-  deliveryPostalCode?: string | null;
-  deliveryCountry?: string | null;
+  deliveryTime?: string | null;
+  deliveryAddress?: DeliveryAddress | null;
   deliveryFee?: number;
   deliveryRequiresContact?: boolean;
   specialInstructions?: string | null;
@@ -84,10 +83,8 @@ export function generateCustomerConfirmationEmail({
   totalAmount,
   deliveryType,
   deliveryDate,
+  deliveryTime,
   deliveryAddress,
-  deliveryCity,
-  deliveryPostalCode,
-  deliveryCountry,
   deliveryFee = 0,
   deliveryRequiresContact = false,
   specialInstructions,
@@ -282,13 +279,11 @@ export function generateCustomerConfirmationEmail({
             <p><strong>🏪 ${t.pickup}</strong></p>
           ` : `
             <p><strong>🚚 ${t.delivery}</strong></p>
-            ${deliveryAddress ? `<p>${deliveryAddress}</p>` : ''}
-            ${deliveryPostalCode && deliveryCity ? `<p>${deliveryPostalCode} ${deliveryCity}</p>` : ''}
-            ${deliveryCountry ? `<p>${deliveryCountry}</p>` : ''}
+            ${deliveryAddress ? `<p>${formatDeliveryAddress(deliveryAddress)}</p>` : ''}
             ${deliveryFee > 0 ? `<p style="margin-top: 12px;"><strong>${t.deliveryFee}:</strong> ${formatPrice(deliveryFee)}</p>` : ''}
           `}
           ${deliveryDate ? `
-            <p style="margin-top: 12px;"><strong>📅 ${t.deliveryDate}:</strong> ${new Date(deliveryDate).toLocaleDateString()}</p>
+            <p style="margin-top: 12px;"><strong>📅 ${t.deliveryDate}:</strong> ${new Date(deliveryDate).toLocaleDateString()}${deliveryTime ? ` at ${deliveryTime}` : ''}</p>
           ` : ''}
         </div>
         ${deliveryRequiresContact ? `

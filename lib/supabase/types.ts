@@ -7,70 +7,87 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+// Delivery Address type for structured JSONB storage
+export interface DeliveryAddress {
+  street: string
+  city: string
+  postalCode: string
+  country: string
+}
+
 export interface Database {
   public: {
     Tables: {
       orders: {
         Row: {
           id: string
-          stripe_session_id: string
+          stripe_session_id: string | null
           stripe_payment_intent_id: string | null
-          stripe_payment_status: string
           customer_email: string
           customer_name: string
           customer_phone: string | null
+          customer_ig_handle: string | null
           total_amount: number
           currency: string
           status: string
           delivery_type: string | null
           delivery_date: string | null
-          delivery_address: string | null
-          delivery_city: string | null
-          delivery_postal_code: string | null
-          delivery_country: string | null
-          special_instructions: string | null
+          delivery_time: string | null
+          delivery_address: DeliveryAddress | null
+          customer_notes: string | null
+          channel: string | null
+          created_by_user_id: string | null
+          paid: boolean | null
+          payment_method: string | null
+          order_number: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          stripe_session_id: string
+          stripe_session_id?: string | null
           stripe_payment_intent_id?: string | null
-          stripe_payment_status?: string
           customer_email: string
           customer_name: string
           customer_phone?: string | null
+          customer_ig_handle?: string | null
           total_amount: number
           currency?: string
           status?: string
           delivery_type?: string | null
           delivery_date?: string | null
-          delivery_address?: string | null
-          delivery_city?: string | null
-          delivery_postal_code?: string | null
-          delivery_country?: string | null
-          special_instructions?: string | null
+          delivery_time?: string | null
+          delivery_address?: DeliveryAddress | null
+          customer_notes?: string | null
+          channel?: string | null
+          created_by_user_id?: string | null
+          paid?: boolean | null
+          payment_method?: string | null
+          order_number?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: Partial<{
           id: string
-          stripe_session_id: string
+          stripe_session_id: string | null
           stripe_payment_intent_id: string | null
-          stripe_payment_status: string
           customer_email: string
           customer_name: string
           customer_phone: string | null
+          customer_ig_handle: string | null
           total_amount: number
           currency: string
           status: string
           delivery_type: string | null
           delivery_date: string | null
-          delivery_address: string | null
-          delivery_city: string | null
-          delivery_postal_code: string | null
-          delivery_country: string | null
-          special_instructions: string | null
+          delivery_time: string | null
+          delivery_address: DeliveryAddress | null
+          customer_notes: string | null
+          channel: string | null
+          created_by_user_id: string | null
+          paid: boolean | null
+          payment_method: string | null
+          order_number: string | null
           created_at: string
           updated_at: string
         }>
@@ -89,6 +106,17 @@ export interface Database {
           size_label: string | null
           selected_flavour: string | null
           flavour_name: string | null
+          production_status: string | null
+          weight_kg: number | null
+          diameter_cm: number | null
+          product_category: string | null
+          writing_on_cake: string | null
+          internal_decoration_notes: string | null
+          staff_notes: string | null
+          delivery_date: string | null
+          started_at: string | null
+          completed_at: string | null
+          updated_at: string | null
           created_at: string
         }
         Insert: {
@@ -104,6 +132,17 @@ export interface Database {
           size_label?: string | null
           selected_flavour?: string | null
           flavour_name?: string | null
+          production_status?: string | null
+          weight_kg?: number | null
+          diameter_cm?: number | null
+          product_category?: string | null
+          writing_on_cake?: string | null
+          internal_decoration_notes?: string | null
+          staff_notes?: string | null
+          delivery_date?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          updated_at?: string | null
           created_at?: string
         }
         Update: Partial<{
@@ -119,10 +158,20 @@ export interface Database {
           size_label: string | null
           selected_flavour: string | null
           flavour_name: string | null
+          production_status: string | null
+          weight_kg: number | null
+          diameter_cm: number | null
+          product_category: string | null
+          writing_on_cake: string | null
+          internal_decoration_notes: string | null
+          staff_notes: string | null
+          delivery_date: string | null
+          started_at: string | null
+          completed_at: string | null
+          updated_at: string | null
           created_at: string
         }>
       }
     }
   }
 }
-

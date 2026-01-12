@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { urlFor } from '@/lib/sanity/image-url';
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
+import { DeliveryAddressSchema } from '@/lib/schemas/delivery';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       ...(item.sizeLabel && { sizeLabel: item.sizeLabel }),
       ...(item.selectedFlavour && { selectedFlavour: item.selectedFlavour }),
       ...(item.flavourName && { flavourName: item.flavourName }),
+      ...(item.writingOnCake && { writingOnCake: item.writingOnCake }),
     }));
 
     // Prepare line items with delivery fee if applicable
@@ -95,10 +97,12 @@ export async function POST(request: NextRequest) {
         customerPhone: customerInfo.phone,
         deliveryType: deliveryInfo.type,
         deliveryDate: deliveryInfo.date || '',
-        deliveryAddress: deliveryInfo.address || '',
-        deliveryCity: deliveryInfo.city || '',
-        deliveryPostalCode: deliveryInfo.postalCode || '',
-        deliveryCountry: deliveryInfo.country || '',
+        deliveryTime: deliveryInfo.time || '',
+        // Flatten address for Stripe metadata (500 char limit per field)
+        deliveryAddressStreet: deliveryInfo.address || '',
+        deliveryAddressCity: deliveryInfo.city || '',
+        deliveryAddressPostalCode: deliveryInfo.postalCode || '',
+        deliveryAddressCountry: deliveryInfo.country || '',
         deliveryFee: deliveryFee.toString(),
         deliveryRequiresContact: deliveryInfo.requiresContact ? 'true' : 'false',
         specialInstructions: specialInstructions || '',
@@ -120,6 +124,16 @@ export async function POST(request: NextRequest) {
 
     // Create checkout attempt record for analytics
     try {
+      // Build delivery address JSONB
+      const deliveryAddress = deliveryInfo.type === 'delivery' && deliveryInfo.address
+        ? {
+            street: deliveryInfo.address,
+            city: deliveryInfo.city || '',
+            postalCode: deliveryInfo.postalCode || '',
+            country: deliveryInfo.country || 'Switzerland'
+          }
+        : null;
+
       const { error: attemptError } = await (supabaseAdmin
         .from('checkout_attempts') as any)
         .insert({
@@ -131,10 +145,7 @@ export async function POST(request: NextRequest) {
           total_amount: totalAmount,
           currency: 'chf',
           delivery_type: deliveryInfo.type || null,
-          delivery_address: deliveryInfo.address || null,
-          delivery_city: deliveryInfo.city || null,
-          delivery_postal_code: deliveryInfo.postalCode || null,
-          delivery_country: deliveryInfo.country || 'Switzerland',
+          delivery_address: deliveryAddress,
           delivery_fee: deliveryFee,
           special_instructions: specialInstructions || null,
           locale: locale || 'it',

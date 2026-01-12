@@ -7,11 +7,12 @@ export interface CartItem {
   quantity: number;
   selectedSize?: string; // Size value (e.g., "1kg")
   selectedFlavour?: string; // Flavour ID
+  writingOnCake?: string; // Custom text to write on cake
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product, quantity: number, selectedSize?: string, selectedFlavour?: string) => void;
+  addItem: (product: Product, quantity: number, selectedSize?: string, selectedFlavour?: string, writingOnCake?: string) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -35,23 +36,24 @@ export const useCartStore = create<CartStore>()(
         return basePrice + (sizeOption?.priceModifier || 0);
       },
 
-      addItem: (product, quantity, selectedSize, selectedFlavour) => {
+      addItem: (product, quantity, selectedSize, selectedFlavour, writingOnCake) => {
         set((state) => {
-          // Generate unique ID for cart item (product + size + flavour combination)
-          const itemId = `${product._id}-${selectedSize || 'default'}-${selectedFlavour || 'default'}`;
+          // Generate unique ID for cart item (product + size + flavour + writing combination)
+          // Note: Items with different writing are separate cart items
+          const itemId = `${product._id}-${selectedSize || 'default'}-${selectedFlavour || 'default'}-${writingOnCake || 'none'}`;
           
           const existingItem = state.items.find(
             (item) => {
-              const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}`;
+              const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}-${item.writingOnCake || 'none'}`;
               return existingItemId === itemId;
             }
           );
 
           if (existingItem) {
-            // If same product with same size and flavour exists, increase quantity
+            // If same product with same size, flavour, and writing exists, increase quantity
             return {
               items: state.items.map((item) => {
-                const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}`;
+                const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}-${item.writingOnCake || 'none'}`;
                 return existingItemId === itemId
                   ? { ...item, quantity: item.quantity + quantity }
                   : item;
@@ -61,7 +63,7 @@ export const useCartStore = create<CartStore>()(
 
           // Add new item to cart
           return {
-            items: [...state.items, { product, quantity, selectedSize, selectedFlavour }],
+            items: [...state.items, { product, quantity, selectedSize, selectedFlavour, writingOnCake }],
           };
         });
       },

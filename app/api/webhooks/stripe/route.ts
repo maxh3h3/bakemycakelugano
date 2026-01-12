@@ -8,6 +8,7 @@ import { generateCustomerConfirmationEmail } from '@/lib/resend/templates/custom
 import { generateOwnerNotificationEmail } from '@/lib/resend/templates/owner-notification';
 import { sendTelegramMessage } from '@/lib/telegram/client';
 import { generateOrderNotificationMessage } from '@/lib/telegram/templates/order-notification';
+import { generateOrderNumber } from '@/lib/order-number-generator';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
@@ -102,21 +103,31 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const totalAmount = subtotal + deliveryFee;
 
   try {
-    // Map Stripe payment_status to our database values
+    // Determine if payment was successful
     // Stripe Checkout Session returns: 'paid', 'unpaid', 'no_payment_required'
-    // Our DB expects: 'pending', 'processing', 'succeeded', 'failed', 'canceled'
-    const mapPaymentStatus = (stripeStatus: string) => {
-      switch (stripeStatus) {
-        case 'paid':
-          return 'succeeded';
-        case 'unpaid':
-          return 'pending';
-        case 'no_payment_required':
-          return 'succeeded';
-        default:
-          return 'pending';
+    const isPaid = session.payment_status === 'paid' || session.payment_status === 'no_payment_required';
+
+    // Generate order number based on delivery date
+    let orderNumber: string | null = null;
+    if (metadata.deliveryDate) {
+      try {
+        orderNumber = await generateOrderNumber(metadata.deliveryDate);
+        console.log('Generated order number:', orderNumber);
+      } catch (error) {
+        console.error('Failed to generate order number:', error);
+        // Continue without order number - it will be null but order creation will proceed
       }
-    };
+    }
+
+    // Reconstruct delivery address JSONB from flattened Stripe metadata
+    const deliveryAddress = metadata.deliveryType === 'delivery' && metadata.deliveryAddressStreet
+      ? {
+          street: metadata.deliveryAddressStreet,
+          city: metadata.deliveryAddressCity || '',
+          postalCode: metadata.deliveryAddressPostalCode || '',
+          country: metadata.deliveryAddressCountry || 'Switzerland'
+        }
+      : null;
 
     // Create order in Supabase
     const { data: order, error: orderError } = await supabaseAdmin
@@ -124,7 +135,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       .insert({
         stripe_session_id: session.id,
         stripe_payment_intent_id: session.payment_intent as string || null,
-        stripe_payment_status: mapPaymentStatus(session.payment_status),
+        paid: isPaid,
+        payment_method: 'stripe',
+        channel: 'website',
+        order_number: orderNumber,
         customer_email: metadata.customerEmail,
         customer_name: metadata.customerName,
         customer_phone: metadata.customerPhone || null,
@@ -133,11 +147,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         status: 'pending',
         delivery_type: metadata.deliveryType || null,
         delivery_date: metadata.deliveryDate || null,
-        delivery_address: metadata.deliveryAddress || null,
-        delivery_city: metadata.deliveryCity || null,
-        delivery_postal_code: metadata.deliveryPostalCode || null,
-        delivery_country: metadata.deliveryCountry || null,
-        special_instructions: metadata.specialInstructions || null,
+        delivery_time: metadata.deliveryTime || null,
+        delivery_address: deliveryAddress,
+        customer_notes: metadata.specialInstructions || null,
       } as any)
       .select()
       .single();
@@ -163,6 +175,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       size_label: item.sizeLabel || null,
       selected_flavour: item.selectedFlavour || null,
       flavour_name: item.flavourName || null,
+      writing_on_cake: item.writingOnCake || null,
     }));
 
     const { error: itemsError } = await supabaseAdmin
@@ -201,15 +214,13 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     try {
       const customerEmail = generateCustomerConfirmationEmail({
         customerName: metadata.customerName,
-        orderNumber: (order as any).id.slice(0, 8).toUpperCase(),
+        orderNumber: (order as any).order_number || (order as any).id.slice(0, 8).toUpperCase(),
         orderItems: orderItemsData,
         totalAmount,
         deliveryType: metadata.deliveryType,
         deliveryDate: metadata.deliveryDate || null,
-        deliveryAddress: metadata.deliveryAddress || null,
-        deliveryCity: metadata.deliveryCity || null,
-        deliveryPostalCode: metadata.deliveryPostalCode || null,
-        deliveryCountry: metadata.deliveryCountry || null,
+        deliveryTime: metadata.deliveryTime || null,
+        deliveryAddress,
         deliveryFee,
         deliveryRequiresContact,
         specialInstructions: metadata.specialInstructions || null,
@@ -235,7 +246,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     // Send notification to bakery owners (both email addresses in one request)
     try {
       const ownerEmail = generateOwnerNotificationEmail({
-        orderNumber: (order as any).id.slice(0, 8).toUpperCase(),
+        orderNumber: (order as any).order_number || (order as any).id.slice(0, 8).toUpperCase(),
         customerName: metadata.customerName,
         customerEmail: metadata.customerEmail,
         customerPhone: metadata.customerPhone || null,
@@ -243,10 +254,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         totalAmount,
         deliveryType: metadata.deliveryType,
         deliveryDate: metadata.deliveryDate || null,
-        deliveryAddress: metadata.deliveryAddress || null,
-        deliveryCity: metadata.deliveryCity || null,
-        deliveryPostalCode: metadata.deliveryPostalCode || null,
-        deliveryCountry: metadata.deliveryCountry || null,
+        deliveryTime: metadata.deliveryTime || null,
+        deliveryAddress,
         specialInstructions: metadata.specialInstructions || null,
       });
 
@@ -267,7 +276,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     // Send Telegram notification to owner
     try {
       const telegramMessage = generateOrderNotificationMessage({
-        orderNumber: (order as any).id.slice(0, 8).toUpperCase(),
+        orderNumber: (order as any).order_number || (order as any).id.slice(0, 8).toUpperCase(),
         customerName: metadata.customerName,
         customerEmail: metadata.customerEmail,
         customerPhone: metadata.customerPhone || null,
@@ -275,10 +284,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         totalAmount,
         deliveryType: metadata.deliveryType,
         deliveryDate: metadata.deliveryDate || null,
-        deliveryAddress: metadata.deliveryAddress || null,
-        deliveryCity: metadata.deliveryCity || null,
-        deliveryPostalCode: metadata.deliveryPostalCode || null,
-        deliveryCountry: metadata.deliveryCountry || null,
+        deliveryTime: metadata.deliveryTime || null,
+        deliveryAddress,
         specialInstructions: metadata.specialInstructions || null,
       });
 
@@ -303,11 +310,11 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   console.log('Payment intent succeeded:', paymentIntent.id);
 
   try {
-    // Update order status to 'succeeded' (matching DB constraint)
+    // Mark order as paid and confirm
     const { error } = await (supabaseAdmin
       .from('orders') as any)
       .update({
-        stripe_payment_status: 'succeeded',
+        paid: true,
         status: 'confirmed',  // Move to confirmed status when payment succeeds
         updated_at: new Date().toISOString(),
       })
@@ -316,7 +323,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     if (error) {
       console.error('Failed to update order status:', error);
     } else {
-      console.log('Order status updated to confirmed');
+      console.log('Order marked as paid and confirmed');
     }
   } catch (error) {
     console.error('Error updating order status:', error);

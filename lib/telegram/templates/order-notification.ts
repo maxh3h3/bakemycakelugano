@@ -1,4 +1,5 @@
 // Telegram notification template for new orders
+import { formatDeliveryAddress, type DeliveryAddress } from '@/lib/schemas/delivery';
 
 interface OrderItem {
   product_name: string;
@@ -18,10 +19,8 @@ interface OrderNotificationProps {
   totalAmount: number;
   deliveryType: string;
   deliveryDate?: string | null;
-  deliveryAddress?: string | null;
-  deliveryCity?: string | null;
-  deliveryPostalCode?: string | null;
-  deliveryCountry?: string | null;
+  deliveryTime?: string | null;
+  deliveryAddress?: DeliveryAddress | null;
   specialInstructions?: string | null;
 }
 
@@ -38,10 +37,8 @@ export function generateOrderNotificationMessage({
   totalAmount,
   deliveryType,
   deliveryDate,
+  deliveryTime,
   deliveryAddress,
-  deliveryCity,
-  deliveryPostalCode,
-  deliveryCountry,
   specialInstructions,
 }: OrderNotificationProps): string {
   // Emoji icons for visual appeal
@@ -106,12 +103,8 @@ export function generateOrderNotificationMessage({
   // Delivery information
   if (deliveryType === 'delivery') {
     message += `${icons.delivery} <b>Consegna a domicilio</b>\n`;
-    if (deliveryAddress) message += `${deliveryAddress}\n`;
-    if (deliveryCity) message += `${deliveryCity}`;
-    if (deliveryPostalCode) message += ` ${deliveryPostalCode}`;
-    if (deliveryCity || deliveryPostalCode) message += '\n';
-    if (deliveryCountry && deliveryCountry !== 'Switzerland') {
-      message += `${deliveryCountry}\n`;
+    if (deliveryAddress) {
+      message += `${formatDeliveryAddress(deliveryAddress)}\n`;
     }
   } else if (deliveryType === 'pickup') {
     message += `${icons.pickup} <b>Ritiro in negozio</b>\n`;
@@ -120,7 +113,11 @@ export function generateOrderNotificationMessage({
   // Delivery/pickup date
   if (deliveryDate) {
     const formattedDate = formatDate(deliveryDate);
-    message += `\n${icons.calendar} <b>DATA: ${formattedDate}</b>\n`;
+    message += `\n${icons.calendar} <b>DATA: ${formattedDate}</b>`;
+    if (deliveryTime) {
+      message += ` at ${deliveryTime}`;
+    }
+    message += '\n';
   }
   message += '\n';
 

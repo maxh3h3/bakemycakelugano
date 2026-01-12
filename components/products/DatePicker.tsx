@@ -12,6 +12,7 @@ interface DatePickerProps {
   onDateChange: (date: Date | undefined) => void;
   locale: string;
   required?: boolean;
+  minDate?: Date;
 }
 
 const localeMap = {
@@ -24,14 +25,18 @@ export default function DatePicker({
   onDateChange,
   locale,
   required = false,
+  minDate: customMinDate,
 }: DatePickerProps) {
   const t = useTranslations('productDetail');
   const [isOpen, setIsOpen] = useState(false);
 
-  // Calculate minimum date (2 days from now - no same-day or next-day orders)
-  const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 2); // Day after tomorrow
-  minDate.setHours(0, 0, 0, 0);
+  // Calculate minimum date (2 days from now by default - no same-day or next-day orders for customers)
+  // But allow override for admin orders
+  const defaultMinDate = new Date();
+  defaultMinDate.setDate(defaultMinDate.getDate() + 2); // Day after tomorrow
+  defaultMinDate.setHours(0, 0, 0, 0);
+
+  const minDate = customMinDate || defaultMinDate;
 
   // Maximum date (3 months in advance)
   const maxDate = new Date();
@@ -47,8 +52,8 @@ export default function DatePicker({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-charcoal-900">
-        {t('deliveryDate')} {required && <span className="text-rose-500">*</span>}
+      <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+        {t('deliveryDate')} {required && <span className="text-red-500">*</span>}
       </label>
       
       <div className="relative">
@@ -57,13 +62,13 @@ export default function DatePicker({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className={`
-            w-full px-4 py-3 rounded-lg border-2 transition-colors text-left
+            w-full px-4 py-2 rounded-lg border-2 transition-colors text-left
             flex items-center justify-between
-            focus:outline-none focus:ring-2 focus:ring-brown-500/20
+            focus:outline-none focus:border-brown-500
             ${
               selectedDate
-                ? 'border-brown-500 bg-white text-charcoal-900'
-                : 'border-cream-200 bg-white text-charcoal-900/50 hover:border-brown-300'
+                ? 'border-cream-300 bg-white text-charcoal-900'
+                : 'border-cream-300 bg-white text-charcoal-500 hover:border-brown-500'
             }
           `}
         >
@@ -183,21 +188,25 @@ export default function DatePicker({
                 required={required}
               />
               
-              {/* Helper text */}
-              <div className="mt-3 pt-3 border-t border-cream-200">
-                <p className="text-xs text-charcoal-900/60 leading-relaxed">
-                  {t('datePickerHelp')}
-                </p>
-              </div>
+              {/* Helper text - only show if using default 2-day minimum */}
+              {!customMinDate && (
+                <div className="mt-3 pt-3 border-t border-cream-200">
+                  <p className="text-xs text-charcoal-600 leading-relaxed">
+                    {t('datePickerHelp')}
+                  </p>
+                </div>
+              )}
             </div>
           </>
         )}
       </div>
       
-      {/* Info text */}
-      <p className="text-xs text-charcoal-900/60">
-        {t('leadTime')}
-      </p>
+      {/* Info text - only show if using default 2-day minimum */}
+      {!customMinDate && (
+        <p className="text-xs text-charcoal-600">
+          {t('leadTime')}
+        </p>
+      )}
     </div>
   );
 }

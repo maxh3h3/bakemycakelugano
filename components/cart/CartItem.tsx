@@ -93,6 +93,14 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
                 </p>
               )}
 
+              {/* Writing on Cake (if applicable) */}
+              {item.writingOnCake && (
+                <div className="mb-2 bg-purple-50 border border-purple-300 rounded-lg px-3 py-2">
+                  <p className="text-xs text-purple-600 font-semibold mb-1">{t('writingOnCake')}</p>
+                  <p className="text-sm text-purple-900 font-bold">"{item.writingOnCake}"</p>
+                </div>
+              )}
+
               {/* Unit Price */}
               <p className="text-sm text-charcoal-900/60 mb-3">
                 {formatPrice(itemPrice)} {t('each')}

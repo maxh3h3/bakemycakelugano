@@ -8,7 +8,13 @@ import { useTranslations } from 'next-intl';
 import Button from '@/components/ui/Button';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
-export default function AdminHeader() {
+type UserRole = 'owner' | 'cook' | 'delivery';
+
+interface AdminHeaderProps {
+  role?: UserRole | null;
+}
+
+export default function AdminHeader({ role = 'owner' }: AdminHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations('admin');
@@ -59,20 +65,67 @@ export default function AdminHeader() {
             </div>
           </Link>
 
-          {/* Navigation Links */}
+          {/* Navigation Links - Role-Based */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link
-              href={`/${locale}/admin/orders`}
-              className="text-sm font-medium text-charcoal-700 hover:text-brown-500 transition-colors"
-            >
-              {t('orders')}
-            </Link>
-            <Link
-              href={`/${locale}/admin/analytics`}
-              className="text-sm font-medium text-charcoal-700 hover:text-brown-500 transition-colors"
-            >
-              {t('analytics')}
-            </Link>
+            {role === 'owner' && (
+              <>
+                <Link
+                  href={`/${locale}/admin/orders`}
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/orders')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  {t('orders')}
+                </Link>
+                <Link
+                  href={`/${locale}/admin/production`}
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/production')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  Production
+                </Link>
+                <Link
+                  href={`/${locale}/admin/analytics`}
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/analytics')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  {t('analytics')}
+                </Link>
+              </>
+            )}
+
+            {role === 'cook' && (
+              <Link
+                href={`/${locale}/admin/production`}
+                className="text-sm font-medium text-brown-500 font-semibold"
+              >
+                Production Board
+              </Link>
+            )}
+
+            {role === 'delivery' && (
+              <Link
+                href={`/${locale}/admin/deliveries`}
+                className="text-sm font-medium text-brown-500 font-semibold"
+              >
+                Deliveries
+              </Link>
+            )}
+
+            {/* Role Badge */}
+            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-brown-100 text-brown-700 border border-brown-300">
+              {role === 'owner' && 'Owner'}
+              {role === 'cook' && 'Cook'}
+              {role === 'delivery' && 'Delivery'}
+            </div>
           </div>
 
           {/* Right Side Actions */}

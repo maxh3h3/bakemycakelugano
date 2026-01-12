@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSession, verifyPassword } from '@/lib/auth/session';
+import { createSession, verifyPassword, verifyAdminPassword, type UserRole } from '@/lib/auth/session';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { password, rememberMe = false } = body;
+    const { password, role, rememberMe = false } = body;
 
-    // Validate password exists
+    // Validate required fields
     if (!password) {
       return NextResponse.json(
         { success: false, error: 'Password is required' },
@@ -14,8 +14,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    const isValid = verifyPassword(password);
+    // Support both old (admin) and new (role-based) login
+    let validRole: UserRole;
+    let isValid: boolean;
+
+    if (role) {
+      // New role-based login
+      if (!['owner', 'cook', 'delivery'].includes(role)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid role' },
+          { status: 400 }
+        );
+      }
+      validRole = role as UserRole;
+      isValid = verifyPassword(password, validRole);
+    } else {
+      // Legacy admin login (maps to owner)
+      validRole = 'owner';
+      isValid = verifyAdminPassword(password);
+    }
 
     if (!isValid) {
       return NextResponse.json(
@@ -24,11 +41,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session
-    await createSession(rememberMe);
+    // Create session with role
+    await createSession(validRole, rememberMe);
 
     return NextResponse.json(
-      { success: true, message: 'Login successful' },
+      { 
+        success: true, 
+        message: 'Login successful',
+        role: validRole 
+      },
       { status: 200 }
     );
   } catch (error) {

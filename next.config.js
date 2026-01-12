@@ -9,6 +9,11 @@ const nextConfig = {
         hostname: 'cdn.sanity.io',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
     qualities: [50, 75, 90, 100], // Configure allowed image quality values
   },

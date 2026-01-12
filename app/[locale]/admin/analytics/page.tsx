@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { getUserRole } from '@/lib/auth/session';
 import { format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,9 @@ export default async function AdminAnalyticsPage({
   if (!isAuthenticated) {
     redirect(`/${locale}/admin/login`);
   }
+
+  // Get user role
+  const role = await getUserRole();
 
   // Fetch all checkout attempts
   const { data: attempts, error } = await (supabaseAdmin
@@ -99,7 +103,7 @@ export default async function AdminAnalyticsPage({
 
   return (
     <div className="min-h-screen bg-cream-50">
-      <AdminHeader />
+      <AdminHeader role={role} />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
