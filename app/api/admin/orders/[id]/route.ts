@@ -65,7 +65,7 @@ export async function PATCH(
       .from('orders')
       .select('id, client_id')
       .eq('id', id)
-      .single();
+      .single() as { data: { id: string; client_id: string | null } | null; error: any };
 
     if (fetchError || !existingOrder) {
       return NextResponse.json(
@@ -75,7 +75,7 @@ export async function PATCH(
     }
 
     // Update the order
-    const { data: updatedOrder, error: updateError } = await supabaseAdmin
+    const { data: updatedOrder, error: updateError } = await (supabaseAdmin as any)
       .from('orders')
       .update(updateData)
       .eq('id', id)

@@ -364,7 +364,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
         <div className="bg-cream-50 border-t-2 border-cream-200 px-6 py-4 flex justify-between items-center">
           <button
             onClick={handleDelete}
-            disabled={isDeleting || (client.totalOrders && client.totalOrders > 0)}
+            disabled={isDeleting || !!(client.totalOrders && client.totalOrders > 0)}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={client.totalOrders && client.totalOrders > 0 ? 'Cannot delete client with orders' : 'Delete client'}
           >

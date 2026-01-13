@@ -89,7 +89,7 @@ export async function findOrCreateClient(
     let existingClient: Client | null = null;
 
     if (email) {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await (supabaseAdmin as any)
         .from('clients')
         .select('*')
         .ilike('email', email)
@@ -103,7 +103,7 @@ export async function findOrCreateClient(
 
     // If not found by email, try phone
     if (!existingClient && phone) {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await (supabaseAdmin as any)
         .from('clients')
         .select('*')
         .eq('phone', phone)
@@ -148,12 +148,12 @@ export async function findOrCreateClient(
       }
 
       if (needsUpdate) {
-        const { data: updatedClient, error: updateError } = await (supabaseAdmin
+        const { data: updatedClient, error: updateError } = await ((supabaseAdmin as any)
           .from('clients')
           .update(updates)
           .eq('id', existingClient.id)
           .select()
-          .single() as Promise<{ data: Client | null; error: any }>);
+          .single());
 
         if (updateError) {
           console.error('Error updating client:', updateError);
@@ -185,11 +185,11 @@ export async function findOrCreateClient(
       last_order_date: null,
     };
 
-    const { data: newClient, error: createError } = await (supabaseAdmin
+    const { data: newClient, error: createError } = await ((supabaseAdmin as any)
       .from('clients')
       .insert(newClientData)
       .select()
-      .single() as Promise<{ data: Client | null; error: any }>);
+      .single());
 
     if (createError) {
       throw new Error(`Failed to create client: ${createError.message}`);
@@ -209,13 +209,10 @@ export async function findOrCreateClient(
 export async function updateClientStats(clientId: string): Promise<void> {
   try {
     // Calculate stats from orders
-    const { data: stats, error: statsError } = await (supabaseAdmin
+    const { data: stats, error: statsError } = await supabaseAdmin
       .from('orders')
       .select('total_amount, created_at, delivery_date')
-      .eq('client_id', clientId) as Promise<{ 
-        data: Array<{ total_amount: string; created_at: string; delivery_date: string | null }> | null; 
-        error: any 
-      }>);
+      .eq('client_id', clientId) as any;
 
     if (statsError) {
       throw new Error(`Failed to fetch order stats: ${statsError.message}`);
@@ -223,7 +220,7 @@ export async function updateClientStats(clientId: string): Promise<void> {
 
     if (!stats || stats.length === 0) {
       // No orders for this client, reset stats
-      await (supabaseAdmin
+      await ((supabaseAdmin as any)
         .from('clients')
         .update({
           total_orders: 0,
@@ -237,14 +234,14 @@ export async function updateClientStats(clientId: string): Promise<void> {
 
     // Calculate aggregates
     const totalOrders = stats.length;
-    const totalSpent = stats.reduce((sum, order) => {
+    const totalSpent = stats.reduce((sum: number, order: any) => {
       return sum + parseFloat(order.total_amount || '0');
     }, 0);
 
     // Find first and last order dates
     const sortedDates = stats
-      .map((order) => order.created_at)
-      .filter((date) => date)
+      .map((order: any) => order.created_at)
+      .filter((date: any) => date)
       .sort();
 
     // Use UTC date for consistency with timestamp fields (created_at is stored in UTC)
@@ -254,9 +251,9 @@ export async function updateClientStats(clientId: string): Promise<void> {
       : null;
 
     // Update client
-    const { error: updateError } = await (supabaseAdmin
+    const { error: updateError } = await ((supabaseAdmin as any)
       .from('clients')
-      .update({
+        .update({
         total_orders: totalOrders,
         total_spent: totalSpent.toFixed(2),
         first_order_date: firstOrderDate,
@@ -284,7 +281,7 @@ export async function searchClients(
   try {
     if (!query || query.trim().length < 2) {
       // For very short queries, return recent clients
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await (supabaseAdmin as any)
         .from('clients')
         .select('id, name, email, phone, instagram_handle, preferred_contact, total_orders, total_spent, last_order_date')
         .order('last_order_date', { ascending: false, nullsFirst: false })
@@ -294,7 +291,7 @@ export async function searchClients(
         throw new Error(`Search error: ${error.message}`);
       }
 
-      return (data || []).map((client) => ({
+      return (data || []).map((client: any) => ({
         id: client.id,
         name: client.name,
         email: client.email,
@@ -310,31 +307,18 @@ export async function searchClients(
     const searchTerm = query.trim().toLowerCase();
 
     // Search across name, email, and phone
-    const { data, error } = await (supabaseAdmin
+    const { data, error } = await ((supabaseAdmin as any)
       .from('clients')
       .select('id, name, email, phone, instagram_handle, preferred_contact, total_orders, total_spent, last_order_date')
       .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
       .order('total_orders', { ascending: false })
-      .limit(limit) as Promise<{ 
-        data: Array<{
-          id: string;
-          name: string;
-          email: string | null;
-          phone: string | null;
-          instagram_handle: string | null;
-          preferred_contact: string | null;
-          total_orders: number | null;
-          total_spent: string | null;
-          last_order_date: string | null;
-        }> | null;
-        error: any;
-      }>);
+      .limit(limit));
 
     if (error) {
       throw new Error(`Search error: ${error.message}`);
     }
 
-    return (data || []).map((client) => ({
+    return (data || []).map((client: any) => ({
       id: client.id,
       name: client.name,
       email: client.email,
@@ -356,7 +340,7 @@ export async function searchClients(
  */
 export async function getClientById(clientId: string): Promise<Client | null> {
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as any)
       .from('clients')
       .select('*')
       .eq('id', clientId)
@@ -398,7 +382,7 @@ export async function deleteClient(clientId: string): Promise<{ success: boolean
     }
 
     // Delete client
-    const { error: deleteError } = await supabaseAdmin
+    const { error: deleteError } = await (supabaseAdmin as any)
       .from('clients')
       .delete()
       .eq('id', clientId);

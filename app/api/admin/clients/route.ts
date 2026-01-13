@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build query
-    let query = supabaseAdmin
+    let query = (supabaseAdmin as any)
       .from('clients')
       .select('*', { count: 'exact' });
 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       last_order_date: null,
     };
 
-    const { data: client, error: createError } = await supabaseAdmin
+    const { data: client, error: createError } = await (supabaseAdmin as any)
       .from('clients')
       .insert(newClient)
       .select()

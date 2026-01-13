@@ -18,6 +18,56 @@ export interface DeliveryAddress {
 export interface Database {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          id: string
+          name: string
+          email: string | null
+          phone: string | null
+          whatsapp: string | null
+          instagram_handle: string | null
+          preferred_contact: string | null
+          first_order_date: string | null
+          last_order_date: string | null
+          total_orders: number | null
+          total_spent: number | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          whatsapp?: string | null
+          instagram_handle?: string | null
+          preferred_contact?: string | null
+          first_order_date?: string | null
+          last_order_date?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<{
+          id: string
+          name: string
+          email: string | null
+          phone: string | null
+          whatsapp: string | null
+          instagram_handle: string | null
+          preferred_contact: string | null
+          first_order_date: string | null
+          last_order_date: string | null
+          total_orders: number | null
+          total_spent: number | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }>
+      }
       orders: {
         Row: {
           id: string
@@ -96,7 +146,7 @@ export interface Database {
         Row: {
           id: string
           order_id: string
-          product_id: string
+          product_id: string | null
           product_name: string
           product_image_url: string | null
           quantity: number
@@ -107,6 +157,7 @@ export interface Database {
           selected_flavour: string | null
           flavour_name: string | null
           production_status: string | null
+          order_number: string | null
           weight_kg: number | null
           diameter_cm: number | null
           product_category: string | null
@@ -122,7 +173,7 @@ export interface Database {
         Insert: {
           id?: string
           order_id: string
-          product_id: string
+          product_id?: string | null
           product_name: string
           product_image_url?: string | null
           quantity: number
@@ -133,6 +184,7 @@ export interface Database {
           selected_flavour?: string | null
           flavour_name?: string | null
           production_status?: string | null
+          order_number?: string | null
           weight_kg?: number | null
           diameter_cm?: number | null
           product_category?: string | null
@@ -148,7 +200,7 @@ export interface Database {
         Update: Partial<{
           id: string
           order_id: string
-          product_id: string
+          product_id: string | null
           product_name: string
           product_image_url: string | null
           quantity: number
@@ -159,6 +211,7 @@ export interface Database {
           selected_flavour: string | null
           flavour_name: string | null
           production_status: string | null
+          order_number: string | null
           weight_kg: number | null
           diameter_cm: number | null
           product_category: string | null

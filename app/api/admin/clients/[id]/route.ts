@@ -24,7 +24,7 @@ export async function GET(
     const { id: clientId } = await params;
 
     // Fetch client
-    const { data: client, error: clientError } = await supabaseAdmin
+    const { data: client, error: clientError } = await (supabaseAdmin as any)
       .from('clients')
       .select('*')
       .eq('id', clientId)
@@ -119,7 +119,7 @@ export async function PATCH(
     if (notes !== undefined) updates.notes = notes?.trim() || null;
 
     // Update client
-    const { data: client, error: updateError } = await supabaseAdmin
+    const { data: client, error: updateError } = await (supabaseAdmin as any)
       .from('clients')
       .update(updates)
       .eq('id', clientId)

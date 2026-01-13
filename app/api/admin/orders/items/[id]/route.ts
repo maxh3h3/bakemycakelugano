@@ -39,7 +39,7 @@ export async function PATCH(
     }
 
     // Update the order item
-    const { data: item, error } = await supabaseAdmin
+    const { data: item, error } = await (supabaseAdmin as any)
       .from('order_items')
       .update({
         quantity,
@@ -51,7 +51,7 @@ export async function PATCH(
         weight_kg,
         diameter_cm,
         updated_at: new Date().toISOString(),
-      } as any)
+      })
       .eq('id', id)
       .select()
       .single();
@@ -78,17 +78,17 @@ export async function PATCH(
     const { data: allItems } = await supabaseAdmin
       .from('order_items')
       .select('subtotal')
-      .eq('order_id', orderId);
+      .eq('order_id', orderId) as { data: Array<{ subtotal: number }> | null };
 
     if (allItems) {
       const newTotal = allItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
       
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('orders')
         .update({
           total_amount: newTotal,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', orderId);
     }
 
@@ -170,17 +170,17 @@ export async function DELETE(
     const { data: remainingItems } = await supabaseAdmin
       .from('order_items')
       .select('subtotal')
-      .eq('order_id', orderId);
+      .eq('order_id', orderId) as { data: Array<{ subtotal: number }> | null };
 
     if (remainingItems) {
       const newTotal = remainingItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
       
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('orders')
         .update({
           total_amount: newTotal,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', orderId);
     }
 

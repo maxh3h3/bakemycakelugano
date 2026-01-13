@@ -45,7 +45,7 @@ export async function POST(
       .from('orders')
       .select('order_number, delivery_date')
       .eq('id', orderId)
-      .single();
+      .single() as { data: { order_number: string | null; delivery_date: string | null } | null; error: any };
 
     if (orderError || !order) {
       return NextResponse.json(
@@ -93,17 +93,17 @@ export async function POST(
     const { data: allItems } = await supabaseAdmin
       .from('order_items')
       .select('subtotal')
-      .eq('order_id', orderId);
+      .eq('order_id', orderId) as { data: Array<{ subtotal: number }> | null };
 
     if (allItems) {
       const newTotal = allItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
       
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('orders')
         .update({
           total_amount: newTotal,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', orderId);
     }
 
