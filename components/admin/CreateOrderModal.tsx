@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { getFlavours } from '@/lib/sanity/queries';
 import DatePicker from '@/components/products/DatePicker';
 import ImageUpload from '@/components/admin/ImageUpload';
+import ClientSearchInput from '@/components/admin/ClientSearchInput';
+import { formatDateForDB } from '@/lib/utils';
 
 interface CreateOrderModalProps {
   onClose: () => void;
@@ -34,6 +36,9 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   
+  // Client selection state
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_email: '',
@@ -46,7 +51,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
     delivery_postal_code: '',
     delivery_country: 'Switzerland',
     customer_notes: '',
-    payment_method: 'cash',
+    payment_method: '',
     paid: false,
     channel: 'phone',
   });
@@ -73,6 +78,35 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
+
+  const handleClientSelect = (client: any) => {
+    setSelectedClient(client);
+    // Pre-fill form with client data
+    setFormData(prev => ({
+      ...prev,
+      customer_name: client.name,
+      customer_email: client.email || '',
+      customer_phone: client.phone || '',
+      customer_ig_handle: client.instagramHandle || '',
+      // Infer channel from preferred contact
+      channel: client.preferredContact === 'instagram' ? 'instagram' :
+               client.preferredContact === 'email' ? 'email' :
+               client.preferredContact === 'whatsapp' ? 'whatsapp' :
+               'phone',
+    }));
+  };
+
+  const handleClearClientSelection = () => {
+    setSelectedClient(null);
+    // Clear customer fields
+    setFormData(prev => ({
+      ...prev,
+      customer_name: '',
+      customer_email: '',
+      customer_phone: '',
+      customer_ig_handle: '',
     }));
   };
 
@@ -204,8 +238,8 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
     try {
       const totalAmount = calculateTotal();
       
-      // Format delivery date to YYYY-MM-DD
-      const formattedDate = deliveryDate.toISOString().split('T')[0];
+      // Format delivery date to YYYY-MM-DD in local timezone (prevents timezone shift bug)
+      const formattedDate = formatDateForDB(deliveryDate);
       
       // Build delivery address JSONB object
       const deliveryAddressObj = formData.delivery_type === 'delivery' && formData.delivery_address
@@ -395,89 +429,217 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                 <p className="text-charcoal-600">Who is this order for?</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Customer Name */}
-                <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                    Customer Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="customer_name"
-                    value={formData.customer_name}
-                    onChange={handleChange}
-                    placeholder="Full name"
-                    className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                  />
-                </div>
-
-                {/* Order Channel */}
-                <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                    Order Channel <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="channel"
-                    value={formData.channel}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                  >
-                    <option value="phone">📞 Phone</option>
-                    <option value="whatsapp">💬 WhatsApp</option>
-                    <option value="instagram">📸 Instagram</option>
-                    <option value="email">📧 Email</option>
-                    <option value="walk_in">🚶 Walk-in</option>
-                  </select>
-                </div>
-
-                {/* Conditional Contact Field */}
-                {(formData.channel === 'phone' || formData.channel === 'whatsapp' || formData.channel === 'walk_in') && (
-                <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                      Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="customer_phone"
-                    value={formData.customer_phone}
-                    onChange={handleChange}
-                      placeholder="+41 XX XXX XX XX"
-                    className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                  />
-                </div>
+              {/* Client Search/Select */}
+              <div className="mb-6">
+                <ClientSearchInput
+                  onClientSelect={handleClientSelect}
+                  onCreateNew={handleClearClientSelection}
+                />
+              </div>
+                
+              {/* Selected Client Info */}
+              {selectedClient && (
+                <div className="mb-6 p-4 bg-white border-2 border-green-300 rounded-lg shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="font-bold text-green-800 text-lg">
+                            {selectedClient.name}
+                          </p>
+                        </div>
+                        <div className="ml-7 space-y-1">
+                          <p className="text-sm text-charcoal-700">
+                            {selectedClient.email || selectedClient.phone || selectedClient.instagramHandle}
+                          </p>
+                          {selectedClient.totalOrders > 0 && (
+                            <div className="flex items-center gap-3 text-sm text-green-700 font-medium mt-2">
+                              <span className="inline-flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                                {selectedClient.totalOrders} order{selectedClient.totalOrders > 1 ? 's' : ''}
+                              </span>
+                              <span>•</span>
+                              <span>CHF {parseFloat(selectedClient.totalSpent).toFixed(2)} total</span>
+                              {selectedClient.lastOrderDate && (
+                                <>
+                                  <span>•</span>
+                                  <span>Last: {new Date(selectedClient.lastOrderDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleClearClientSelection}
+                        className="px-3 py-1.5 text-sm text-charcoal-600 hover:text-charcoal-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
                 )}
 
-                {formData.channel === 'instagram' && (
-                <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                      Instagram Handle <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="customer_ig_handle"
-                    value={formData.customer_ig_handle}
-                    onChange={handleChange}
-                    placeholder="@username"
-                    className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                  />
-                </div>
-                )}
-
-                {formData.channel === 'email' && (
+              <div className="space-y-4">
+                {/* Customer Name & Contact Details Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Customer Name */}
                   <div>
                     <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                      Email Address <span className="text-red-500">*</span>
+                      Customer Name <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="email"
-                      name="customer_email"
-                      value={formData.customer_email}
+                      type="text"
+                      name="customer_name"
+                      value={formData.customer_name}
                       onChange={handleChange}
-                      placeholder="customer@example.com"
+                      placeholder="Full name"
                       className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                     />
                   </div>
-                )}
+
+                  {/* Conditional Contact Field */}
+                  {(formData.channel === 'phone' || formData.channel === 'whatsapp' || formData.channel === 'walk_in') && (
+                    <div>
+                      <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        name="customer_phone"
+                        value={formData.customer_phone}
+                        onChange={handleChange}
+                        placeholder="+41 XX XXX XX XX"
+                        className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  {formData.channel === 'instagram' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                        Instagram Handle <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="customer_ig_handle"
+                        value={formData.customer_ig_handle}
+                        onChange={handleChange}
+                        placeholder="@username"
+                        className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  {formData.channel === 'email' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="customer_email"
+                        value={formData.customer_email}
+                        onChange={handleChange}
+                        placeholder="customer@example.com"
+                        className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Order Channel Buttons */}
+                <div>
+                  <label className="block text-sm font-semibold text-charcoal-700 mb-3">
+                    Order Channel <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {/* Phone */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, channel: 'phone' }))}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                        formData.channel === 'phone'
+                          ? 'bg-brown-500 border-brown-500 text-white shadow-lg scale-105'
+                          : 'bg-white border-cream-300 text-charcoal-700 hover:border-brown-300 hover:bg-cream-50'
+                      }`}
+                    >
+                      <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span className="text-xs font-semibold">Phone</span>
+                    </button>
+
+                    {/* WhatsApp */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, channel: 'whatsapp' }))}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                        formData.channel === 'whatsapp'
+                          ? 'bg-brown-500 border-brown-500 text-white shadow-lg scale-105'
+                          : 'bg-white border-cream-300 text-charcoal-700 hover:border-brown-300 hover:bg-cream-50'
+                      }`}
+                    >
+                      <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="text-xs font-semibold">WhatsApp</span>
+                    </button>
+
+                    {/* Instagram */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, channel: 'instagram' }))}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                        formData.channel === 'instagram'
+                          ? 'bg-brown-500 border-brown-500 text-white shadow-lg scale-105'
+                          : 'bg-white border-cream-300 text-charcoal-700 hover:border-brown-300 hover:bg-cream-50'
+                      }`}
+                    >
+                      <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-xs font-semibold">Instagram</span>
+                    </button>
+
+                    {/* Email */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, channel: 'email' }))}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                        formData.channel === 'email'
+                          ? 'bg-brown-500 border-brown-500 text-white shadow-lg scale-105'
+                          : 'bg-white border-cream-300 text-charcoal-700 hover:border-brown-300 hover:bg-cream-50'
+                      }`}
+                    >
+                      <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-xs font-semibold">Email</span>
+                    </button>
+
+                    {/* Walk-in */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, channel: 'walk_in' }))}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                        formData.channel === 'walk_in'
+                          ? 'bg-brown-500 border-brown-500 text-white shadow-lg scale-105'
+                          : 'bg-white border-cream-300 text-charcoal-700 hover:border-brown-300 hover:bg-cream-50'
+                      }`}
+                    >
+                      <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="text-xs font-semibold">Walk-in</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -795,7 +957,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                      Payment Method <span className="text-red-500">*</span>
+                      Payment Method
                     </label>
                     <select
                       name="payment_method"
@@ -803,6 +965,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                       onChange={handleChange}
                       className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                     >
+                      <option value="">Not specified</option>
                       <option value="cash">💵 Cash</option>
                       <option value="twint">💳 Twint</option>
                       <option value="stripe">💳 Card (Stripe)</option>

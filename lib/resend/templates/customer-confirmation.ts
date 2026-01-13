@@ -1,4 +1,4 @@
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, parseDateFromDB } from '@/lib/utils';
 import { formatDeliveryAddress, type DeliveryAddress } from '@/lib/schemas/delivery';
 
 interface OrderItem {
@@ -283,7 +283,7 @@ export function generateCustomerConfirmationEmail({
             ${deliveryFee > 0 ? `<p style="margin-top: 12px;"><strong>${t.deliveryFee}:</strong> ${formatPrice(deliveryFee)}</p>` : ''}
           `}
           ${deliveryDate ? `
-            <p style="margin-top: 12px;"><strong>📅 ${t.deliveryDate}:</strong> ${new Date(deliveryDate).toLocaleDateString()}${deliveryTime ? ` at ${deliveryTime}` : ''}</p>
+            <p style="margin-top: 12px;"><strong>📅 ${t.deliveryDate}:</strong> ${parseDateFromDB(deliveryDate).toLocaleDateString()}${deliveryTime ? ` at ${deliveryTime}` : ''}</p>
           ` : ''}
         </div>
         ${deliveryRequiresContact ? `

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatDateForDB } from '@/lib/utils';
 import { getDeliveryInfo, getDeliveryMessage, type DeliveryInfo } from '@/lib/delivery';
 import Button from '@/components/ui/Button';
 import OrderSummary from './OrderSummary';
@@ -162,7 +162,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
           deliveryInfo: {
             type: formData.deliveryType,
             date: formData.deliveryDate 
-              ? `${formData.deliveryDate.getFullYear()}-${String(formData.deliveryDate.getMonth() + 1).padStart(2, '0')}-${String(formData.deliveryDate.getDate()).padStart(2, '0')}`
+              ? formatDateForDB(formData.deliveryDate)
               : null,
             time: formData.deliveryTime || null,
             address: formData.deliveryType === 'delivery' ? formData.address : null,

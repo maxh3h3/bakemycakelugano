@@ -80,6 +80,16 @@ export default function AdminHeader({ role = 'owner' }: AdminHeaderProps) {
                   {t('orders')}
                 </Link>
                 <Link
+                  href={`/${locale}/admin/clients`}
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/clients')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  Clients
+                </Link>
+                <Link
                   href={`/${locale}/admin/production`}
                   className={`text-sm font-medium transition-colors ${
                     pathname.includes('/production')

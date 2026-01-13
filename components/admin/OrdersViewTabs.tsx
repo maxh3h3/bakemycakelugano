@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Database } from '@/lib/supabase/types';
 import OrdersTable from './OrdersTable';
+import { parseDateFromDB } from '@/lib/utils';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -33,8 +34,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         
         return orders.filter(o => {
           if (!o.delivery_date) return false;
-          const orderDate = new Date(o.delivery_date);
-          orderDate.setHours(0, 0, 0, 0);
+          const orderDate = parseDateFromDB(o.delivery_date);
           return orderDate.getTime() >= today.getTime() && orderDate.getTime() < tomorrow.getTime();
         });
       }
@@ -48,7 +48,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         
         return orders.filter(o => {
           if (!o.delivery_date) return false;
-          const orderDate = new Date(o.delivery_date);
+          const orderDate = parseDateFromDB(o.delivery_date);
           return orderDate >= weekStart && orderDate < weekEnd;
         });
       }
@@ -60,7 +60,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         
         return orders.filter(o => {
           if (!o.delivery_date) return false;
-          const orderDate = new Date(o.delivery_date);
+          const orderDate = parseDateFromDB(o.delivery_date);
           return orderDate >= monthStart && orderDate <= monthEnd;
         });
       }
@@ -137,14 +137,6 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
           <p className="text-sm text-charcoal-500">
             Showing {filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'}
           </p>
-        </div>
-        
-        {/* Quick Filter by Payment Status */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-charcoal-500">Quick filters:</span>
-          <span className="px-3 py-1 rounded-full text-xs bg-orange-100 text-orange-700 border border-orange-300">
-            {filteredOrders.filter(o => !o.paid).length} Unpaid
-          </span>
         </div>
       </div>
 

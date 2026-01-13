@@ -1,14 +1,47 @@
-import { pgTable, text, uuid, timestamp, numeric, boolean, date, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, uuid, timestamp, numeric, boolean, date, jsonb, integer } from 'drizzle-orm/pg-core';
+
+// Clients table
+export const clients = pgTable('clients', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  
+  // Basic information
+  name: text('name').notNull(),
+  
+  // Contact methods (at least one required - enforced at application level)
+  email: text('email'),
+  phone: text('phone'),
+  whatsapp: text('whatsapp'),
+  instagramHandle: text('instagram_handle'),
+  
+  // Preferred contact method
+  preferredContact: text('preferred_contact'),
+  
+  // Metadata for client relationship management
+  firstOrderDate: date('first_order_date'),
+  lastOrderDate: date('last_order_date'),
+  totalOrders: integer('total_orders').default(0),
+  totalSpent: numeric('total_spent', { precision: 10, scale: 2 }).default('0'),
+  
+  // Admin notes (internal only)
+  notes: text('notes'),
+  
+  // Timestamps
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
 
 // Orders table
 export const orders = pgTable('orders', {
   id: uuid('id').defaultRandom().primaryKey(),
   
+  // Client reference (replaces individual customer fields)
+  clientId: uuid('client_id').references(() => clients.id, { onDelete: 'set null' }),
+  
   // Stripe fields (optional for manual orders)
   stripeSessionId: text('stripe_session_id'),
   stripePaymentIntentId: text('stripe_payment_intent_id'),
   
-  // Customer information
+  // Customer information (deprecated - kept for backward compatibility)
   customerEmail: text('customer_email'),
   customerName: text('customer_name').notNull(),
   customerPhone: text('customer_phone'),
@@ -17,7 +50,6 @@ export const orders = pgTable('orders', {
   // Order details
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
   currency: text('currency').default('CHF').notNull(),
-  status: text('status').default('pending').notNull(),
   
   // Delivery information
   deliveryType: text('delivery_type'),
@@ -70,6 +102,7 @@ export const orderItems = pgTable('order_items', {
   
   // Production details
   productionStatus: text('production_status').default('new'),
+  orderNumber: text('order_number'), // Denormalized from orders for production view
   weightKg: numeric('weight_kg', { precision: 6, scale: 3 }),
   diameterCm: numeric('diameter_cm', { precision: 5, scale: 2 }),
   productCategory: text('product_category'),
@@ -117,6 +150,8 @@ export const checkoutAttempts = pgTable('checkout_attempts', {
 });
 
 // Export types
+export type Client = typeof clients.$inferSelect;
+export type NewClient = typeof clients.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
 export type OrderItem = typeof orderItems.$inferSelect;

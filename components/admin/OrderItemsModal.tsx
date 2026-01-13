@@ -4,16 +4,19 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import type { Database } from '@/lib/supabase/types';
+import { parseDateFromDB } from '@/lib/utils';
 
-type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
-interface OrderWithItems extends Order {
-  order_items: OrderItem[];
+interface OrderGroup {
+  order_number: string;
+  order_id: string;
+  delivery_date: string;
+  items: OrderItem[];
 }
 
 interface OrderItemsModalProps {
-  order: OrderWithItems;
+  orderGroup: OrderGroup;
   onClose: () => void;
 }
 
@@ -29,10 +32,10 @@ const statusOptions: { value: ProductionStatus; label: string; color: string }[]
   { value: 'delivered', label: 'Delivered', color: 'bg-gray-100 text-gray-700 border-gray-300' },
 ];
 
-export default function OrderItemsModal({ order, onClose }: OrderItemsModalProps) {
+export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModalProps) {
   const router = useRouter();
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
-  const [localOrder, setLocalOrder] = useState<OrderWithItems>(order);
+  const [localItems, setLocalItems] = useState<OrderItem[]>(orderGroup.items);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const updateItemStatus = async (itemId: string, newStatus: ProductionStatus) => {
@@ -53,14 +56,13 @@ export default function OrderItemsModal({ order, onClose }: OrderItemsModalProps
       const result = await response.json();
 
       // Update local state optimistically
-      setLocalOrder(prev => ({
-        ...prev,
-        order_items: prev.order_items.map(item => 
+      setLocalItems(prev => 
+        prev.map(item => 
           item.id === itemId 
             ? { ...item, production_status: newStatus }
             : item
         )
-      }));
+      );
 
       // Show success message
       setSuccessMessage('Status updated successfully!');
@@ -84,13 +86,12 @@ export default function OrderItemsModal({ order, onClose }: OrderItemsModalProps
           <div className="flex items-center justify-between mb-2">
             <div className="flex-1">
               <h2 className="text-3xl font-heading font-bold mb-2">
-                Order #{localOrder.order_number || localOrder.id.slice(0, 8)}
+                Order #{orderGroup.order_number}
               </h2>
               <div className="flex items-center gap-4 text-sm">
-                <span>Customer: {localOrder.customer_name}</span>
-                {localOrder.delivery_date && (
+                {orderGroup.delivery_date && (
                   <span>
-                    Delivery: {format(new Date(localOrder.delivery_date), 'MMM dd, yyyy')}
+                    Delivery: {format(parseDateFromDB(orderGroup.delivery_date), 'MMM dd, yyyy')}
                   </span>
                 )}
               </div>
@@ -119,22 +120,14 @@ export default function OrderItemsModal({ order, onClose }: OrderItemsModalProps
 
         {/* Modal Body - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Customer Notes */}
-          {localOrder.customer_notes && (
-            <div className="mb-6 bg-blue-50 rounded-xl p-4 border-2 border-blue-300">
-              <h3 className="font-heading font-bold text-blue-900 mb-2">Customer Notes</h3>
-              <p className="text-sm text-blue-800">{localOrder.customer_notes}</p>
-            </div>
-          )}
-
           {/* Order Items */}
           <div>
             <h3 className="font-heading font-bold text-brown-500 text-xl mb-4">
-              Order Items ({localOrder.order_items?.length || 0})
+              Order Items ({localItems.length})
             </h3>
             <div className="space-y-4">
-              {localOrder.order_items && localOrder.order_items.length > 0 ? (
-                localOrder.order_items.map((item) => (
+              {localItems.length > 0 ? (
+                localItems.map((item) => (
                   <div
                     key={item.id}
                     className="bg-white rounded-2xl p-6 border-2 border-cream-300 shadow-md"
@@ -255,4 +248,3 @@ export default function OrderItemsModal({ order, onClose }: OrderItemsModalProps
     </div>
   );
 }
-

@@ -9,6 +9,7 @@ import { generateOwnerNotificationEmail } from '@/lib/resend/templates/owner-not
 import { sendTelegramMessage } from '@/lib/telegram/client';
 import { generateOrderNotificationMessage } from '@/lib/telegram/templates/order-notification';
 import { generateOrderNumber } from '@/lib/order-number-generator';
+import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
@@ -119,6 +120,25 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }
     }
 
+    // Find or create client
+    let clientId: string | null = null;
+    try {
+      const { client, isNew } = await findOrCreateClient(
+        {
+          name: metadata.customerName,
+          email: metadata.customerEmail || null,
+          phone: metadata.customerPhone || null,
+          whatsapp: metadata.customerPhone || null,
+        },
+        'website'
+      );
+      clientId = client.id;
+      console.log(`${isNew ? 'Created new' : 'Found existing'} client:`, clientId);
+    } catch (clientError) {
+      console.error('Failed to find/create client:', clientError);
+      // Continue without client_id - order will still be created with legacy fields
+    }
+
     // Reconstruct delivery address JSONB from flattened Stripe metadata
     const deliveryAddress = metadata.deliveryType === 'delivery' && metadata.deliveryAddressStreet
       ? {
@@ -135,6 +155,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       .insert({
         stripe_session_id: session.id,
         stripe_payment_intent_id: session.payment_intent as string || null,
+        client_id: clientId,
         paid: isPaid,
         payment_method: 'stripe',
         channel: 'website',
@@ -144,7 +165,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         customer_phone: metadata.customerPhone || null,
         total_amount: totalAmount,
         currency: 'chf',
-        status: 'pending',
         delivery_type: metadata.deliveryType || null,
         delivery_date: metadata.deliveryDate || null,
         delivery_time: metadata.deliveryTime || null,
@@ -160,11 +180,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
     console.log('Order created:', (order as any).id);
 
+    // Update client stats
+    if (clientId) {
+      try {
+        await updateClientStats(clientId);
+        console.log('Client stats updated');
+      } catch (statsError) {
+        console.error('Failed to update client stats:', statsError);
+        // Non-critical error, continue
+      }
+    }
+
     // Create order items
     // Note: product_image_url is null since we don't store images in Stripe metadata
     // Images can be fetched from Sanity using product_id if needed for display
     const orderItemsData = orderItems.map((item: any) => ({
       order_id: (order as any).id,
+      order_number: orderNumber, // Denormalized for production view
       product_id: item.productId,
       product_name: item.productName,
       product_image_url: null, // Not stored in metadata to save space
@@ -176,6 +208,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       selected_flavour: item.selectedFlavour || null,
       flavour_name: item.flavourName || null,
       writing_on_cake: item.writingOnCake || null,
+      delivery_date: metadata.deliveryDate || null, // Denormalized for production view
+      production_status: 'new',
     }));
 
     const { error: itemsError } = await supabaseAdmin
@@ -310,23 +344,22 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   console.log('Payment intent succeeded:', paymentIntent.id);
 
   try {
-    // Mark order as paid and confirm
+    // Mark order as paid
     const { error } = await (supabaseAdmin
       .from('orders') as any)
       .update({
         paid: true,
-        status: 'confirmed',  // Move to confirmed status when payment succeeds
         updated_at: new Date().toISOString(),
       })
       .eq('stripe_payment_intent_id', paymentIntent.id);
 
     if (error) {
-      console.error('Failed to update order status:', error);
+      console.error('Failed to update order payment status:', error);
     } else {
-      console.log('Order marked as paid and confirmed');
+      console.log('Order marked as paid');
     }
   } catch (error) {
-    console.error('Error updating order status:', error);
+    console.error('Error updating order payment status:', error);
   }
 }
 

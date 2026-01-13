@@ -3,6 +3,7 @@ import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { generateOrderNumber } from '@/lib/order-number-generator';
 import { validateDeliveryAddress } from '@/lib/schemas/delivery';
+import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,6 +76,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Find or create client
+    let clientId: string | null = null;
+    try {
+      const { client, isNew } = await findOrCreateClient(
+        {
+          name: customer_name,
+          email: customer_email || null,
+          phone: customer_phone || null,
+          whatsapp: customer_phone || null,
+          instagramHandle: customer_ig_handle || null,
+        },
+        channel
+      );
+      clientId = client.id;
+      console.log(`${isNew ? 'Created new' : 'Found existing'} client:`, clientId);
+    } catch (clientError) {
+      console.error('Failed to find/create client:', clientError);
+      // Continue without client_id - order will still be created with legacy fields
+    }
+
     // Generate order number (format: DD-MM-NN)
     const order_number = await generateOrderNumber(delivery_date);
 
@@ -83,6 +104,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert({
         order_number,
+        client_id: clientId,
         customer_name,
         customer_email,
         customer_phone,
@@ -92,10 +114,9 @@ export async function POST(request: NextRequest) {
         delivery_type,
         delivery_address: addressValidation.data,
         customer_notes: customer_notes || null,
-        payment_method,
+        payment_method: payment_method || null,
         paid: paid || false,
         channel: channel || 'phone',
-        status: 'pending',
         total_amount: total_amount || 0,
         currency: 'CHF',
       } as any)
@@ -110,9 +131,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update client stats
+    if (clientId) {
+      try {
+        await updateClientStats(clientId);
+        console.log('Client stats updated');
+      } catch (statsError) {
+        console.error('Failed to update client stats:', statsError);
+        // Non-critical error, continue
+      }
+    }
+
     // Create order items
     const orderItemsData = order_items.map((item: any) => ({
       order_id: (order as any).id,
+      order_number: order_number, // Denormalized for production view
       product_id: item.product_id || null, // Nullable for custom manual orders
       product_name: item.product_name,
       product_image_url: item.product_image_url || null,
@@ -128,7 +161,7 @@ export async function POST(request: NextRequest) {
       writing_on_cake: item.writing_on_cake || null,
       internal_decoration_notes: item.internal_decoration_notes || null,
       staff_notes: item.staff_notes || null,
-      delivery_date: delivery_date,
+      delivery_date: delivery_date, // Denormalized for production view
       production_status: 'new',
     }));
 

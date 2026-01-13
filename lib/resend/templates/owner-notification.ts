@@ -1,4 +1,4 @@
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, parseDateFromDB } from '@/lib/utils';
 import { formatDeliveryAddress, type DeliveryAddress } from '@/lib/schemas/delivery';
 
 interface OrderItem {
@@ -276,7 +276,7 @@ export function generateOwnerNotificationEmail({
               📅 DATA DI CONSEGNA/RITIRO
             </div>
             <div style="color: #991b1b; font-size: 18px; font-weight: 600;">
-              ${new Date(deliveryDate).toLocaleDateString('it-IT', {
+              ${parseDateFromDB(deliveryDate).toLocaleDateString('it-IT', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',

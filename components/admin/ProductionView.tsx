@@ -4,37 +4,56 @@ import { useState } from 'react';
 import type { Database } from '@/lib/supabase/types';
 import OrderItemsModal from './OrderItemsModal';
 
-type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
-interface OrderWithItems extends Order {
-  order_items: OrderItem[];
-}
-
 interface ProductionViewProps {
-  orders: OrderWithItems[];
+  items: OrderItem[];
 }
 
 type ViewMode = 'today' | 'week' | 'month';
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-rose-100 text-rose-700 border-rose-300',
-  confirmed: 'bg-blue-100 text-blue-700 border-blue-300',
-  preparing: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-  ready: 'bg-green-100 text-green-700 border-green-300',
-  completed: 'bg-gray-100 text-gray-700 border-gray-300',
-  cancelled: 'bg-red-100 text-red-700 border-red-300',
-};
+// Group items by order_number for display
+interface OrderGroup {
+  order_number: string;
+  order_id: string;
+  delivery_date: string;
+  items: OrderItem[];
+}
 
-export default function ProductionView({ orders }: ProductionViewProps) {
+export default function ProductionView({ items }: ProductionViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('today');
-  const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
+  const [selectedOrderGroup, setSelectedOrderGroup] = useState<OrderGroup | null>(null);
+
+  // Group items by order_number
+  function groupItemsByOrder(orderItems: OrderItem[]): OrderGroup[] {
+    const groups = new Map<string, OrderGroup>();
+
+    orderItems.forEach((item) => {
+      const key = item.order_number || item.order_id;
+      
+      if (!groups.has(key)) {
+        groups.set(key, {
+          order_number: item.order_number || 'N/A',
+          order_id: item.order_id,
+          delivery_date: item.delivery_date || '',
+          items: [],
+        });
+      }
+      
+      groups.get(key)!.items.push(item);
+    });
+
+    return Array.from(groups.values());
+  }
 
   // Get week days
   function getWeekDays(): Date[] {
     const today = new Date();
     const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+    // Start week with Monday instead of Sunday
+    const dayOfWeek = today.getDay();
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    startOfWeek.setDate(today.getDate() - daysFromMonday);
     
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -67,17 +86,19 @@ export default function ProductionView({ orders }: ProductionViewProps) {
     return `${year}-${month}-${day}`;
   }
 
-  // Get orders for a specific day
-  function getOrdersForDay(day: Date): OrderWithItems[] {
+  // Get order groups for a specific day
+  function getOrderGroupsForDay(day: Date): OrderGroup[] {
     const dayStr = dateToLocalString(day);
-    return orders.filter(order => order.delivery_date === dayStr);
+    const dayItems = items.filter(item => item.delivery_date === dayStr);
+    return groupItemsByOrder(dayItems);
   }
 
   const weekDays = getWeekDays();
   const monthDays = getMonthDays();
   const today = new Date();
   const todayStr = dateToLocalString(today);
-  const todayOrders = orders.filter(order => order.delivery_date === todayStr);
+  const todayItems = items.filter(item => item.delivery_date === todayStr);
+  const todayOrderGroups = groupItemsByOrder(todayItems);
 
   return (
     <>
@@ -95,7 +116,7 @@ export default function ProductionView({ orders }: ProductionViewProps) {
                 }
               `}
             >
-              Today ({todayOrders.length})
+              Today ({todayOrderGroups.length})
             </button>
             <button
               onClick={() => setViewMode('week')}
@@ -127,15 +148,15 @@ export default function ProductionView({ orders }: ProductionViewProps) {
         {/* Today View */}
         {viewMode === 'today' && (
           <div className="space-y-4">
-            {todayOrders.length === 0 ? (
+            {todayOrderGroups.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-12 text-center">
                 <p className="text-lg text-charcoal-500">No orders for today</p>
               </div>
             ) : (
-              todayOrders.map((order) => (
+              todayOrderGroups.map((orderGroup) => (
                 <button
-                  key={order.id}
-                  onClick={() => setSelectedOrder(order)}
+                  key={orderGroup.order_id}
+                  onClick={() => setSelectedOrderGroup(orderGroup)}
                   className="w-full bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6 hover:shadow-lg hover:border-brown-300 transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
@@ -143,51 +164,40 @@ export default function ProductionView({ orders }: ProductionViewProps) {
                     <div className="flex-shrink-0">
                       <p className="text-xs text-charcoal-500 mb-1">Order #</p>
                       <p className="text-xl font-mono font-bold text-brown-500">
-                        {order.order_number || order.id.slice(0, 8)}
+                        {orderGroup.order_number}
                       </p>
                     </div>
 
                     {/* Product Items */}
                     <div className="flex-1 space-y-2">
-                      {order.order_items && order.order_items.length > 0 ? (
-                        order.order_items.map((item, idx) => (
-                          <div key={idx} className="bg-cream-50 rounded-lg p-3 border border-cream-300">
-                            <p className="font-semibold text-charcoal-900 mb-1">
-                              {item.quantity}x {item.product_name}
-                            </p>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                              {item.flavour_name && (
-                                <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                  🍰 {item.flavour_name}
-                                </span>
-                              )}
-                              {item.size_label && (
-                                <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                  📏 {item.size_label}
-                                </span>
-                              )}
-                              {item.diameter_cm && (
-                                <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                  ⭕ {item.diameter_cm}cm
-                                </span>
-                              )}
-                            </div>
+                      {orderGroup.items.map((item, idx) => (
+                        <div key={idx} className="bg-cream-50 rounded-lg p-3 border border-cream-300">
+                          <p className="font-semibold text-charcoal-900 mb-1">
+                            {item.quantity}x {item.product_name}
+                          </p>
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            {item.flavour_name && (
+                              <span className="bg-white px-2 py-1 rounded border border-cream-300">
+                                🍰 {item.flavour_name}
+                              </span>
+                            )}
+                            {item.size_label && (
+                              <span className="bg-white px-2 py-1 rounded border border-cream-300">
+                                📏 {item.size_label}
+                              </span>
+                            )}
+                            {item.diameter_cm && (
+                              <span className="bg-white px-2 py-1 rounded border border-cream-300">
+                                ⭕ {item.diameter_cm}cm
+                              </span>
+                            )}
                           </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-charcoal-500">No items</p>
-                      )}
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Status */}
+                    {/* Production Status Summary */}
                     <div className="flex-shrink-0 flex items-center gap-2">
-                      <span
-                        className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold border-2 ${
-                          statusColors[order.status] || statusColors.pending
-                        }`}
-                      >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
                       <span className="text-brown-500 text-2xl">→</span>
                     </div>
                   </div>
@@ -199,9 +209,9 @@ export default function ProductionView({ orders }: ProductionViewProps) {
 
         {/* Week View */}
         {viewMode === 'week' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {weekDays.map((day, index) => {
-              const dayOrders = getOrdersForDay(day);
+              const dayOrderGroups = getOrderGroupsForDay(day);
               const dayStr = dateToLocalString(day);
               const isToday = dayStr === todayStr;
 
@@ -229,59 +239,51 @@ export default function ProductionView({ orders }: ProductionViewProps) {
                       {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
                     <p className="text-2xl font-mono font-bold text-brown-500 mt-2">
-                      {dayOrders.length}
+                      {dayOrderGroups.length}
                     </p>
                   </div>
 
                   {/* Orders for this day */}
                   <div className="space-y-2">
-                    {dayOrders.length === 0 ? (
+                    {dayOrderGroups.length === 0 ? (
                       <p className="text-xs text-charcoal-400 italic text-center py-4">
                         No orders
                       </p>
                     ) : (
-                      dayOrders.map((order) => (
+                      dayOrderGroups.map((orderGroup) => (
                         <button
-                          key={order.id}
-                          onClick={() => setSelectedOrder(order)}
-                          className="w-full p-3 rounded-xl border-2 border-cream-300 hover:border-brown-400 hover:bg-cream-50 transition-all text-left"
+                          key={orderGroup.order_id}
+                          onClick={() => setSelectedOrderGroup(orderGroup)}
+                          className="w-full p-6 rounded-xl border-2 border-cream-300 hover:border-brown-400 hover:bg-cream-50 transition-all text-left"
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-mono font-semibold text-charcoal-500">
-                              {order.order_number || '#' + order.id.slice(0, 6)}
-                            </span>
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full border ${
-                                statusColors[order.status] || statusColors.pending
-                              }`}
-                            >
-                              {order.status.slice(0, 4)}
+                          <div className="mb-4">
+                            <span className="text-2xl font-mono font-bold text-charcoal-600">
+                              {orderGroup.order_number}
                             </span>
                           </div>
-                          {order.order_items && order.order_items.length > 0 ? (
-                            <div className="space-y-1.5">
-                              {order.order_items.map((item, idx) => (
-                                <div key={idx} className="text-xs">
-                                  <p className="font-semibold text-charcoal-900 truncate">
-                                    {item.quantity}x {item.product_name}
-                                  </p>
-                                  <div className="flex flex-wrap gap-1 mt-0.5">
-                                    {item.flavour_name && (
-                                      <span className="text-charcoal-600">🍰 {item.flavour_name}</span>
-                                    )}
-                                    {item.size_label && (
-                                      <span className="text-charcoal-600">📏 {item.size_label}</span>
-                                    )}
-                                    {item.diameter_cm && (
-                                      <span className="text-charcoal-600">⭕ {item.diameter_cm}cm</span>
-                                    )}
-                                  </div>
+                          <div className="space-y-3">
+                            {orderGroup.items.map((item, idx) => (
+                              <div key={idx}>
+                                <p className="text-xl font-bold text-charcoal-900 mb-2">
+                                  {item.quantity}x {item.product_name}
+                                </p>
+                                <div className="flex flex-wrap gap-2 text-base">
+                                  {item.flavour_name && (
+                                    <span className="text-charcoal-600">🍰 {item.flavour_name}</span>
+                                  )}
+                                  {item.size_label && (
+                                    <span className="text-charcoal-600">📏 {item.size_label}</span>
+                                  )}
+                                  {item.diameter_cm && (
+                                    <span className="text-charcoal-600">⭕ {item.diameter_cm}cm</span>
+                                  )}
+                                  {item.weight_kg && (
+                                    <span className="text-charcoal-600">⚖️ {item.weight_kg}kg</span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-charcoal-500">No items</p>
-                          )}
+                              </div>
+                            ))}
+                          </div>
                         </button>
                       ))
                     )}
@@ -296,7 +298,7 @@ export default function ProductionView({ orders }: ProductionViewProps) {
         {viewMode === 'month' && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {monthDays.map((day, index) => {
-              const dayOrders = getOrdersForDay(day);
+              const dayOrderGroups = getOrderGroupsForDay(day);
               const dayStr = dateToLocalString(day);
               const isToday = dayStr === todayStr;
               const isPast = day < today && !isToday;
@@ -329,49 +331,45 @@ export default function ProductionView({ orders }: ProductionViewProps) {
                     <p className="text-lg font-bold text-charcoal-900">
                       {day.getDate()}
                     </p>
-                    {dayOrders.length > 0 && (
+                    {dayOrderGroups.length > 0 && (
                       <p className="text-xl font-mono font-bold text-brown-500 mt-1">
-                        {dayOrders.length}
+                        {dayOrderGroups.length}
                       </p>
                     )}
                   </div>
 
                   {/* Orders for this day */}
                   <div className="space-y-1.5">
-                    {dayOrders.length === 0 ? (
+                    {dayOrderGroups.length === 0 ? (
                       <p className="text-xs text-charcoal-300 italic text-center py-2">
                         -
                       </p>
                     ) : (
-                      dayOrders.map((order) => (
+                      dayOrderGroups.map((orderGroup) => (
                         <button
-                          key={order.id}
-                          onClick={() => setSelectedOrder(order)}
+                          key={orderGroup.order_id}
+                          onClick={() => setSelectedOrderGroup(orderGroup)}
                           className="w-full p-2 rounded-lg border border-cream-300 hover:border-brown-400 hover:bg-cream-50 transition-all text-left"
                         >
                           <div className="mb-1">
                             <span className="text-xs font-mono font-semibold text-charcoal-500">
-                              {order.order_number || '#' + order.id.slice(0, 6)}
+                              {orderGroup.order_number}
                             </span>
                           </div>
-                          {order.order_items && order.order_items.length > 0 ? (
-                            <div className="space-y-1">
-                              {order.order_items.map((item, idx) => (
-                                <div key={idx} className="text-xs">
-                                  <p className="font-semibold text-charcoal-900 truncate text-[10px]">
-                                    {item.quantity}x {item.product_name}
-                                  </p>
-                                  <div className="text-[9px] text-charcoal-600 space-x-1">
-                                    {item.flavour_name && <span>🍰{item.flavour_name}</span>}
-                                    {item.size_label && <span>📏{item.size_label}</span>}
-                                    {item.diameter_cm && <span>⭕{item.diameter_cm}cm</span>}
-                                  </div>
+                          <div className="space-y-1">
+                            {orderGroup.items.map((item, idx) => (
+                              <div key={idx} className="text-xs">
+                                <p className="font-semibold text-charcoal-900 truncate text-[10px]">
+                                  {item.quantity}x {item.product_name}
+                                </p>
+                                <div className="text-[9px] text-charcoal-600 space-x-1">
+                                  {item.flavour_name && <span>🍰{item.flavour_name}</span>}
+                                  {item.size_label && <span>📏{item.size_label}</span>}
+                                  {item.diameter_cm && <span>⭕{item.diameter_cm}cm</span>}
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-charcoal-500">No items</p>
-                          )}
+                              </div>
+                            ))}
+                          </div>
                         </button>
                       ))
                     )}
@@ -384,13 +382,12 @@ export default function ProductionView({ orders }: ProductionViewProps) {
       </div>
 
       {/* Order Items Modal */}
-      {selectedOrder && (
+      {selectedOrderGroup && (
         <OrderItemsModal
-          order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
+          orderGroup={selectedOrderGroup}
+          onClose={() => setSelectedOrderGroup(null)}
         />
       )}
     </>
   );
 }
-

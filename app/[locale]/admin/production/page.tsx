@@ -4,13 +4,9 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import AdminHeader from '@/components/admin/AdminHeader';
 import ProductionView from '@/components/admin/ProductionView';
 import type { Database } from '@/lib/supabase/types';
+import { formatDateForDB } from '@/lib/utils';
 
-type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
-
-interface OrderWithItems extends Order {
-  order_items: OrderItem[];
-}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -44,21 +40,22 @@ export default async function AdminProductionPage({
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 28); // 4 weeks
   
-  // Fetch orders with delivery dates in the next 4 weeks
+  // Fetch order_items directly with delivery dates in the next 4 weeks
+  // NO JOIN - This is the whole point of denormalization!
   const { data, error } = await supabaseAdmin
-    .from('orders')
-    .select('*, order_items(*)')
-    .gte('delivery_date', startOfWeek.toISOString().split('T')[0])
-    .lte('delivery_date', endOfWeek.toISOString().split('T')[0])
-    .not('status', 'eq', 'cancelled')
+    .from('order_items')
+    .select('*')
+    .gte('delivery_date', formatDateForDB(startOfWeek))
+    .lte('delivery_date', formatDateForDB(endOfWeek))
     .order('delivery_date', { ascending: true })
+    .order('order_number', { ascending: true })
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching production orders:', error);
+    console.error('Error fetching production items:', error);
   }
 
-  const orders = (data || []) as OrderWithItems[];
+  const items = (data || []) as OrderItem[];
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -71,7 +68,7 @@ export default async function AdminProductionPage({
               Production Schedule
             </h1>
             <p className="text-charcoal-600">
-              Kitchen workflow - Click orders to view items and update status
+              Kitchen workflow - Click items to view details and update status
             </p>
             <p className="text-sm text-charcoal-500 mt-1">
               {today.toLocaleDateString('en-US', { 
@@ -84,8 +81,8 @@ export default async function AdminProductionPage({
           </div>
 
           {/* Production View (Daily + Weekly) */}
-          {orders.length > 0 ? (
-            <ProductionView orders={orders} />
+          {items.length > 0 ? (
+            <ProductionView items={items} />
           ) : (
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-12 text-center">
               <div className="text-charcoal-400 mb-4">

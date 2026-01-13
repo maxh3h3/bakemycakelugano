@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { stripe } from '@/lib/stripe/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { formatDeliveryAddress } from '@/lib/schemas/delivery';
+import { parseDateFromDB } from '@/lib/utils';
 
 interface SuccessPageProps {
   params: Promise<{ locale: string }>;
@@ -161,7 +162,7 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                     )}
                     {order.delivery_date && (
                       <p className="font-medium">
-                        📅 {new Date(order.delivery_date).toLocaleDateString()}
+                        📅 {parseDateFromDB(order.delivery_date).toLocaleDateString()}
                         {order.delivery_time && ` at ${order.delivery_time}`}
                       </p>
                     )}

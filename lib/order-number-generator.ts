@@ -4,13 +4,13 @@ import { supabaseAdmin } from '@/lib/supabase/server';
  * Generates a unique order number in the format DD-MM-NN
  * where DD is the day, MM is the month, and NN is a sequential number for that day
  * 
- * @param deliveryDate - The delivery date for the order
+ * @param deliveryDate - The delivery date for the order in YYYY-MM-DD format
  * @returns A unique order number string (e.g., "12-01-01" for the first order on January 12th)
  */
 export async function generateOrderNumber(deliveryDate: string): Promise<string> {
-  const deliveryDateObj = new Date(deliveryDate);
-  const day = deliveryDateObj.getDate().toString().padStart(2, '0');
-  const month = (deliveryDateObj.getMonth() + 1).toString().padStart(2, '0');
+  // Extract day and month directly from the string to avoid timezone issues
+  // deliveryDate format: YYYY-MM-DD
+  const [year, month, day] = deliveryDate.split('-');
   const prefix = `${day}-${month}-`;
 
   // Find the highest existing number for this day

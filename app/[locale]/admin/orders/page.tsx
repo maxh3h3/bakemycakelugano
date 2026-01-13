@@ -6,6 +6,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import OrdersViewTabs from '@/components/admin/OrdersViewTabs';
 import CreateOrderButton from '@/components/admin/CreateOrderButton';
 import type { Database } from '@/lib/supabase/types';
+import { parseDateFromDB } from '@/lib/utils';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -95,9 +96,8 @@ export default async function AdminOrdersPage({
     today: orders.filter(o => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const orderDate = o.delivery_date ? new Date(o.delivery_date) : null;
+      const orderDate = o.delivery_date ? parseDateFromDB(o.delivery_date) : null;
       if (!orderDate) return false;
-      orderDate.setHours(0, 0, 0, 0);
       return orderDate.getTime() === today.getTime();
     }).length,
     thisWeek: orders.filter(o => {
@@ -107,17 +107,14 @@ export default async function AdminOrdersPage({
       weekStart.setHours(0, 0, 0, 0);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
-      const orderDate = o.delivery_date ? new Date(o.delivery_date) : null;
+      const orderDate = o.delivery_date ? parseDateFromDB(o.delivery_date) : null;
       if (!orderDate) return false;
       return orderDate >= weekStart && orderDate < weekEnd;
     }).length,
-    pending: orders.filter((o) => o.status === 'pending').length,
-    preparing: orders.filter((o) => o.status === 'preparing').length,
-    ready: orders.filter((o) => o.status === 'ready').length,
-    completed: orders.filter((o) => o.status === 'completed').length,
     unpaid: orders.filter((o) => !o.paid).length,
+    paid: orders.filter((o) => o.paid).length,
     totalRevenue: orders
-      .filter((o) => o.paid && o.status !== 'cancelled')
+      .filter((o) => o.paid)
       .reduce((sum, o) => sum + o.total_amount, 0),
   };
 
@@ -140,7 +137,7 @@ export default async function AdminOrdersPage({
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
               <p className="text-sm text-charcoal-500 mb-1">Total Orders</p>
               <p className="text-3xl font-mono font-bold text-brown-500 tabular-nums">
@@ -153,7 +150,6 @@ export default async function AdminOrdersPage({
               <p className="text-3xl font-mono font-bold text-blue-600 tabular-nums">
                 {stats.today}
               </p>
-              <p className="text-xs text-charcoal-400 mt-1">delivery today</p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
@@ -161,7 +157,6 @@ export default async function AdminOrdersPage({
               <p className="text-3xl font-mono font-bold text-purple-600 tabular-nums">
                 {stats.thisWeek}
               </p>
-              <p className="text-xs text-charcoal-400 mt-1">orders this week</p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
@@ -174,36 +169,20 @@ export default async function AdminOrdersPage({
                   maximumFractionDigits: 0,
                 }).format(stats.totalRevenue)}
               </p>
-              <p className="text-xs text-charcoal-400 mt-1">paid orders only</p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Pending</p>
-              <p className="text-3xl font-mono font-bold text-rose-500 tabular-nums">
-                {stats.pending}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Preparing</p>
-              <p className="text-3xl font-mono font-bold text-yellow-600 tabular-nums">
-                {stats.preparing}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Ready</p>
+              <p className="text-sm text-charcoal-500 mb-1">Paid Orders</p>
               <p className="text-3xl font-mono font-bold text-green-500 tabular-nums">
-                {stats.ready}
+                {stats.paid}
               </p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Unpaid</p>
+              <p className="text-sm text-charcoal-500 mb-1">Unpaid Orders</p>
               <p className="text-3xl font-mono font-bold text-orange-600 tabular-nums">
                 {stats.unpaid}
               </p>
-              <p className="text-xs text-charcoal-400 mt-1">need attention</p>
             </div>
           </div>
 
