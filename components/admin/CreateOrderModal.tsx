@@ -36,6 +36,9 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   
+  // Immediate sale mode - for walk-in shelf sales
+  const [isImmediateMode, setIsImmediateMode] = useState(false);
+  
   // Client selection state
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   
@@ -55,6 +58,45 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
     paid: false,
     channel: 'phone',
   });
+
+  // Enable immediate mode
+  const enableImmediateMode = () => {
+    setIsImmediateMode(true);
+    setDeliveryDate(new Date()); // Today
+    setFormData(prev => ({
+      ...prev,
+      customer_name: 'Walk-in Customer',
+      delivery_type: 'immediate',
+      paid: true,
+      payment_method: 'cash',
+      channel: 'walk_in',
+    }));
+    // Skip to items step
+    setCurrentStep(2);
+  };
+
+  // Disable immediate mode
+  const disableImmediateMode = () => {
+    setIsImmediateMode(false);
+    setDeliveryDate(undefined);
+    setFormData({
+      customer_name: '',
+      customer_email: '',
+      customer_phone: '',
+      customer_ig_handle: '',
+      delivery_type: 'pickup',
+      delivery_time: '',
+      delivery_address: '',
+      delivery_city: '',
+      delivery_postal_code: '',
+      delivery_country: 'Switzerland',
+      customer_notes: '',
+      payment_method: '',
+      paid: false,
+      channel: 'phone',
+    });
+    setCurrentStep(1);
+  };
 
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
@@ -154,6 +196,9 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
 
   // Step validation
   const isStep1Valid = () => {
+    // Immediate mode skips validation
+    if (isImmediateMode) return true;
+    
     if (!formData.customer_name.trim()) return false;
     if (formData.channel === 'phone' || formData.channel === 'whatsapp' || formData.channel === 'walk_in') {
       return formData.customer_phone.trim() !== '';
@@ -173,6 +218,8 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
   };
 
   const isStep3Valid = () => {
+    // Immediate mode always has today as delivery date
+    if (isImmediateMode) return true;
     return deliveryDate !== undefined;
   };
 
@@ -265,6 +312,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
         paid: formData.paid,
         channel: formData.channel,
         total_amount: totalAmount,
+        is_immediate: isImmediateMode, // Flag for immediate orders
         order_items: orderItems.map(item => ({
           ...item,
           product_id: null, // Custom orders don't have a product_id
@@ -326,7 +374,16 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
         <div className="bg-gradient-to-r from-brown-500 to-brown-600 text-white flex-shrink-0">
           {/* Top Bar */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-white/20">
-            <h2 className="text-2xl font-heading font-bold">Create Custom Order</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-heading font-bold">
+                {isImmediateMode ? '⚡ Immediate Sale' : 'Create Custom Order'}
+              </h2>
+              {isImmediateMode && (
+                <span className="px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                  Quick Mode
+                </span>
+              )}
+            </div>
           <button
             onClick={onClose}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
@@ -424,6 +481,35 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           {/* STEP 1: Customer Information */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-fadeIn">
+              {/* Immediate Mode Quick Toggle */}
+              {!isImmediateMode && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <h4 className="font-heading font-bold text-amber-900 text-lg">Immediate Sale Mode</h4>
+                      </div>
+                      <p className="text-sm text-amber-800 ml-8">
+                        For walk-in customers purchasing items directly from the shelf. Skips customer tracking and sets order as fulfilled immediately.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={enableImmediateMode}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors whitespace-nowrap flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Quick Sale
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="mb-6">
                 <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">Customer Information</h3>
                 <p className="text-charcoal-600">Who is this order for?</p>
@@ -647,6 +733,27 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           {/* STEP 2: Order Items */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-fadeIn">
+              {/* Immediate Mode Indicator */}
+              {isImmediateMode && (
+                <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-amber-900">
+                      Immediate Sale Mode Active • No customer tracking • Fulfilled today
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={disableImmediateMode}
+                    className="text-xs text-amber-700 hover:text-amber-900 font-semibold underline"
+                  >
+                    Switch to Regular Order
+                  </button>
+                </div>
+              )}
+
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">Order Items</h3>
@@ -855,39 +962,65 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           {/* STEP 3: Delivery & Details */}
           {currentStep === 3 && (
             <div className="space-y-6 animate-fadeIn">
+              {/* Immediate Mode Indicator */}
+              {isImmediateMode && (
+                <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-amber-900">
+                      Immediate Sale Mode • Payment marked as received • Fulfilled immediately
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={disableImmediateMode}
+                    className="text-xs text-amber-700 hover:text-amber-900 font-semibold underline"
+                  >
+                    Switch to Regular Order
+                  </button>
+                </div>
+              )}
+
               <div className="mb-6">
-                <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">Delivery & Details</h3>
-                <p className="text-charcoal-600">When and how should we deliver?</p>
+                <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">
+                  {isImmediateMode ? 'Payment Details' : 'Delivery & Details'}
+                </h3>
+                <p className="text-charcoal-600">
+                  {isImmediateMode ? 'Confirm payment method' : 'When and how should we deliver?'}
+                </p>
               </div>
 
               {/* Delivery Date & Type */}
-              <div>
-                <h4 className="font-heading font-bold text-charcoal-900 mb-4">Delivery Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <DatePicker
-                      selectedDate={deliveryDate}
-                      onDateChange={setDeliveryDate}
-                      locale="en"
-                      required
-                      minDate={new Date()}
-                  />
-                </div>
-
+              {!isImmediateMode && (
                 <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                    Delivery Type <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="delivery_type"
-                    value={formData.delivery_type}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                  >
-                      <option value="pickup">🏪 Pickup</option>
-                      <option value="delivery">🚗 Delivery</option>
-                  </select>
-                </div>
+                  <h4 className="font-heading font-bold text-charcoal-900 mb-4">Delivery Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <DatePicker
+                        selectedDate={deliveryDate}
+                        onDateChange={setDeliveryDate}
+                        locale="en"
+                        required
+                        minDate={new Date()}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                      Delivery Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="delivery_type"
+                      value={formData.delivery_type}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                    >
+                        <option value="pickup">🏪 Pickup</option>
+                        <option value="delivery">🚗 Delivery</option>
+                    </select>
+                  </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-charcoal-700 mb-2">
@@ -950,14 +1083,17 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                 )}
               </div>
             </div>
+              )}
 
               {/* Payment & Notes */}
             <div>
-                <h4 className="font-heading font-bold text-charcoal-900 mb-4">Payment & Notes</h4>
+                <h4 className="font-heading font-bold text-charcoal-900 mb-4">
+                  {isImmediateMode ? 'Payment Method' : 'Payment & Notes'}
+                </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                      Payment Method
+                      Payment Method {isImmediateMode && <span className="text-red-500">*</span>}
                     </label>
                     <select
                       name="payment_method"
@@ -965,40 +1101,44 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                       onChange={handleChange}
                       className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                     >
-                      <option value="">Not specified</option>
+                      {!isImmediateMode && <option value="">Not specified</option>}
                       <option value="cash">💵 Cash</option>
                       <option value="twint">💳 Twint</option>
                       <option value="stripe">💳 Card (Stripe)</option>
                     </select>
                   </div>
 
-                  <div className="flex items-center pt-8">
-                  <input
-                    type="checkbox"
-                    name="paid"
-                      id="paid"
-                    checked={formData.paid}
-                    onChange={handleChange}
-                    className="w-5 h-5 rounded border-2 border-cream-300 text-brown-500 focus:ring-brown-500"
-                  />
-                    <label htmlFor="paid" className="ml-3 text-sm font-semibold text-charcoal-700">
-                      ✓ Mark as Paid
-                  </label>
-              </div>
+                  {!isImmediateMode && (
+                    <div className="flex items-center pt-8">
+                    <input
+                      type="checkbox"
+                      name="paid"
+                        id="paid"
+                      checked={formData.paid}
+                      onChange={handleChange}
+                      className="w-5 h-5 rounded border-2 border-cream-300 text-brown-500 focus:ring-brown-500"
+                    />
+                      <label htmlFor="paid" className="ml-3 text-sm font-semibold text-charcoal-700">
+                        ✓ Mark as Paid
+                    </label>
+                </div>
+                  )}
 
-                  <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                  Customer Notes
-                </label>
-                <textarea
-                  name="customer_notes"
-                  value={formData.customer_notes}
-                  onChange={handleChange}
-                  rows={3}
-                      placeholder="Delivery instructions, special requests, allergies..."
-                  className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                />
-              </div>
+                  {!isImmediateMode && (
+                    <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                    Customer Notes
+                  </label>
+                  <textarea
+                    name="customer_notes"
+                    value={formData.customer_notes}
+                    onChange={handleChange}
+                    rows={3}
+                        placeholder="Delivery instructions, special requests, allergies..."
+                    className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                  />
+                </div>
+                  )}
             </div>
           </div>
             </div>

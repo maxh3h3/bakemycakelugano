@@ -42,11 +42,13 @@ export default async function AdminProductionPage({
   
   // Fetch order_items directly with delivery dates in the next 4 weeks
   // NO JOIN - This is the whole point of denormalization!
+  // Exclude immediate sales (walk-in shelf sales fulfilled immediately)
   const { data, error } = await supabaseAdmin
     .from('order_items')
     .select('*')
     .gte('delivery_date', formatDateForDB(startOfWeek))
     .lte('delivery_date', formatDateForDB(endOfWeek))
+    .neq('delivery_type', 'immediate') // Filter out immediate sales from production view
     .order('delivery_date', { ascending: true })
     .order('order_number', { ascending: true })
     .order('created_at', { ascending: true });

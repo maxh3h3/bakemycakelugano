@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       channel,
       total_amount,
       order_items,
+      is_immediate, // Flag for immediate sales from shelf
     } = body;
 
     // Validate required fields
@@ -40,13 +41,15 @@ export async function POST(request: NextRequest) {
     if (!customer_name) missingFields.push('customer_name');
     if (!delivery_date) missingFields.push('delivery_date');
     
-    // Validate channel-specific contact fields
-    if (channel === 'phone' || channel === 'whatsapp' || channel === 'walk_in') {
-      if (!customer_phone) missingFields.push('customer_phone');
-    } else if (channel === 'instagram') {
-      if (!customer_ig_handle) missingFields.push('customer_ig_handle');
-    } else if (channel === 'email') {
-      if (!customer_email) missingFields.push('customer_email');
+    // Validate channel-specific contact fields (skip for immediate sales)
+    if (!is_immediate) {
+      if (channel === 'phone' || channel === 'whatsapp' || channel === 'walk_in') {
+        if (!customer_phone) missingFields.push('customer_phone');
+      } else if (channel === 'instagram') {
+        if (!customer_ig_handle) missingFields.push('customer_ig_handle');
+      } else if (channel === 'email') {
+        if (!customer_email) missingFields.push('customer_email');
+      }
     }
     
     if (missingFields.length > 0) {
@@ -77,24 +80,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find or create client
+    // Find or create client (skip for immediate sales)
     let clientId: string | null = null;
-    try {
-      const { client, isNew } = await findOrCreateClient(
-        {
-          name: customer_name,
-          email: customer_email || null,
-          phone: customer_phone || null,
-          whatsapp: customer_phone || null,
-          instagramHandle: customer_ig_handle || null,
-        },
-        channel
-      );
-      clientId = client.id;
-      console.log(`${isNew ? 'Created new' : 'Found existing'} client:`, clientId);
-    } catch (clientError) {
-      console.error('Failed to find/create client:', clientError);
-      // Continue without client_id - order will still be created with legacy fields
+    if (!is_immediate) {
+      try {
+        const { client, isNew } = await findOrCreateClient(
+          {
+            name: customer_name,
+            email: customer_email || null,
+            phone: customer_phone || null,
+            whatsapp: customer_phone || null,
+            instagramHandle: customer_ig_handle || null,
+          },
+          channel
+        );
+        clientId = client.id;
+        console.log(`${isNew ? 'Created new' : 'Found existing'} client:`, clientId);
+      } catch (clientError) {
+        console.error('Failed to find/create client:', clientError);
+        // Continue without client_id - order will still be created with legacy fields
+      }
+    } else {
+      console.log('Immediate sale - skipping client tracking');
     }
 
     // Generate order number (format: DD-MM-NN)
@@ -132,8 +139,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update client stats
-    if (clientId) {
+    // Update client stats (skip for immediate sales)
+    if (clientId && !is_immediate) {
       try {
         await updateClientStats(clientId);
         console.log('Client stats updated');
@@ -144,9 +151,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
+    // Immediate sales are marked as 'delivered' since they're fulfilled from shelf
     const orderItemsData = order_items.map((item: any) => ({
       order_id: (order as any).id,
       order_number: order_number, // Denormalized for production view
+      delivery_type: delivery_type, // Denormalized for filtering immediate sales
       product_id: item.product_id || null, // Nullable for custom manual orders
       product_name: item.product_name,
       product_image_url: item.product_image_url || null,
@@ -163,7 +172,8 @@ export async function POST(request: NextRequest) {
       internal_decoration_notes: item.internal_decoration_notes || null,
       staff_notes: item.staff_notes || null,
       delivery_date: delivery_date, // Denormalized for production view
-      production_status: 'new',
+      production_status: is_immediate ? 'delivered' : 'new', // Immediate sales are already delivered
+      completed_at: is_immediate ? new Date().toISOString() : null, // Mark completion time
     }));
 
     const { error: itemsError } = await supabaseAdmin
@@ -180,18 +190,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Emit SSE event for real-time production view updates
-    try {
-      emitNewOrderEvent({
-        orderId: (order as any).id,
-        orderNumber: order_number,
-        deliveryDate: delivery_date,
-        itemCount: order_items.length,
-      });
-      console.log('SSE new_order event emitted');
-    } catch (sseError) {
-      console.error('Failed to emit SSE event:', sseError);
-      // Don't throw - order is already created, SSE is not critical
+    // Emit SSE event for real-time production view updates (skip for immediate sales)
+    if (!is_immediate) {
+      try {
+        emitNewOrderEvent({
+          orderId: (order as any).id,
+          orderNumber: order_number,
+          deliveryDate: delivery_date,
+          itemCount: order_items.length,
+        });
+        console.log('SSE new_order event emitted');
+      } catch (sseError) {
+        console.error('Failed to emit SSE event:', sseError);
+        // Don't throw - order is already created, SSE is not critical
+      }
+    } else {
+      console.log('Immediate sale - skipping SSE production event');
     }
 
     return NextResponse.json(

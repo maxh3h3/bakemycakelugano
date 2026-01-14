@@ -40,11 +40,11 @@ export function formatDeliveryAddress(address: DeliveryAddress | null): string {
  * Helper function to validate delivery address for delivery orders
  */
 export function validateDeliveryAddress(
-  deliveryType: 'pickup' | 'delivery' | null,
+  deliveryType: 'pickup' | 'delivery' | 'immediate' | null,
   address: unknown
 ): { success: boolean; data?: DeliveryAddress | null; error?: string } {
-  if (deliveryType === 'pickup' || !deliveryType) {
-    // For pickup orders, address should be null
+  if (deliveryType === 'pickup' || deliveryType === 'immediate' || !deliveryType) {
+    // For pickup and immediate orders, address should be null
     return { success: true, data: null };
   }
   

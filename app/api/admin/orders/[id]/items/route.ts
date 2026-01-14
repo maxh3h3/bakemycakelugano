@@ -89,12 +89,12 @@ export async function POST(
       );
     }
 
-    // Fetch order to get order_number and delivery_date
+    // Fetch order to get order_number, delivery_date, and delivery_type
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('order_number, delivery_date')
+      .select('order_number, delivery_date, delivery_type')
       .eq('id', orderId)
-      .single() as { data: { order_number: string | null; delivery_date: string | null } | null; error: any };
+      .single() as { data: { order_number: string | null; delivery_date: string | null; delivery_type: string | null } | null; error: any };
 
     if (orderError || !order) {
       return NextResponse.json(
@@ -109,6 +109,7 @@ export async function POST(
       .insert({
         order_id: orderId,
         order_number: order.order_number, // Denormalized for production view
+        delivery_type: order.delivery_type, // Denormalized for filtering immediate sales
         product_id: null, // Manual items don't have product_id
         product_name,
         product_image_url: product_image_url || null,
