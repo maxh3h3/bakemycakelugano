@@ -56,6 +56,15 @@ export default function EditOrderItemModal({
   const [flavours, setFlavours] = useState<any[]>([]);
   const [isLoadingFlavours, setIsLoadingFlavours] = useState(true);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Fetch flavours and check if this is the last item
   useEffect(() => {
     async function fetchData() {

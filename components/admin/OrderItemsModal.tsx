@@ -19,7 +19,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -53,6 +53,15 @@ const statusOptions: { value: ProductionStatus; label: string; color: string }[]
 ];
 
 export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModalProps) {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const router = useRouter();
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [localItems, setLocalItems] = useState<OrderItem[]>(orderGroup.items);

@@ -6,10 +6,13 @@ import { getFlavours } from '@/lib/sanity/queries';
 import DatePicker from '@/components/products/DatePicker';
 import ImageUpload from '@/components/admin/ImageUpload';
 import ClientSearchInput from '@/components/admin/ClientSearchInput';
+import AIOrderAssistantModal from '@/components/admin/AIOrderAssistantModal';
 import { formatDateForDB } from '@/lib/utils';
+import type { AIExtractedOrderData } from '@/types/ai-order';
 
 interface CreateOrderModalProps {
   onClose: () => void;
+  initialData?: AIExtractedOrderData; // AI-extracted data for pre-filling
 }
 
 interface OrderItem {
@@ -28,13 +31,19 @@ interface OrderItem {
 
 type Step = 1 | 2 | 3;
 
-export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
+export default function CreateOrderModal({ onClose, initialData }: CreateOrderModalProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [flavours, setFlavours] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(
+    initialData?.delivery_date ? new Date(initialData.delivery_date) : undefined
+  );
+  
+  // AI Assistant modal state
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [isAIPrefilled, setIsAIPrefilled] = useState(!!initialData);
   
   // Immediate sale mode - for walk-in shelf sales
   const [isImmediateMode, setIsImmediateMode] = useState(false);
@@ -42,21 +51,36 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
   // Client selection state
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   
-  const [formData, setFormData] = useState({
-    customer_name: '',
-    customer_email: '',
-    customer_phone: '',
-    customer_ig_handle: '',
-    delivery_type: 'pickup',
-    delivery_time: '',
-    delivery_address: '',
-    delivery_city: '',
-    delivery_postal_code: '',
-    delivery_country: 'Switzerland',
-    customer_notes: '',
-    payment_method: '',
-    paid: false,
-    channel: 'phone',
+  const [formData, setFormData] = useState<{
+    customer_name: string;
+    customer_email: string;
+    customer_phone: string;
+    customer_ig_handle: string;
+    delivery_type: 'pickup' | 'delivery' | 'immediate';
+    delivery_time: string;
+    delivery_address: string;
+    delivery_city: string;
+    delivery_postal_code: string;
+    delivery_country: string;
+    customer_notes: string;
+    payment_method: string;
+    paid: boolean;
+    channel: 'phone' | 'whatsapp' | 'instagram' | 'email' | 'walk_in';
+  }>({
+    customer_name: initialData?.customer_name || '',
+    customer_email: initialData?.customer_email || '',
+    customer_phone: initialData?.customer_phone || '',
+    customer_ig_handle: initialData?.customer_ig_handle || '',
+    delivery_type: initialData?.delivery_type || 'pickup',
+    delivery_time: initialData?.delivery_time || '',
+    delivery_address: initialData?.delivery_address || '',
+    delivery_city: initialData?.delivery_city || '',
+    delivery_postal_code: initialData?.delivery_postal_code || '',
+    delivery_country: initialData?.delivery_country || 'Switzerland',
+    customer_notes: initialData?.customer_notes || '',
+    payment_method: initialData?.payment_method || '',
+    paid: initialData?.paid || false,
+    channel: initialData?.channel || 'phone',
   });
 
   // Enable immediate mode
@@ -75,30 +99,50 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
     setCurrentStep(2);
   };
 
-  // Disable immediate mode
-  const disableImmediateMode = () => {
-    setIsImmediateMode(false);
-    setDeliveryDate(undefined);
-    setFormData({
-      customer_name: '',
-      customer_email: '',
-      customer_phone: '',
-      customer_ig_handle: '',
-      delivery_type: 'pickup',
-      delivery_time: '',
-      delivery_address: '',
-      delivery_city: '',
-      delivery_postal_code: '',
-      delivery_country: 'Switzerland',
-      customer_notes: '',
-      payment_method: '',
-      paid: false,
-      channel: 'phone',
-    });
-    setCurrentStep(1);
+  // Toggle immediate mode
+  const toggleImmediateMode = () => {
+    if (isImmediateMode) {
+      // Disable immediate mode
+      setIsImmediateMode(false);
+      setDeliveryDate(undefined);
+      setFormData({
+        customer_name: '',
+        customer_email: '',
+        customer_phone: '',
+        customer_ig_handle: '',
+        delivery_type: 'pickup',
+        delivery_time: '',
+        delivery_address: '',
+        delivery_city: '',
+        delivery_postal_code: '',
+        delivery_country: 'Switzerland',
+        customer_notes: '',
+        payment_method: '',
+        paid: false,
+        channel: 'phone',
+      });
+      setCurrentStep(1);
+    } else {
+      // Enable immediate mode
+      enableImmediateMode();
+    }
   };
 
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(
+    initialData?.order_items?.map(item => ({
+      product_name: item.product_name,
+      product_image_url: '',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      selected_flavour: item.selected_flavour || null,
+      flavour_name: item.flavour_name || null,
+      weight_kg: item.weight_kg || null,
+      diameter_cm: item.diameter_cm || null,
+      writing_on_cake: item.writing_on_cake || null,
+      internal_decoration_notes: item.internal_decoration_notes || null,
+      staff_notes: item.staff_notes || null,
+    })) || []
+  );
 
   // Fetch flavours on mount
   useEffect(() => {
@@ -113,6 +157,20 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
       }
     }
     fetchData();
+  }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    // Save original overflow style
+    const originalOverflow = document.body.style.overflow;
+    
+    // Prevent scrolling
+    document.body.style.overflow = 'hidden';
+    
+    // Restore on unmount
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -224,10 +282,8 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
   };
 
   const canNavigateToStep = (step: Step) => {
-    if (step === 1) return true;
-    if (step === 2) return isStep1Valid();
-    if (step === 3) return isStep1Valid() && isStep2Valid();
-    return false;
+    // Allow free navigation between all steps
+    return true;
   };
 
   const handleNext = () => {
@@ -258,6 +314,70 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
     if (!deliveryDate) return 'No delivery date';
     const date = deliveryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     return `${date} • ${formData.delivery_type === 'pickup' ? 'Pickup' : 'Delivery'}`;
+  };
+
+  // Check if form has data
+  const hasFormData = () => {
+    const hasCustomerData = formData.customer_name.trim() || 
+                           formData.customer_email.trim() || 
+                           formData.customer_phone.trim();
+    const hasItems = orderItems.length > 0;
+    return hasCustomerData || hasItems || deliveryDate !== undefined;
+  };
+
+  // Handle close with confirmation
+  const handleClose = () => {
+    if (hasFormData()) {
+      if (confirm('You have unsaved changes. Are you sure you want to close? All data will be lost.')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
+
+  // Handle AI-extracted data
+  const handleAIDataExtracted = (data: AIExtractedOrderData) => {
+    // Pre-fill form data
+    if (data.customer_name) setFormData(prev => ({ ...prev, customer_name: data.customer_name! }));
+    if (data.customer_email) setFormData(prev => ({ ...prev, customer_email: data.customer_email! }));
+    if (data.customer_phone) setFormData(prev => ({ ...prev, customer_phone: data.customer_phone! }));
+    if (data.customer_ig_handle) setFormData(prev => ({ ...prev, customer_ig_handle: data.customer_ig_handle! }));
+    if (data.delivery_type) setFormData(prev => ({ ...prev, delivery_type: data.delivery_type! }));
+    if (data.delivery_time) setFormData(prev => ({ ...prev, delivery_time: data.delivery_time! }));
+    if (data.delivery_address) setFormData(prev => ({ ...prev, delivery_address: data.delivery_address! }));
+    if (data.delivery_city) setFormData(prev => ({ ...prev, delivery_city: data.delivery_city! }));
+    if (data.delivery_postal_code) setFormData(prev => ({ ...prev, delivery_postal_code: data.delivery_postal_code! }));
+    if (data.delivery_country) setFormData(prev => ({ ...prev, delivery_country: data.delivery_country! }));
+    if (data.customer_notes) setFormData(prev => ({ ...prev, customer_notes: data.customer_notes! }));
+    if (data.payment_method) setFormData(prev => ({ ...prev, payment_method: data.payment_method! }));
+    if (data.paid !== undefined) setFormData(prev => ({ ...prev, paid: data.paid! }));
+    if (data.channel) setFormData(prev => ({ ...prev, channel: data.channel! }));
+    
+    // Set delivery date
+    if (data.delivery_date) {
+      setDeliveryDate(new Date(data.delivery_date));
+    }
+    
+    // Pre-fill order items
+    if (data.order_items && data.order_items.length > 0) {
+      setOrderItems(data.order_items.map(item => ({
+        product_name: item.product_name,
+        product_image_url: '',
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        selected_flavour: item.selected_flavour || null,
+        flavour_name: item.flavour_name || null,
+        weight_kg: item.weight_kg || null,
+        diameter_cm: item.diameter_cm || null,
+        writing_on_cake: item.writing_on_cake || null,
+        internal_decoration_notes: item.internal_decoration_notes || null,
+        staff_notes: item.staff_notes || null,
+      })));
+    }
+    
+    setIsAIPrefilled(true);
+    setShowAIModal(false);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -383,30 +503,79 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                   Quick Mode
                 </span>
               )}
+              {isAIPrefilled && (
+                <span className="px-3 py-1 bg-purple-500/30 text-white text-xs font-bold rounded-full uppercase tracking-wide flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  AI Pre-filled
+                </span>
+              )}
             </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-          >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Quick Sale Toggle */}
+              <button
+                onClick={toggleImmediateMode}
+                className={`p-2.5 rounded-xl font-semibold transition-all shadow-lg ${
+                  isImmediateMode
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                    : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
+                title={isImmediateMode ? 'Switch to Regular Order' : 'Quick Sale Mode'}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </button>
+              
+              {/* AI Assistant */}
+              <button
+                onClick={() => {
+                  // Disable quick mode when opening AI assistant
+                  if (isImmediateMode) {
+                    setIsImmediateMode(false);
+                    setDeliveryDate(undefined);
+                    setFormData(prev => ({
+                      ...prev,
+                      delivery_type: 'pickup',
+                      paid: false,
+                      payment_method: '',
+                    }));
+                  }
+                  setShowAIModal(true);
+                }}
+                className="p-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all shadow-lg"
+                title="AI Order Assistant"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </button>
+              
+              {/* Close Button */}
+              <button
+                onClick={handleClose}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                title="Close"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
           {/* Step Navigation */}
           <div className="grid grid-cols-3 gap-2 px-6 py-4">
             {/* Step 1: Customer */}
             <button
               type="button"
-              onClick={() => canNavigateToStep(1) && setCurrentStep(1)}
-              disabled={!canNavigateToStep(1)}
+              onClick={() => setCurrentStep(1)}
               className={`text-left p-3 rounded-xl transition-all ${
                 currentStep === 1
                   ? 'bg-white/20 ring-2 ring-white'
-                  : canNavigateToStep(1)
-                  ? 'bg-white/10 hover:bg-white/15'
-                  : 'bg-white/5 opacity-50 cursor-not-allowed'
+                  : 'bg-white/10 hover:bg-white/15'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -425,14 +594,11 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
             {/* Step 2: Items */}
             <button
               type="button"
-              onClick={() => canNavigateToStep(2) && setCurrentStep(2)}
-              disabled={!canNavigateToStep(2)}
+              onClick={() => setCurrentStep(2)}
               className={`text-left p-3 rounded-xl transition-all ${
                 currentStep === 2
                   ? 'bg-white/20 ring-2 ring-white'
-                  : canNavigateToStep(2)
-                  ? 'bg-white/10 hover:bg-white/15'
-                  : 'bg-white/5 opacity-50 cursor-not-allowed'
+                  : 'bg-white/10 hover:bg-white/15'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -451,14 +617,11 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
             {/* Step 3: Delivery */}
             <button
               type="button"
-              onClick={() => canNavigateToStep(3) && setCurrentStep(3)}
-              disabled={!canNavigateToStep(3)}
+              onClick={() => setCurrentStep(3)}
               className={`text-left p-3 rounded-xl transition-all ${
                 currentStep === 3
                   ? 'bg-white/20 ring-2 ring-white'
-                  : canNavigateToStep(3)
-                  ? 'bg-white/10 hover:bg-white/15'
-                  : 'bg-white/5 opacity-50 cursor-not-allowed'
+                  : 'bg-white/10 hover:bg-white/15'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -481,35 +644,6 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           {/* STEP 1: Customer Information */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-fadeIn">
-              {/* Immediate Mode Quick Toggle */}
-              {!isImmediateMode && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <h4 className="font-heading font-bold text-amber-900 text-lg">Immediate Sale Mode</h4>
-                      </div>
-                      <p className="text-sm text-amber-800 ml-8">
-                        For walk-in customers purchasing items directly from the shelf. Skips customer tracking and sets order as fulfilled immediately.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={enableImmediateMode}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors whitespace-nowrap flex items-center gap-2"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Quick Sale
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <div className="mb-6">
                 <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">Customer Information</h3>
                 <p className="text-charcoal-600">Who is this order for?</p>
@@ -733,27 +867,6 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           {/* STEP 2: Order Items */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-fadeIn">
-              {/* Immediate Mode Indicator */}
-              {isImmediateMode && (
-                <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-amber-900">
-                      Immediate Sale Mode Active • No customer tracking • Fulfilled today
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={disableImmediateMode}
-                    className="text-xs text-amber-700 hover:text-amber-900 font-semibold underline"
-                  >
-                    Switch to Regular Order
-                  </button>
-                </div>
-              )}
-
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">Order Items</h3>
@@ -962,27 +1075,6 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           {/* STEP 3: Delivery & Details */}
           {currentStep === 3 && (
             <div className="space-y-6 animate-fadeIn">
-              {/* Immediate Mode Indicator */}
-              {isImmediateMode && (
-                <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-amber-900">
-                      Immediate Sale Mode • Payment marked as received • Fulfilled immediately
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={disableImmediateMode}
-                    className="text-xs text-amber-700 hover:text-amber-900 font-semibold underline"
-                  >
-                    Switch to Regular Order
-                  </button>
-                </div>
-              )}
-
               <div className="mb-6">
                 <h3 className="text-2xl font-heading font-bold text-brown-500 mb-2">
                   {isImmediateMode ? 'Payment Details' : 'Delivery & Details'}
@@ -1152,7 +1244,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
             {currentStep === 1 ? (
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="px-6 py-3 bg-white text-charcoal-700 rounded-xl font-semibold hover:bg-cream-100 transition-colors border-2 border-cream-300"
           >
             Cancel
@@ -1227,6 +1319,14 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
           </div>
         </div>
       </div>
+
+      {/* AI Order Assistant Modal */}
+      {showAIModal && (
+        <AIOrderAssistantModal
+          onClose={() => setShowAIModal(false)}
+          onOrderExtracted={handleAIDataExtracted}
+        />
+      )}
     </div>
   );
 }

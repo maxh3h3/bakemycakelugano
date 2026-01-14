@@ -48,6 +48,15 @@ export default function AddOrderItemModal({
   const [flavours, setFlavours] = useState<any[]>([]);
   const [isLoadingFlavours, setIsLoadingFlavours] = useState(true);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Fetch flavours on mount
   useEffect(() => {
     async function fetchFlavours() {

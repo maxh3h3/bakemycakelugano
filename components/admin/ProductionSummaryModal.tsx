@@ -19,7 +19,7 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Database } from '@/lib/supabase/types';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -44,6 +44,15 @@ interface FlavourWeight {
 type CalculationMode = 'daily' | 'until-sunday' | 'next-7-days';
 
 export default function ProductionSummaryModal({ items, viewMode, onClose }: ProductionSummaryModalProps) {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Initialize calculation mode based on view mode
   // Daily view → 'daily' mode (no switching allowed)
   // Weekly view → 'until-sunday' mode (switching allowed)

@@ -22,6 +22,15 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function ExpenseModal({ expense, onClose, onSave }: ExpenseModalProps) {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     date: '',
     category: 'ingredients',
