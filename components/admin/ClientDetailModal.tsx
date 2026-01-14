@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Client } from '@/lib/db/schema';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 
 interface Order {
   id: string;
@@ -24,6 +25,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [formData, setFormData] = useState({
@@ -79,11 +81,11 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
 
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/admin/clients/${client.id}`, {
@@ -102,6 +104,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
       alert('Failed to delete client');
     } finally {
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -263,7 +266,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors disabled:opacity-50"
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -363,12 +366,12 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
         {/* Footer */}
         <div className="bg-cream-50 border-t-2 border-cream-200 px-6 py-4 flex justify-between items-center">
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={isDeleting || !!(client.totalOrders && client.totalOrders > 0)}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={client.totalOrders && client.totalOrders > 0 ? 'Cannot delete client with orders' : 'Delete client'}
           >
-            {isDeleting ? 'Deleting...' : 'Delete Client'}
+            Delete Client
           </button>
           <button
             onClick={onClose}
@@ -378,6 +381,19 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Client"
+        message={`Are you sure you want to delete ${client.name}? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

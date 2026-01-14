@@ -1,0 +1,139 @@
+---
+alwaysApply: false
+---
+### React Components (components/**/*)
+
+Add a comment block explaining:
+- **User role**: Who uses this (admin staff, customers, production team)
+- **Workflow position**: Where this fits in the business process
+- **User decisions**: What choices/actions users make here
+- **Data relationships**: What business entities are displayed/linked
+- **Business constraints**: Rules enforced or displayed to users
+
+**Example - BAD:**
+```typescript
+export default function ProductionView({ items }: ProductionViewProps) {
+```
+
+**Example - GOOD:**
+```typescript
+// BUSINESS CONTEXT: Production Tracking Board for Kitchen Staff
+// Used by: Production team (admin role required)
+// 
+// Workflow: Displays order items grouped by order number and delivery date for kitchen scheduling.
+// Staff can update production status (new → in_progress → completed) to track daily workload.
+//
+// Business Rules:
+// - Items grouped by order_number (denormalized from orders table)
+// - Filtered by delivery date (today/week/month views)
+// - Shows critical production details: weight, diameter, decorations, staff notes
+// - Status changes update item timestamps (startedAt, completedAt)
+//
+// Data Relationships: order_items → orders → clients
+
+export default function ProductionView({ items }: ProductionViewProps) {
+```
+
+---
+
+### Utility Functions (lib/**/*)
+
+Add a comment block explaining:
+- **Business rule**: What business logic this implements
+- **When used**: Which business processes need this
+- **Critical calculations**: Important formulas or constraints
+- **Data integrity**: What this ensures or maintains
+
+**Example - BAD:**
+```typescript
+export function updateClientStats(clientId: string) {
+```
+
+**Example - GOOD:**
+```typescript
+// BUSINESS CONTEXT: Client Relationship Metrics Calculator
+// Maintains accurate client statistics for customer relationship management.
+//
+// Business Rules:
+// - totalOrders: Count of all paid orders for this client
+// - totalSpent: Sum of all paid order amounts (unpaid orders excluded)
+// - firstOrderDate: Earliest delivery_date from their orders
+// - lastOrderDate: Most recent delivery_date
+//
+// When Used:
+// - After creating a new order (manual or website)
+// - After updating order paid status
+// - After deleting an order
+//
+// Critical: Stats exclude unpaid orders to reflect actual revenue
+
+export async function updateClientStats(clientId: string) {
+```
+
+---
+
+### Database Schemas (lib/db/schema.ts)
+
+Already well-documented! Continue using inline comments for:
+- Field purposes and business meaning
+- Why fields are nullable/required
+- Deprecated fields and migration notes
+- Relationships and cascade rules
+
+---
+
+### Type Definitions (types/**)
+
+Add a comment block for complex types explaining:
+- **Business entity**: What real-world concept this represents
+- **Key fields**: Business-critical properties
+- **Usage context**: Where/why this type is needed
+
+**Example - GOOD:**
+```typescript
+// BUSINESS CONTEXT: Client Contact Information
+// Represents customer contact methods across multiple channels.
+// 
+// Business Rules:
+// - At least ONE contact method required (email, phone, whatsapp, or instagramHandle)
+// - preferredContact guides admin which method to use first
+// - Used for order creation and client relationship tracking
+
+export interface ClientContactInfo {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  instagramHandle?: string | null;
+  preferredContact?: 'email' | 'phone' | 'whatsapp' | 'instagram' | null;
+}
+```
+
+---
+
+## Guidelines for All Files
+
+### Keep It Concise
+- **3-7 bullet points** maximum per file
+- Each line should add business value
+- Skip obvious technical details (code shows that)
+
+### Focus on "Why" Not "How"
+- ❌ "This function queries the database" (code shows this)
+- ✅ "Updates client stats after paid orders to track customer lifetime value"
+
+### Use Domain Language
+- Use business terms: client, order, production, channel, delivery
+- Reference business concepts: order channels, production workflow, client relationship tracking
+- Mention business constraints: required fields, validation rules, stat calculations
+
+### Highlight Non-Obvious Rules
+- Channel-specific validation (Instagram requires IG handle)
+- Denormalized data (order_number copied to items)
+- Side effects (stat updates, notifications)
+- Business invariants (stats exclude unpaid orders)
+
+### Update When Logic Changes
+Before committing changes, verify the header comment still provide business logic context about that file
+
+

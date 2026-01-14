@@ -47,7 +47,7 @@ export async function GET(
     // Fetch client's orders
     const { data: orders, error: ordersError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_number, total_amount, status, delivery_date, created_at, paid, channel')
+      .select('id, order_number, total_amount, delivery_date, created_at, paid, channel')
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
 
@@ -56,9 +56,27 @@ export async function GET(
       // Return client without orders rather than failing completely
     }
 
+    // Map snake_case DB fields to camelCase TypeScript fields
+    const mappedClient = {
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      whatsapp: client.whatsapp,
+      instagramHandle: client.instagram_handle,
+      preferredContact: client.preferred_contact,
+      firstOrderDate: client.first_order_date,
+      lastOrderDate: client.last_order_date,
+      totalOrders: client.total_orders,
+      totalSpent: client.total_spent,
+      notes: client.notes,
+      createdAt: client.created_at,
+      updatedAt: client.updated_at,
+    };
+
     return NextResponse.json({
       success: true,
-      client,
+      client: mappedClient,
       orders: orders || [],
     });
   } catch (error) {
@@ -147,10 +165,28 @@ export async function PATCH(
       );
     }
 
+    // Map snake_case DB fields to camelCase TypeScript fields
+    const mappedClient = {
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      whatsapp: client.whatsapp,
+      instagramHandle: client.instagram_handle,
+      preferredContact: client.preferred_contact,
+      firstOrderDate: client.first_order_date,
+      lastOrderDate: client.last_order_date,
+      totalOrders: client.total_orders,
+      totalSpent: client.total_spent,
+      notes: client.notes,
+      createdAt: client.created_at,
+      updatedAt: client.updated_at,
+    };
+
     return NextResponse.json({
       success: true,
       message: 'Client updated successfully',
-      client,
+      client: mappedClient,
     });
   } catch (error) {
     console.error('Error in PATCH /api/admin/clients/[id]:', error);

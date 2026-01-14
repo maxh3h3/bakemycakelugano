@@ -218,17 +218,20 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
             </div>
 
             {/* Total & Payment */}
-            <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200 flex-1 min-h-[100px] flex flex-col justify-between">
-              <p className="text-xs font-semibold text-green-600 uppercase mb-1">Total</p>
+            <div className={`rounded-xl p-4 border-2 flex-1 min-h-[100px] flex flex-col justify-between ${
+              order.paid 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-rose-50 border-rose-200'
+            }`}>
+              <p className={`text-xs font-semibold uppercase mb-1 ${
+                order.paid ? 'text-green-600' : 'text-rose-600'
+              }`}>Total</p>
               <div>
-                <p className="text-xl font-bold text-green-700">
+                <p className={`text-xl font-bold ${
+                  order.paid ? 'text-green-700' : 'text-rose-700'
+                }`}>
                   {formatCurrency(order.total_amount, order.currency)}
                 </p>
-                {order.paid ? (
-                  <p className="text-xs font-semibold text-green-600 mt-1">✓ Paid</p>
-                ) : (
-                  <p className="text-xs font-semibold text-orange-600 mt-1">⚠ Unpaid</p>
-                )}
               </div>
             </div>
 

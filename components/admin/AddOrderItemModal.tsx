@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getFlavours } from '@/lib/sanity/queries';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 interface AddOrderItemModalProps {
   orderId: string;
@@ -12,8 +14,10 @@ interface AddOrderItemModalProps {
 
 interface NewItemFormData {
   product_name: string;
+  product_image_url: string;
   quantity: string;
   unit_price: string;
+  selected_flavour: string;
   writing_on_cake: string;
   internal_decoration_notes: string;
   staff_notes: string;
@@ -30,8 +34,10 @@ export default function AddOrderItemModal({
 }: AddOrderItemModalProps) {
   const [formData, setFormData] = useState<NewItemFormData>({
     product_name: '',
+    product_image_url: '',
     quantity: '1',
     unit_price: '',
+    selected_flavour: '',
     writing_on_cake: '',
     internal_decoration_notes: '',
     staff_notes: '',
@@ -39,6 +45,23 @@ export default function AddOrderItemModal({
     diameter_cm: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [flavours, setFlavours] = useState<any[]>([]);
+  const [isLoadingFlavours, setIsLoadingFlavours] = useState(true);
+
+  // Fetch flavours on mount
+  useEffect(() => {
+    async function fetchFlavours() {
+      try {
+        const flavoursData = await getFlavours('en');
+        setFlavours(flavoursData || []);
+      } catch (error) {
+        console.error('Error fetching flavours:', error);
+      } finally {
+        setIsLoadingFlavours(false);
+      }
+    }
+    fetchFlavours();
+  }, []);
 
   const calculateSubtotal = () => {
     const quantity = parseFloat(formData.quantity) || 0;
@@ -61,14 +84,21 @@ export default function AddOrderItemModal({
       const unitPrice = parseFloat(formData.unit_price);
       const subtotal = quantity * unitPrice;
 
+      // Find flavour name if flavour is selected
+      const selectedFlavour = flavours.find(f => f._id === formData.selected_flavour);
+      const flavourName = selectedFlavour ? selectedFlavour.name : null;
+
       const response = await fetch(`/api/admin/orders/${orderId}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_name: formData.product_name,
+          product_image_url: formData.product_image_url || null,
           quantity,
           unit_price: unitPrice,
           subtotal,
+          selected_flavour: formData.selected_flavour || null,
+          flavour_name: flavourName,
           writing_on_cake: formData.writing_on_cake || null,
           internal_decoration_notes: formData.internal_decoration_notes || null,
           staff_notes: formData.staff_notes || null,
@@ -176,6 +206,31 @@ export default function AddOrderItemModal({
               />
             </div>
 
+            {/* Flavour Selection */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-charcoal-700 mb-1">
+                Flavour
+              </label>
+              {isLoadingFlavours ? (
+                <div className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 bg-cream-50 text-charcoal-500">
+                  Loading flavours...
+                </div>
+              ) : (
+                <select
+                  value={formData.selected_flavour}
+                  onChange={(e) => setFormData({ ...formData, selected_flavour: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                >
+                  <option value="">No flavour</option>
+                  {flavours.map((flavour) => (
+                    <option key={flavour._id} value={flavour._id}>
+                      {flavour.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             {/* Weight */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
@@ -205,6 +260,15 @@ export default function AddOrderItemModal({
                 min="0"
                 placeholder="Optional"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Product Image Upload */}
+            <div className="col-span-2">
+              <ImageUpload
+                value={formData.product_image_url}
+                onChange={(url) => setFormData({ ...formData, product_image_url: url })}
+                label="Product Image (optional)"
               />
             </div>
 

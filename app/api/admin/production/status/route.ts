@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
+import { emitStatusUpdateEvent } from '@/lib/events/production-events';
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -81,6 +82,21 @@ export async function PATCH(request: NextRequest) {
         { success: false, error: 'Item not found' },
         { status: 404 }
       );
+    }
+
+    // Emit SSE event for real-time updates to connected clients
+    try {
+      emitStatusUpdateEvent({
+        itemId: data.id,
+        orderId: data.order_id,
+        orderNumber: data.order_number || '',
+        oldStatus: body.oldStatus || 'unknown',
+        newStatus: status,
+        deliveryDate: data.delivery_date || undefined,
+      });
+    } catch (sseError) {
+      // Log but don't fail the request if SSE broadcast fails
+      console.error('Failed to emit SSE event:', sseError);
     }
 
     return NextResponse.json(

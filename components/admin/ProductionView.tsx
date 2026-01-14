@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Database } from '@/lib/supabase/types';
 import OrderItemsModal from './OrderItemsModal';
+import ProductionSummaryModal from './ProductionSummaryModal';
+import Toast from '@/components/ui/Toast';
+import { useProductionSSE } from '@/lib/hooks/useProductionSSE';
+import type { ProductionEvent } from '@/lib/events/production-events';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -21,8 +26,81 @@ interface OrderGroup {
 }
 
 export default function ProductionView({ items }: ProductionViewProps) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<OrderGroup | null>(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<'info' | 'success'>('info');
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle SSE events
+  const handleProductionEvent = (event: ProductionEvent) => {
+    console.log('[ProductionView] Received SSE event:', event);
+    
+    switch (event.type) {
+      case 'new_order':
+        setToastMessage(`New order received! Order #${event.orderNumber}`);
+        setToastVariant('success');
+        break;
+      
+      case 'status_update':
+        setToastMessage(`Order #${event.orderNumber} updated to ${event.newStatus}`);
+        setToastVariant('info');
+        break;
+      
+      case 'notes_update':
+        setToastMessage(`Order #${event.orderNumber} details updated`);
+        setToastVariant('info');
+        break;
+      
+      case 'item_added':
+        setToastMessage(`New item added to order #${event.orderNumber}`);
+        setToastVariant('success');
+        break;
+      
+      case 'item_deleted':
+        setToastMessage(`Item removed from order #${event.orderNumber}`);
+        setToastVariant('info');
+        break;
+    }
+
+    // Schedule page refresh after 3 seconds
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    refreshTimeoutRef.current = setTimeout(() => {
+      console.log('[ProductionView] Auto-refreshing page data...');
+      router.refresh();
+    }, 3000);
+  };
+
+  // Initialize SSE connection
+  const { connected, error } = useProductionSSE({
+    enabled: true,
+    onEvent: handleProductionEvent,
+    onConnect: () => {
+      console.log('[ProductionView] SSE connected');
+    },
+    onDisconnect: () => {
+      console.log('[ProductionView] SSE disconnected');
+    },
+    onError: (err) => {
+      console.error('[ProductionView] SSE error:', err);
+    },
+  });
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Group items by order_number
   function groupItemsByOrder(orderItems: OrderItem[]): OrderGroup[] {
@@ -100,8 +178,35 @@ export default function ProductionView({ items }: ProductionViewProps) {
   const todayItems = items.filter(item => item.delivery_date === todayStr);
   const todayOrderGroups = groupItemsByOrder(todayItems);
 
+  // Get items for today view
+  const todayViewItems = todayItems;
+  
+  // Get items for week view
+  const weekViewItems = (() => {
+    const weekDateStrings = weekDays.map(d => dateToLocalString(d));
+    return items.filter(item => item.delivery_date && weekDateStrings.includes(item.delivery_date));
+  })();
+
   return (
     <>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          variant={toastVariant}
+          duration={3000}
+          onClose={() => setToastMessage(null)}
+          show={!!toastMessage}
+        />
+      )}
+
+      {/* SSE Connection Status Indicator (optional - shows at bottom right) */}
+      {error && (
+        <div className="fixed bottom-4 right-4 z-50 bg-red-100 text-red-700 px-4 py-2 rounded-lg shadow-lg border-2 border-red-300 text-sm">
+          Connection lost - Attempting to reconnect...
+        </div>
+      )}
+
       <div className="space-y-6">
         {/* View Mode Tabs */}
         <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-2">
@@ -109,26 +214,98 @@ export default function ProductionView({ items }: ProductionViewProps) {
             <button
               onClick={() => setViewMode('today')}
               className={`
-                px-6 py-3 rounded-xl font-medium transition-all duration-200
+                px-6 py-3 rounded-xl font-medium transition-all duration-200 relative
                 ${viewMode === 'today'
                   ? 'bg-brown-500 text-white shadow-lg scale-105'
                   : 'bg-cream-50 text-charcoal-700 hover:bg-cream-100'
                 }
               `}
             >
-              Today ({todayOrderGroups.length})
+              <div className="flex items-center justify-between gap-3">
+                <span>Today ({todayOrderGroups.length})</span>
+                {viewMode === 'today' && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSummaryModal(true);
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white rounded-lg p-2 flex items-center justify-center transition-all cursor-pointer"
+                    title="Production Summary"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowSummaryModal(true);
+                      }
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </span>
+                )}
+              </div>
             </button>
             <button
               onClick={() => setViewMode('week')}
               className={`
-                px-6 py-3 rounded-xl font-medium transition-all duration-200
+                px-6 py-3 rounded-xl font-medium transition-all duration-200 relative
                 ${viewMode === 'week'
                   ? 'bg-brown-500 text-white shadow-lg scale-105'
                   : 'bg-cream-50 text-charcoal-700 hover:bg-cream-100'
                 }
               `}
             >
-              Week View
+              <div className="flex items-center justify-between gap-3">
+                <span>Week View</span>
+                {viewMode === 'week' && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSummaryModal(true);
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white rounded-lg p-2 flex items-center justify-center transition-all cursor-pointer"
+                    title="Production Summary"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowSummaryModal(true);
+                      }
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </span>
+                )}
+              </div>
             </button>
             <button
               onClick={() => setViewMode('month')}
@@ -209,7 +386,8 @@ export default function ProductionView({ items }: ProductionViewProps) {
 
         {/* Week View */}
         {viewMode === 'week' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {weekDays.map((day, index) => {
               const dayOrderGroups = getOrderGroupsForDay(day);
               const dayStr = dateToLocalString(day);
@@ -245,12 +423,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
 
                   {/* Orders for this day */}
                   <div className="space-y-2">
-                    {dayOrderGroups.length === 0 ? (
-                      <p className="text-xs text-charcoal-400 italic text-center py-4">
-                        No orders
-                      </p>
-                    ) : (
-                      dayOrderGroups.map((orderGroup) => (
+                    {dayOrderGroups.map((orderGroup) => (
                         <button
                           key={orderGroup.order_id}
                           onClick={() => setSelectedOrderGroup(orderGroup)}
@@ -285,12 +458,12 @@ export default function ProductionView({ items }: ProductionViewProps) {
                             ))}
                           </div>
                         </button>
-                      ))
-                    )}
+                      ))}
                   </div>
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 
@@ -340,12 +513,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
 
                   {/* Orders for this day */}
                   <div className="space-y-1.5">
-                    {dayOrderGroups.length === 0 ? (
-                      <p className="text-xs text-charcoal-300 italic text-center py-2">
-                        -
-                      </p>
-                    ) : (
-                      dayOrderGroups.map((orderGroup) => (
+                    {dayOrderGroups.map((orderGroup) => (
                         <button
                           key={orderGroup.order_id}
                           onClick={() => setSelectedOrderGroup(orderGroup)}
@@ -371,8 +539,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
                             ))}
                           </div>
                         </button>
-                      ))
-                    )}
+                      ))}
                   </div>
                 </div>
               );
@@ -386,6 +553,15 @@ export default function ProductionView({ items }: ProductionViewProps) {
         <OrderItemsModal
           orderGroup={selectedOrderGroup}
           onClose={() => setSelectedOrderGroup(null)}
+        />
+      )}
+
+      {/* Production Summary Modal */}
+      {showSummaryModal && (
+        <ProductionSummaryModal
+          items={viewMode === 'today' ? todayViewItems : weekViewItems}
+          viewMode={viewMode}
+          onClose={() => setShowSummaryModal(false)}
         />
       )}
     </>

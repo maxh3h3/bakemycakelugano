@@ -204,18 +204,18 @@ export default function ClientSearchInput({ onClientSelect, onCreateNew }: Clien
           <div className="border-t-2 border-cream-200">
             <button
               onClick={handleCreateNew}
-              className={`w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center gap-3 ${
-                selectedIndex === results.length ? 'bg-green-50' : ''
+              className={`w-full px-4 py-3 text-left hover:bg-brown-50 transition-colors flex items-center gap-3 ${
+                selectedIndex === results.length ? 'bg-brown-50' : ''
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-full bg-brown-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-brown-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-green-700">Create New Client</p>
-                <p className="text-sm text-green-600">Add a new customer to the system</p>
+                <p className="font-semibold text-brown-700">Create New Client</p>
+                <p className="text-sm text-brown-600">Add a new customer to the system</p>
               </div>
             </button>
           </div>

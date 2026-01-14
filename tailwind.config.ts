@@ -43,6 +43,15 @@ const config: Config = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
+      keyframes: {
+        'toast-progress': {
+          '0%': { width: '100%' },
+          '100%': { width: '0%' },
+        },
+      },
+      animation: {
+        'toast-progress': 'toast-progress linear forwards',
+      },
     },
   },
   plugins: [],

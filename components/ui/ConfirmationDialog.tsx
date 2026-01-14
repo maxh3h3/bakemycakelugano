@@ -46,29 +46,49 @@ export default function ConfirmationDialog({
 
   const variantStyles = {
     danger: {
-      icon: '⚠️',
-      iconBg: 'bg-rose-100',
-      iconText: 'text-rose-600',
-      buttonBg: 'bg-rose-600 hover:bg-rose-700',
+      iconBg: 'bg-red-100',
+      iconText: 'text-red-600',
+      buttonBg: 'bg-red-600 hover:bg-red-700',
       buttonText: 'text-white',
     },
     warning: {
-      icon: '⚡',
-      iconBg: 'bg-orange-100',
-      iconText: 'text-orange-600',
-      buttonBg: 'bg-orange-600 hover:bg-orange-700',
+      iconBg: 'bg-brown-100',
+      iconText: 'text-brown-600',
+      buttonBg: 'bg-brown-500 hover:bg-brown-600',
       buttonText: 'text-white',
     },
     info: {
-      icon: 'ℹ️',
-      iconBg: 'bg-blue-100',
-      iconText: 'text-blue-600',
-      buttonBg: 'bg-blue-600 hover:bg-blue-700',
+      iconBg: 'bg-brown-100',
+      iconText: 'text-brown-600',
+      buttonBg: 'bg-brown-500 hover:bg-brown-600',
       buttonText: 'text-white',
     },
   };
 
   const style = variantStyles[variant];
+
+  const getIcon = () => {
+    switch (variant) {
+      case 'danger':
+        return (
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        );
+      case 'warning':
+        return (
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'info':
+        return (
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+    }
+  };
 
   return (
     <div 
@@ -88,8 +108,8 @@ export default function ConfirmationDialog({
       <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
         {/* Icon */}
         <div className="p-6 pb-4">
-          <div className={`w-12 h-12 rounded-full ${style.iconBg} flex items-center justify-center mb-4`}>
-            <span className="text-2xl">{style.icon}</span>
+          <div className={`w-12 h-12 rounded-full ${style.iconBg} ${style.iconText} flex items-center justify-center mb-4`}>
+            {getIcon()}
           </div>
 
           {/* Title */}

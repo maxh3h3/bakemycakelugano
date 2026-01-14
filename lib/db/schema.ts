@@ -149,6 +149,29 @@ export const checkoutAttempts = pgTable('checkout_attempts', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Expenses table for accounting
+export const expenses = pgTable('expenses', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  
+  // Expense details
+  date: date('date').notNull(),
+  category: text('category').notNull(), // ingredients, utilities, labor, supplies, marketing, rent, other
+  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+  currency: text('currency').default('CHF').notNull(),
+  
+  // Description and documentation
+  description: text('description').notNull(),
+  notes: text('notes'),
+  receiptUrl: text('receipt_url'), // URL to receipt image in storage
+  
+  // Tracking
+  createdByUserId: uuid('created_by_user_id'), // Admin who logged the expense
+  
+  // Timestamps
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Export types
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
@@ -158,4 +181,6 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
 export type CheckoutAttempt = typeof checkoutAttempts.$inferSelect;
 export type NewCheckoutAttempt = typeof checkoutAttempts.$inferInsert;
+export type Expense = typeof expenses.$inferSelect;
+export type NewExpense = typeof expenses.$inferInsert;
 

@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { generateOrderNumber } from '@/lib/order-number-generator';
 import { validateDeliveryAddress } from '@/lib/schemas/delivery';
 import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
+import { emitNewOrderEvent } from '@/lib/events/production-events';
 
 export async function POST(request: NextRequest) {
   try {
@@ -177,6 +178,20 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to create order items' },
         { status: 500 }
       );
+    }
+
+    // Emit SSE event for real-time production view updates
+    try {
+      emitNewOrderEvent({
+        orderId: (order as any).id,
+        orderNumber: order_number,
+        deliveryDate: delivery_date,
+        itemCount: order_items.length,
+      });
+      console.log('SSE new_order event emitted');
+    } catch (sseError) {
+      console.error('Failed to emit SSE event:', sseError);
+      // Don't throw - order is already created, SSE is not critical
     }
 
     return NextResponse.json(

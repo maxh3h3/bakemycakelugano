@@ -60,9 +60,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Map snake_case DB fields to camelCase TypeScript fields
+    const mappedClients = (data || []).map((client: any) => ({
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      whatsapp: client.whatsapp,
+      instagramHandle: client.instagram_handle,
+      preferredContact: client.preferred_contact,
+      firstOrderDate: client.first_order_date,
+      lastOrderDate: client.last_order_date,
+      totalOrders: client.total_orders,
+      totalSpent: client.total_spent,
+      notes: client.notes,
+      createdAt: client.created_at,
+      updatedAt: client.updated_at,
+    }));
+
     return NextResponse.json({
       success: true,
-      clients: data,
+      clients: mappedClients,
       pagination: {
         page,
         limit,
@@ -158,11 +176,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Map snake_case DB fields to camelCase TypeScript fields
+    const mappedClient = {
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      whatsapp: client.whatsapp,
+      instagramHandle: client.instagram_handle,
+      preferredContact: client.preferred_contact,
+      firstOrderDate: client.first_order_date,
+      lastOrderDate: client.last_order_date,
+      totalOrders: client.total_orders,
+      totalSpent: client.total_spent,
+      notes: client.notes,
+      createdAt: client.created_at,
+      updatedAt: client.updated_at,
+    };
+
     return NextResponse.json(
       {
         success: true,
         message: 'Client created successfully',
-        client,
+        client: mappedClient,
       },
       { status: 201 }
     );

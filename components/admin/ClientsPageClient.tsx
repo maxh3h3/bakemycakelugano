@@ -170,7 +170,7 @@ export default function ClientsPageClient() {
             {/* Create Button */}
             <button
               onClick={() => setIsCreating(true)}
-              className="w-full md:w-auto px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold"
+              className="w-full md:w-auto px-6 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors flex items-center justify-center gap-2 font-semibold"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

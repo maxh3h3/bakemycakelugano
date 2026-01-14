@@ -1,0 +1,179 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { validateSession } from '@/lib/auth/session';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import type { NewExpense } from '@/lib/db/schema';
+
+/**
+ * GET /api/admin/expenses
+ * List expenses with filtering, pagination, and date range support
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Check authentication
+    const isAuthenticated = await validateSession();
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const category = searchParams.get('category') || '';
+    const startDate = searchParams.get('startDate') || '';
+    const endDate = searchParams.get('endDate') || '';
+    const sortBy = searchParams.get('sortBy') || 'date';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+
+    const offset = (page - 1) * limit;
+
+    // Build query
+    let query = (supabaseAdmin as any)
+      .from('expenses')
+      .select('*', { count: 'exact' });
+
+    // Apply category filter
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    // Apply date range filter
+    if (startDate) {
+      query = query.gte('date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('date', endDate);
+    }
+
+    // Apply sorting
+    const ascending = sortOrder === 'asc';
+    query = query.order(sortBy, { ascending });
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching expenses:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch expenses' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      expenses: data,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    });
+  } catch (error) {
+    console.error('Error in GET /api/admin/expenses:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/admin/expenses
+ * Create a new expense entry
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Check authentication
+    const isAuthenticated = await validateSession();
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const {
+      date,
+      category,
+      amount,
+      currency,
+      description,
+      notes,
+      receipt_url,
+      created_by_user_id,
+    } = body;
+
+    // Validate required fields
+    if (!date || !category || !amount || !description) {
+      return NextResponse.json(
+        { success: false, error: 'Date, category, amount, and description are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate amount is positive
+    if (parseFloat(amount) <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'Amount must be greater than 0' },
+        { status: 400 }
+      );
+    }
+
+    // Validate category
+    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'other'];
+    if (!validCategories.includes(category)) {
+      return NextResponse.json(
+        { success: false, error: `Category must be one of: ${validCategories.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Create expense
+    const newExpense = {
+      date,
+      category,
+      amount: parseFloat(amount).toFixed(2),
+      currency: currency || 'CHF',
+      description: description.trim(),
+      notes: notes?.trim() || null,
+      receipt_url: receipt_url || null,
+      created_by_user_id: created_by_user_id || null,
+    };
+
+    const { data: expense, error: createError } = await (supabaseAdmin as any)
+      .from('expenses')
+      .insert(newExpense)
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating expense:', createError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create expense' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Expense created successfully',
+        expense,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Error in POST /api/admin/expenses:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

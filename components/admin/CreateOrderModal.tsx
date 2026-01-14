@@ -439,14 +439,14 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                 
               {/* Selected Client Info */}
               {selectedClient && (
-                <div className="mb-6 p-4 bg-white border-2 border-green-300 rounded-lg shadow-sm">
+                <div className="mb-6 p-4 bg-white border-2 border-brown-300 rounded-lg shadow-sm">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-5 h-5 text-brown-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <p className="font-bold text-green-800 text-lg">
+                          <p className="font-bold text-brown-800 text-lg">
                             {selectedClient.name}
                           </p>
                         </div>
@@ -455,7 +455,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                             {selectedClient.email || selectedClient.phone || selectedClient.instagramHandle}
                           </p>
                           {selectedClient.totalOrders > 0 && (
-                            <div className="flex items-center gap-3 text-sm text-green-700 font-medium mt-2">
+                            <div className="flex items-center gap-3 text-sm text-brown-700 font-medium mt-2">
                               <span className="inline-flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -1066,7 +1066,7 @@ export default function CreateOrderModal({ onClose }: CreateOrderModalProps) {
                 className={`px-8 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2 ${
                   isSubmitting || !isStep3Valid()
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-brown-500 text-white hover:bg-brown-600'
                 }`}
               >
                 {isSubmitting ? (

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { Database } from '@/lib/supabase/types';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import ImageUpload from '@/components/admin/ImageUpload';
+import { getFlavours } from '@/lib/sanity/queries';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -23,6 +25,9 @@ interface ItemFormData {
   staff_notes: string;
   weight_kg: string;
   diameter_cm: string;
+  selected_flavour: string;
+  flavour_name: string;
+  product_image_url: string;
 }
 
 export default function EditOrderItemModal({
@@ -40,10 +45,38 @@ export default function EditOrderItemModal({
     staff_notes: item.staff_notes || '',
     weight_kg: item.weight_kg?.toString() || '',
     diameter_cm: item.diameter_cm?.toString() || '',
+    selected_flavour: item.selected_flavour || '',
+    flavour_name: item.flavour_name || '',
+    product_image_url: item.product_image_url || '',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLastItem, setIsLastItem] = useState(false);
+  const [flavours, setFlavours] = useState<any[]>([]);
+  const [isLoadingFlavours, setIsLoadingFlavours] = useState(true);
+
+  // Fetch flavours and check if this is the last item
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const flavoursData = await getFlavours('en');
+        setFlavours(flavoursData || []);
+        
+        // Check if this is the last item in the order
+        const response = await fetch(`/api/admin/orders/${orderId}/items`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsLastItem(data.items?.length === 1);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoadingFlavours(false);
+      }
+    }
+    fetchData();
+  }, [orderId]);
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -73,6 +106,15 @@ export default function EditOrderItemModal({
     }).format(amount);
   };
 
+  const handleFlavourChange = (flavourId: string) => {
+    const flavour = flavours.find(f => f._id === flavourId);
+    setFormData({
+      ...formData,
+      selected_flavour: flavourId,
+      flavour_name: flavour?.name || '',
+    });
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
 
@@ -93,6 +135,9 @@ export default function EditOrderItemModal({
           staff_notes: formData.staff_notes || null,
           weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : null,
           diameter_cm: formData.diameter_cm ? parseFloat(formData.diameter_cm) : null,
+          selected_flavour: formData.selected_flavour || null,
+          flavour_name: formData.flavour_name || null,
+          product_image_url: formData.product_image_url || null,
         }),
       });
 
@@ -121,6 +166,13 @@ export default function EditOrderItemModal({
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to delete item');
+      }
+
+      const result = await response.json();
+      
+      // Show appropriate message based on whether order was deleted
+      if (result.orderDeleted) {
+        console.log('Last item deleted - entire order removed');
       }
 
       onUpdate();
@@ -240,6 +292,34 @@ export default function EditOrderItemModal({
               />
             </div>
 
+            {/* Flavour */}
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 mb-1">
+                Flavour
+              </label>
+              {isLoadingFlavours ? (
+                <div className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 text-charcoal-500 text-sm">
+                  Loading flavours...
+                </div>
+              ) : (
+                <select
+                  value={formData.selected_flavour || ''}
+                  onChange={(e) => handleFlavourChange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                >
+                  <option value="">No flavour</option>
+                  {flavours.map(flavour => (
+                    <option key={flavour._id} value={flavour._id}>
+                      {flavour.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Empty cell for layout balance */}
+            <div></div>
+
             {/* Weight */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
@@ -269,6 +349,15 @@ export default function EditOrderItemModal({
                 min="0"
                 placeholder="Optional"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Reference Image */}
+            <div className="col-span-2">
+              <ImageUpload
+                value={formData.product_image_url}
+                onChange={(url) => setFormData({ ...formData, product_image_url: url })}
+                label="Reference Image"
               />
             </div>
 
@@ -369,9 +458,13 @@ export default function EditOrderItemModal({
         isOpen={deleteConfirm}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
-        title="Delete Order Item?"
-        message="Are you sure you want to delete this item? This action cannot be undone and will update the order total."
-        confirmText="Delete Item"
+        title={isLastItem ? "Delete Entire Order?" : "Delete Order Item?"}
+        message={
+          isLastItem
+            ? "This is the last item in the order. Deleting it will remove the entire order. This action cannot be undone."
+            : "Are you sure you want to delete this item? This action cannot be undone and will update the order total."
+        }
+        confirmText={isLastItem ? "Delete Order" : "Delete Item"}
         cancelText="Cancel"
         variant="danger"
         isLoading={isDeleting}

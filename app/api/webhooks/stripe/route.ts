@@ -10,6 +10,7 @@ import { sendTelegramMessage } from '@/lib/telegram/client';
 import { generateOrderNotificationMessage } from '@/lib/telegram/templates/order-notification';
 import { generateOrderNumber } from '@/lib/order-number-generator';
 import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
+import { emitNewOrderEvent } from '@/lib/events/production-events';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
@@ -332,6 +333,20 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     } catch (telegramError) {
       console.error('Failed to send Telegram notification:', telegramError);
       // Don't throw - order is already created, Telegram is not critical
+    }
+
+    // Emit SSE event for real-time production view updates
+    try {
+      emitNewOrderEvent({
+        orderId: (order as any).id,
+        orderNumber: (order as any).order_number || (order as any).id.slice(0, 8).toUpperCase(),
+        deliveryDate: metadata.deliveryDate || '',
+        itemCount: orderItemsData.length,
+      });
+      console.log('SSE new_order event emitted');
+    } catch (sseError) {
+      console.error('Failed to emit SSE event:', sseError);
+      // Don't throw - order is already created, SSE is not critical
     }
 
   } catch (error) {

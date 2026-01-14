@@ -1,8 +1,28 @@
+// BUSINESS CONTEXT: Production Order Details Modal for Kitchen Staff
+// Used by: Production team (cooks and decorators)
+// 
+// Workflow: Accessed from ProductionView when clicking on an order. Shows full production
+// details for all items in a single order. Staff update production status as they progress
+// through each stage of the baking/decoration workflow.
+//
+// Business Rules:
+// - Displays all items grouped by order_number for coordinated production
+// - Shows critical production info: weight, diameter, flavour, size (for recipe/assembly)
+// - Highlights customer requests: writing on cake (exact text to write)
+// - Shows decoration notes and staff notes for production guidance
+// - Production status workflow: new → prepared → baked → creamed → decorated → packaged → delivered
+// - Status updates are optimistic (instant UI feedback) with background persistence
+//
+// Data Relationships: order_items (grouped by order_number from orders table)
+// Critical Fields: product_image_url (visual reference), writing_on_cake (customer text),
+//                  production_status (workflow stage), delivery_date (deadline)
+
 'use client';
 
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { Database } from '@/lib/supabase/types';
 import { parseDateFromDB } from '@/lib/utils';
 
@@ -133,40 +153,55 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                     className="bg-white rounded-2xl p-6 border-2 border-cream-300 shadow-md"
                   >
                     {/* Item Header */}
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-6 mb-4">
                       <div className="flex-1">
-                        <h4 className="text-lg font-bold text-charcoal-900 mb-2">
+                        <h4 className="text-2xl font-bold text-charcoal-900 mb-4">
                           {item.quantity}x {item.product_name}
                         </h4>
                         
                         {/* Product Details Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                          {item.size_label && (
-                            <div className="bg-cream-50 rounded-lg px-3 py-2 border border-cream-300">
-                              <p className="text-xs text-charcoal-500">Size</p>
-                              <p className="font-semibold text-charcoal-900">{item.size_label}</p>
-                            </div>
-                          )}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {item.weight_kg && (
-                            <div className="bg-cream-50 rounded-lg px-3 py-2 border border-cream-300">
-                              <p className="text-xs text-charcoal-500">Weight</p>
-                              <p className="font-semibold text-charcoal-900">{item.weight_kg}kg</p>
+                            <div className="bg-orange-50 rounded-xl px-4 py-3 border-2 border-orange-300">
+                              <p className="text-sm font-semibold text-orange-600 uppercase mb-1">Weight</p>
+                              <p className="text-2xl font-bold text-orange-900">{item.weight_kg}kg</p>
                             </div>
                           )}
                           {item.diameter_cm && (
-                            <div className="bg-cream-50 rounded-lg px-3 py-2 border border-cream-300">
-                              <p className="text-xs text-charcoal-500">Diameter</p>
-                              <p className="font-semibold text-charcoal-900">{item.diameter_cm}cm</p>
+                            <div className="bg-blue-50 rounded-xl px-4 py-3 border-2 border-blue-300">
+                              <p className="text-sm font-semibold text-blue-600 uppercase mb-1">Diameter</p>
+                              <p className="text-2xl font-bold text-blue-900">{item.diameter_cm}cm</p>
                             </div>
                           )}
                           {item.flavour_name && (
-                            <div className="bg-cream-50 rounded-lg px-3 py-2 border border-cream-300">
-                              <p className="text-xs text-charcoal-500">Flavour</p>
-                              <p className="font-semibold text-charcoal-900">{item.flavour_name}</p>
+                            <div className="bg-purple-50 rounded-xl px-4 py-3 border-2 border-purple-300">
+                              <p className="text-sm font-semibold text-purple-600 uppercase mb-1">Flavour</p>
+                              <p className="text-2xl font-bold text-purple-900">{item.flavour_name}</p>
+                            </div>
+                          )}
+                          {item.size_label && (
+                            <div className="bg-green-50 rounded-xl px-4 py-3 border-2 border-green-300">
+                              <p className="text-sm font-semibold text-green-600 uppercase mb-1">Size</p>
+                              <p className="text-lg font-bold text-green-900">{item.size_label}</p>
                             </div>
                           )}
                         </div>
                       </div>
+
+                      {/* Product Image Reference */}
+                      {item.product_image_url && (
+                        <div className="flex-shrink-0">
+                          <div className="relative w-64 h-64 rounded-2xl overflow-hidden border-4 border-brown-300 shadow-2xl">
+                            <Image
+                              src={item.product_image_url}
+                              alt={item.product_name}
+                              fill
+                              className="object-cover"
+                              sizes="256px"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Writing on Cake (Customer Request) */}

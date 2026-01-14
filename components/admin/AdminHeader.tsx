@@ -109,6 +109,16 @@ export default function AdminHeader({ role = 'owner' }: AdminHeaderProps) {
                 >
                   {t('analytics')}
                 </Link>
+                <Link
+                  href={`/${locale}/admin/accounting`}
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/accounting')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  Accounting
+                </Link>
               </>
             )}
 
