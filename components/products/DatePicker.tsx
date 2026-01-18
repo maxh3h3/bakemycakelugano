@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { enUS, it } from 'date-fns/locale';
-import { useTranslations } from 'next-intl';
 import 'react-day-picker/dist/style.css';
 
 interface DatePickerProps {
@@ -13,6 +12,9 @@ interface DatePickerProps {
   locale: string;
   required?: boolean;
   minDate?: Date;
+  label?: string;
+  placeholder?: string;
+  showHelperText?: boolean;
 }
 
 const localeMap = {
@@ -26,9 +28,25 @@ export default function DatePicker({
   locale,
   required = false,
   minDate: customMinDate,
+  label,
+  placeholder,
+  showHelperText = true,
 }: DatePickerProps) {
-  const t = useTranslations('productDetail');
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Use custom labels if provided (for admin), otherwise get from translations
+  const getLabel = (key: string) => {
+    if (label && key === 'deliveryDate') return label;
+    if (placeholder && key === 'selectDate') return placeholder;
+    
+    const defaults: Record<string, string> = {
+      deliveryDate: 'Дата доставки',
+      selectDate: 'Выберите дату',
+      datePickerHelp: 'Минимальный срок — 2 дня',
+      leadTime: 'Для обеспечения качества требуется минимум 2 дня',
+    };
+    return defaults[key];
+  };
 
   // Calculate minimum date (2 days from now by default - no same-day or next-day orders for customers)
   // But allow override for admin orders
@@ -53,7 +71,7 @@ export default function DatePicker({
   return (
     <div className="space-y-2">
       <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-        {t('deliveryDate')} {required && <span className="text-red-500">*</span>}
+        {getLabel('deliveryDate')} {required && <span className="text-red-500">*</span>}
       </label>
       
       <div className="relative">
@@ -73,7 +91,7 @@ export default function DatePicker({
           `}
         >
           <span className="font-medium">
-            {selectedDate ? format(selectedDate, 'PPP', { locale: dateLocale }) : t('selectDate')}
+            {selectedDate ? format(selectedDate, 'PPP', { locale: dateLocale }) : getLabel('selectDate')}
           </span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -188,11 +206,11 @@ export default function DatePicker({
                 required={required}
               />
               
-              {/* Helper text - only show if using default 2-day minimum */}
-              {!customMinDate && (
+              {/* Helper text - only show if using default 2-day minimum and showHelperText is true */}
+              {!customMinDate && showHelperText && (
                 <div className="mt-3 pt-3 border-t border-cream-200">
                   <p className="text-xs text-charcoal-600 leading-relaxed">
-                    {t('datePickerHelp')}
+                    {getLabel('datePickerHelp')}
                   </p>
                 </div>
               )}
@@ -201,10 +219,10 @@ export default function DatePicker({
         )}
       </div>
       
-      {/* Info text - only show if using default 2-day minimum */}
-      {!customMinDate && (
+      {/* Info text - only show if using default 2-day minimum and showHelperText is true */}
+      {!customMinDate && showHelperText && (
         <p className="text-xs text-charcoal-600">
-          {t('leadTime')}
+          {getLabel('leadTime')}
         </p>
       )}
     </div>

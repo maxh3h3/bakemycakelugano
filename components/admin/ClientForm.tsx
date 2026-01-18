@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import t from '@/lib/admin-translations-extended';
+import { User, Briefcase } from 'lucide-react';
 
 interface ClientFormProps {
   onSubmit: (data: ClientFormData) => Promise<void>;
@@ -17,6 +19,7 @@ export interface ClientFormData {
   instagram_handle: string;
   preferred_contact: string;
   notes: string;
+  client_type: 'individual' | 'business';
 }
 
 export default function ClientForm({ onSubmit, onCancel, initialData, isLoading = false }: ClientFormProps) {
@@ -29,6 +32,7 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
       instagram_handle: '',
       preferred_contact: '',
       notes: '',
+      client_type: 'individual',
     }
   );
 
@@ -38,12 +42,10 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Имя обязательно';
     }
 
-    if (!formData.email && !formData.phone && !formData.instagram_handle) {
-      newErrors.contact = 'At least one contact method (email, phone, or Instagram) is required';
-    }
+    // Contact details are now optional - removed validation requirement
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -58,17 +60,54 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Client Type */}
+      <div>
+        <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+          Тип клиента <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, client_type: 'individual' })}
+            className={`px-4 py-3 rounded-xl font-semibold transition-all border-2 ${
+              formData.client_type === 'individual'
+                ? 'bg-brown-500 text-white border-brown-500'
+                : 'bg-white text-charcoal-700 border-cream-300 hover:border-brown-300'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <User className="w-5 h-5" />
+              Физическое лицо
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, client_type: 'business' })}
+            className={`px-4 py-3 rounded-xl font-semibold transition-all border-2 ${
+              formData.client_type === 'business'
+                ? 'bg-brown-500 text-white border-brown-500'
+                : 'bg-white text-charcoal-700 border-cream-300 hover:border-brown-300'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Briefcase className="w-5 h-5" />
+              Бизнес
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* Name */}
       <div>
         <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-          Name <span className="text-red-500">*</span>
+          {t.name} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-          placeholder="Full name"
+          placeholder="Полное имя"
         />
         {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
       </div>
@@ -76,16 +115,10 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
       {/* Contact Methods */}
       <div className="border-2 border-cream-200 rounded-xl p-4">
         <p className="text-sm font-semibold text-charcoal-700 mb-4">
-          Contact Methods <span className="text-red-500">*</span>
-          <span className="ml-2 text-xs text-charcoal-500 font-normal">(at least one required)</span>
+          Способы связи
+          <span className="ml-2 text-xs text-charcoal-500 font-normal">(необязательно)</span>
         </p>
         
-        {errors.contact && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{errors.contact}</p>
-          </div>
-        )}
-
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-charcoal-700 mb-2">📧 Email</label>
@@ -137,15 +170,15 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
 
       {/* Preferred Contact */}
       <div>
-        <label className="block text-sm font-semibold text-charcoal-700 mb-2">Preferred Contact Method</label>
+        <label className="block text-sm font-semibold text-charcoal-700 mb-2">{t.preferredContact}</label>
         <select
           value={formData.preferred_contact}
           onChange={(e) => setFormData({ ...formData, preferred_contact: e.target.value })}
           className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
         >
-          <option value="">Auto-detect from orders</option>
+          <option value="">Автоопределение из заказов</option>
           <option value="email">📧 Email</option>
-          <option value="phone">📞 Phone</option>
+          <option value="phone">📞 Телефон</option>
           <option value="whatsapp">💬 WhatsApp</option>
           <option value="instagram">📸 Instagram</option>
         </select>
@@ -153,13 +186,13 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-semibold text-charcoal-700 mb-2">Internal Notes</label>
+        <label className="block text-sm font-semibold text-charcoal-700 mb-2">Внутренние примечания</label>
         <textarea
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={4}
           className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-          placeholder="Add any internal notes about this client..."
+          placeholder="Добавьте любые внутренние примечания о клиенте..."
         />
       </div>
 
@@ -170,7 +203,7 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
           disabled={isLoading}
           className="flex-1 px-6 py-3 bg-brown-500 text-white rounded-xl font-semibold hover:bg-brown-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Saving...' : initialData ? 'Update Client' : 'Create Client'}
+          {isLoading ? t.saving : initialData ? 'Обновить клиента' : 'Создать клиента'}
         </button>
         <button
           type="button"
@@ -178,7 +211,7 @@ export default function ClientForm({ onSubmit, onCancel, initialData, isLoading 
           disabled={isLoading}
           className="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-400 transition-colors disabled:opacity-50"
         >
-          Cancel
+          {t.cancel}
         </button>
       </div>
     </form>

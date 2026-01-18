@@ -3,6 +3,19 @@
 import { useState, useEffect } from 'react';
 import type { Client } from '@/lib/db/schema';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import DatePicker from '@/components/products/DatePicker';
+import t from '@/lib/admin-translations-extended';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Briefcase, X, FileDown, Download } from 'lucide-react';
+
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: string;
+  subtotal: string;
+}
 
 interface Order {
   id: string;
@@ -12,6 +25,7 @@ interface Order {
   created_at: string;
   paid: boolean;
   channel: string;
+  order_items?: OrderItem[];
 }
 
 interface ClientDetailModalProps {
@@ -37,6 +51,12 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  
+  // Invoice generation state
+  const [showInvoiceGenerator, setShowInvoiceGenerator] = useState(false);
+  const [invoiceFromDate, setInvoiceFromDate] = useState<Date | undefined>();
+  const [invoiceToDate, setInvoiceToDate] = useState<Date | undefined>();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [formData, setFormData] = useState({
     name: client.name,
     email: client.email || '',
@@ -45,6 +65,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
     instagram_handle: client.instagramHandle || '',
     preferred_contact: client.preferredContact || '',
     notes: client.notes || '',
+    client_type: client.clientType || 'individual',
   });
 
   // Fetch orders for this client
@@ -106,11 +127,11 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
         onClose();
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to delete client');
+        alert(error.error || t.failedToDeleteClient);
       }
     } catch (error) {
       console.error('Error deleting client:', error);
-      alert('Failed to delete client');
+      alert(t.failedToDeleteClient);
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -141,64 +162,393 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
     ? (parseFloat(client.totalSpent || '0') / orders.length).toFixed(2)
     : '0.00';
 
+  // Filter orders by date range for invoice
+  const getFilteredOrders = () => {
+    if (!invoiceFromDate && !invoiceToDate) return orders;
+    
+    return orders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      const from = invoiceFromDate ? new Date(invoiceFromDate) : new Date(0);
+      const to = invoiceToDate ? new Date(invoiceToDate) : new Date();
+      
+      // Set time to start/end of day for comparison
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      
+      return orderDate >= from && orderDate <= to;
+    });
+  };
+
+  const generateInvoicePDF = async () => {
+    setIsGeneratingPDF(true);
+    
+    try {
+      const doc = new jsPDF();
+      const filteredOrders = getFilteredOrders();
+      
+      // Function to safely encode text for PDF (transliterate Cyrillic if needed)
+      const safeText = (text: string) => {
+        // Simple transliteration map for common Cyrillic characters
+        const cyrillicMap: { [key: string]: string } = {
+          'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+          'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+          'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+          'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch',
+          'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+          'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo',
+          'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M',
+          'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U',
+          'Ф': 'F', 'Х': 'H', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Sch',
+          'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
+        };
+        
+        return text.split('').map(char => cyrillicMap[char] || char).join('');
+      };
+      
+      // Load and add logo at top
+      const logoImg = new Image();
+      logoImg.src = '/images/icons/logo_white_back.png';
+      
+      await new Promise<void>((resolve) => {
+        logoImg.onload = () => {
+          try {
+            // Add cream background to entire page
+            doc.setFillColor(253, 252, 251); // cream-50
+            doc.rect(0, 0, 210, 297, 'F');
+            
+            // Add logo at top left
+            const logoSize = 25;
+            doc.addImage(logoImg, 'PNG', 15, 12, logoSize, logoSize);
+            
+            // Add branding next to logo with elegant serif font
+            doc.setFontSize(28);
+            doc.setFont('times', 'bold');
+            doc.setTextColor(139, 107, 71); // brown-500
+            doc.text('Bake My Cake', 45, 25);
+            
+            doc.setFontSize(11);
+            doc.setFont('times', 'italic');
+            doc.setTextColor(83, 61, 41); // brown-700
+            doc.text('Pasticceria Artigianale', 45, 32);
+            
+            // Decorative line under header
+            doc.setDrawColor(237, 215, 184); // cream-300
+            doc.setLineWidth(1);
+            doc.line(15, 42, 195, 42);
+            
+            resolve();
+          } catch (error) {
+            console.error('Error adding logo:', error);
+            resolve();
+          }
+        };
+        logoImg.onerror = () => {
+          // Fallback: render without logo
+          doc.setFillColor(253, 252, 251); // cream-50
+          doc.rect(0, 0, 210, 297, 'F');
+          
+          doc.setFontSize(28);
+          doc.setFont('times', 'bold');
+          doc.setTextColor(139, 107, 71);
+          doc.text('Bake My Cake', 15, 25);
+          
+          doc.setFontSize(11);
+          doc.setFont('times', 'italic');
+          doc.setTextColor(83, 61, 41);
+          doc.text('Pasticceria Artigianale', 15, 32);
+          
+          doc.setDrawColor(237, 215, 184);
+          doc.setLineWidth(1);
+          doc.line(15, 42, 195, 42);
+          
+          resolve();
+        };
+      });
+      
+      // Invoice title in a soft rounded box
+      doc.setFillColor(245, 230, 211); // cream-200
+      doc.roundedRect(15, 50, 50, 12, 3, 3, 'F');
+      doc.setFontSize(16);
+      doc.setFont('times', 'bold');
+      doc.setTextColor(83, 61, 41); // brown-700 for better contrast
+      doc.text('Fattura', 40, 58.5, { align: 'center' });
+      
+      // Client info box (left side) - soft cream background
+      doc.setFillColor(249, 246, 241); // cream-100
+      doc.roundedRect(15, 68, 85, 30, 4, 4, 'F');
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 107, 71); // brown-500
+      doc.text('Cliente', 20, 75);
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(44, 44, 44); // charcoal-900
+      doc.text(safeText(client.name), 20, 82);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(74, 74, 74); // charcoal-700
+      let yPos = 88;
+      if (client.email) {
+        doc.text(safeText(client.email), 20, yPos);
+        yPos += 5;
+      }
+      if (client.phone) {
+        doc.text(safeText(client.phone), 20, yPos);
+      }
+      
+      // Invoice details box (right side) - soft cream background
+      doc.setFillColor(249, 246, 241); // cream-100
+      doc.roundedRect(110, 68, 85, 30, 4, 4, 'F');
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 107, 71); // brown-500
+      doc.text('Dettagli Fattura', 115, 75);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(44, 44, 44);
+      
+      const fromDateStr = invoiceFromDate ? invoiceFromDate.toLocaleDateString('it-IT') : 'Inizio';
+      const toDateStr = invoiceToDate ? invoiceToDate.toLocaleDateString('it-IT') : 'Oggi';
+      doc.text(`Periodo: ${fromDateStr} - ${toDateStr}`, 115, 82);
+      
+      const invoiceNum = `${new Date().getFullYear()}-${client.id.slice(0, 8)}`;
+      doc.text(`N. Fattura: ${invoiceNum}`, 115, 88);
+      doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 115, 94);
+      
+      // Build table data with order items
+      const tableData: any[] = [];
+      
+      filteredOrders.forEach(order => {
+        // Add order header row
+        const orderNum = order.order_number || order.id.slice(0, 8);
+        const deliveryDate = order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('it-IT') : '-';
+        
+        tableData.push([
+          {
+            content: `Ordine: ${orderNum} | Consegna: ${deliveryDate}`,
+            colSpan: 4,
+            styles: { 
+              fillColor: [245, 230, 211], // cream-200
+              textColor: [83, 61, 41], // brown-700 for better contrast
+              fontStyle: 'bold',
+              fontSize: 10,
+              cellPadding: 4
+            }
+          }
+        ]);
+        
+        // Add order items
+        if (order.order_items && order.order_items.length > 0) {
+          order.order_items.forEach(item => {
+            tableData.push([
+              safeText(item.product_name),
+              item.quantity.toString(),
+              `CHF ${parseFloat(item.unit_price).toFixed(2)}`,
+              `CHF ${parseFloat(item.subtotal).toFixed(2)}`
+            ]);
+          });
+        } else {
+          // Fallback if no items (shouldn't happen)
+          tableData.push([
+            'Ordine completo',
+            '1',
+            `CHF ${parseFloat(order.total_amount).toFixed(2)}`,
+            `CHF ${parseFloat(order.total_amount).toFixed(2)}`
+          ]);
+        }
+      });
+      
+      // Calculate table dimensions for perfect centering
+      const tableWidth = 80 + 20 + 35 + 35; // 170mm total
+      const pageWidth = 210; // A4 width in mm
+      const tableMarginX = (pageWidth - tableWidth) / 2; // Center horizontally
+      
+      autoTable(doc, {
+        startY: 108,
+        margin: { left: tableMarginX, right: tableMarginX },
+        head: [['Prodotto', 'Qta', 'Prezzo Unit.', 'Subtotale']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [139, 107, 71], // brown-500
+          textColor: [253, 252, 251], // cream-50
+          fontStyle: 'bold',
+          fontSize: 11,
+          cellPadding: 5
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 5,
+          lineColor: [237, 215, 184], // cream-300
+          lineWidth: 0.5
+        },
+        alternateRowStyles: {
+          fillColor: [253, 252, 251] // cream-50
+        },
+        bodyStyles: {
+          textColor: [44, 44, 44] // charcoal-900
+        },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 35, halign: 'right' },
+          3: { cellWidth: 35, halign: 'right', fontStyle: 'bold' }
+        }
+      });
+      
+      // Calculate totals
+      const totalAmount = filteredOrders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
+      
+      const finalY = (doc as any).lastAutoTable?.finalY || 150;
+      
+      // Draw totals box - perfectly aligned with table
+      const boxStartY = finalY + 12;
+      const boxWidth = 80; // Wider for better proportion
+      const boxHeight = 18;
+      // Align box to right edge of table
+      const boxX = tableMarginX + tableWidth - boxWidth;
+      
+      // Gradient-like effect with nested rounded rectangles
+      doc.setFillColor(139, 107, 71); // brown-500
+      doc.roundedRect(boxX, boxStartY, boxWidth, boxHeight, 4, 4, 'F');
+      
+      // Inner lighter box for depth
+      doc.setFillColor(166, 138, 107); // brown-400
+      doc.roundedRect(boxX + 1, boxStartY + 1, boxWidth - 2, boxHeight - 2, 3, 3, 'F');
+      
+      // Totale label
+      doc.setFont('times', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(253, 252, 251); // cream-50
+      doc.text('Totale:', boxX + 6, boxStartY + 12);
+      
+      // Totale amount
+      doc.setFontSize(14);
+      doc.text(`CHF ${totalAmount.toFixed(2)}`, boxX + boxWidth - 6, boxStartY + 12, { align: 'right' });
+      
+      // Footer with logo
+      const footerY = 270;
+      
+      // Decorative line above footer
+      doc.setDrawColor(237, 215, 184); // cream-300
+      doc.setLineWidth(0.5);
+      doc.line(15, footerY - 5, 195, footerY - 5);
+      
+      // Thank you message
+      doc.setFontSize(11);
+      doc.setFont('times', 'italic');
+      doc.setTextColor(139, 107, 71); // brown-500
+      doc.text('Grazie per la vostra fiducia!', 105, footerY + 3, { align: 'center' });
+      
+      // Add small logo at bottom center
+      const logoWidth = 20;
+      const logoHeight = 20;
+      const logoX = (210 - logoWidth) / 2; // Center on A4 page (210mm width)
+      
+      try {
+        doc.addImage(logoImg, 'PNG', logoX, footerY + 8, logoWidth, logoHeight);
+      } catch (error) {
+        console.error('Could not add footer logo:', error);
+      }
+      
+      // Footer text below logo
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(107, 107, 107); // charcoal-500
+      doc.text('Bake My Cake - Pasticceria Artigianale', 105, footerY + 32, { align: 'center' });
+      
+      // Save PDF
+      const fileName = `Fattura_${safeText(client.name).replace(/\s+/g, '_')}_${fromDateStr.replace(/\//g, '-')}_${toDateStr.replace(/\//g, '-')}.pdf`;
+      doc.save(fileName);
+      
+      setShowInvoiceGenerator(false);
+      setIsGeneratingPDF(false);
+    } catch (error) {
+      console.error('Error in PDF generation:', error);
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-cream-50 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-brown-500 to-brown-600 text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-brown-500 to-brown-600 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{getPreferredContactIcon(client.preferredContact)}</span>
-            <div>
-              <h2 className="text-2xl font-heading font-bold">{client.name}</h2>
-              <p className="text-sm text-white/80">Client Details</p>
-            </div>
+            <h2 className="text-2xl font-heading font-bold text-white">
+              {client.name}
+            </h2>
+            {client.clientType === 'business' && (
+              <span className="px-3 py-1 bg-amber-400 text-charcoal-900 text-xs font-bold rounded-full flex items-center gap-1">
+                <Briefcase className="w-3 h-3" />
+                Бизнес
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            className="text-white hover:text-cream-200 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-cream-50 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-brown-600">{client.totalOrders || 0}</p>
-              <p className="text-sm text-charcoal-600">Total Orders</p>
-            </div>
-            <div className="bg-cream-50 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-brown-600">CHF {parseFloat(client.totalSpent || '0').toFixed(2)}</p>
-              <p className="text-sm text-charcoal-600">Total Spent</p>
-            </div>
-            <div className="bg-cream-50 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-brown-600">CHF {averageOrderValue}</p>
-              <p className="text-sm text-charcoal-600">Avg. Order Value</p>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="bg-white border-2 border-cream-200 rounded-xl p-6 mb-6">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Client Details */}
+          <div className="bg-white border-2 border-cream-200 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-heading font-bold text-charcoal-900">Contact Information</h3>
+              <h3 className="text-lg font-heading font-bold text-charcoal-900">Информация о клиенте</h3>
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors text-sm"
+                  className="px-4 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors text-sm font-semibold"
                 >
-                  Edit
+                  {t.edit}
                 </button>
               )}
             </div>
 
             {isEditing ? (
               <div className="space-y-4">
+                {/* Client Type */}
                 <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">Name</label>
+                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">Тип клиента</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, client_type: 'individual' })}
+                      className={`px-4 py-2 rounded-lg font-semibold transition-all border-2 ${
+                        formData.client_type === 'individual'
+                          ? 'bg-brown-500 text-white border-brown-500'
+                          : 'bg-white text-charcoal-700 border-cream-300 hover:border-brown-300'
+                      }`}
+                    >
+                      Физ. лицо
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, client_type: 'business' })}
+                      className={`px-4 py-2 rounded-lg font-semibold transition-all border-2 ${
+                        formData.client_type === 'business'
+                          ? 'bg-brown-500 text-white border-brown-500'
+                          : 'bg-white text-charcoal-700 border-cream-300 hover:border-brown-300'
+                      }`}
+                    >
+                      Бизнес
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                    {t.name}
+                  </label>
                   <input
                     type="text"
                     value={formData.name}
@@ -208,7 +558,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">Email</label>
+                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">{t.email}</label>
                     <input
                       type="email"
                       value={formData.email}
@@ -217,7 +567,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">Phone</label>
+                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">{t.phone}</label>
                     <input
                       type="tel"
                       value={formData.phone}
@@ -248,26 +598,26 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">Preferred Contact</label>
+                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">{t.preferredContact}</label>
                   <select
                     value={formData.preferred_contact}
                     onChange={(e) => setFormData({ ...formData, preferred_contact: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                   >
-                    <option value="">Not Set</option>
+                    <option value="">Не установлено</option>
                     <option value="email">📧 Email</option>
-                    <option value="phone">📞 Phone</option>
+                    <option value="phone">📞 Телефон</option>
                     <option value="whatsapp">💬 WhatsApp</option>
                     <option value="instagram">📸 Instagram</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">Notes</label>
+                  <label className="block text-sm font-semibold text-charcoal-700 mb-2">{t.notes}</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
-                    placeholder="Internal notes about this client..."
+                    placeholder="Внутренние примечания о клиенте..."
                     className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                   />
                 </div>
@@ -277,7 +627,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                     disabled={isSaving}
                     className="flex-1 px-4 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors disabled:opacity-50"
                   >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? t.saving : t.save}
                   </button>
                   <button
                     onClick={() => {
@@ -290,11 +640,12 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                         instagram_handle: client.instagramHandle || '',
                         preferred_contact: client.preferredContact || '',
                         notes: client.notes || '',
+                        client_type: client.clientType || 'individual',
                       });
                     }}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                   >
-                    Cancel
+                    {t.cancel}
                   </button>
                 </div>
               </div>
@@ -306,12 +657,12 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                 {client.instagramHandle && <p className="flex items-center gap-2">📸 @{client.instagramHandle}</p>}
                 {client.preferredContact && (
                   <p className="text-sm text-charcoal-500">
-                    Preferred: {getPreferredContactIcon(client.preferredContact)} {client.preferredContact}
+                    Предпочтительный: {getPreferredContactIcon(client.preferredContact)} {client.preferredContact}
                   </p>
                 )}
                 {client.notes && (
                   <div className="mt-4 pt-4 border-t border-cream-200">
-                    <p className="text-sm font-semibold text-charcoal-700 mb-1">Notes:</p>
+                    <p className="text-sm font-semibold text-charcoal-700 mb-1">{t.notes}:</p>
                     <p className="text-sm text-charcoal-600">{client.notes}</p>
                   </div>
                 )}
@@ -321,72 +672,124 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
 
           {/* Order History */}
           <div className="bg-white border-2 border-cream-200 rounded-xl p-6">
-            <h3 className="text-lg font-heading font-bold text-charcoal-900 mb-4">Order History</h3>
-            
-            {isLoadingOrders ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown-500 mx-auto"></div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-heading font-bold text-charcoal-900">История заказов</h3>
+              
+              {/* Invoice Generator Button (only for business clients) */}
+              {client.clientType === 'business' && orders.length > 0 && (
+                <button
+                  onClick={() => setShowInvoiceGenerator(!showInvoiceGenerator)}
+                  className="flex items-center gap-2 px-4 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors text-sm font-semibold"
+                >
+                  <FileDown className="w-4 h-4" />
+                  Genera Fattura
+                </button>
+              )}
+            </div>
+
+            {/* Invoice Date Range Selector */}
+            {showInvoiceGenerator && (
+              <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                <h4 className="text-sm font-semibold text-charcoal-900 mb-3">Seleziona periodo per la fattura</h4>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <DatePicker
+                    selectedDate={invoiceFromDate}
+                    onDateChange={setInvoiceFromDate}
+                    locale="it"
+                    minDate={new Date(2020, 0, 1)}
+                    label="Дата начала"
+                    placeholder="Выберите дату начала"
+                    showHelperText={false}
+                  />
+                  <DatePicker
+                    selectedDate={invoiceToDate}
+                    onDateChange={setInvoiceToDate}
+                    locale="it"
+                    minDate={invoiceFromDate || new Date(2020, 0, 1)}
+                    label="Дата окончания"
+                    placeholder="Выберите дату окончания"
+                    showHelperText={false}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={generateInvoicePDF}
+                    disabled={isGeneratingPDF || !invoiceFromDate || !invoiceToDate}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-brown-500 text-white rounded-lg hover:bg-brown-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    {isGeneratingPDF ? 'Generazione...' : 'Scarica PDF'}
+                  </button>
+                  <button
+                    onClick={() => setShowInvoiceGenerator(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  >
+                    Annulla
+                  </button>
+                </div>
               </div>
+            )}
+
+            {isLoadingOrders ? (
+              <p className="text-charcoal-500 text-center py-8">Загрузка заказов...</p>
             ) : orders.length === 0 ? (
-              <p className="text-center text-charcoal-500 py-8">No orders yet</p>
+              <p className="text-charcoal-500 text-center py-8">Нет заказов</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-cream-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-charcoal-700">Order #</th>
-                      <th className="px-4 py-2 text-left font-semibold text-charcoal-700">Date</th>
-                      <th className="px-4 py-2 text-left font-semibold text-charcoal-700">Delivery</th>
-                      <th className="px-4 py-2 text-center font-semibold text-charcoal-700">Payment</th>
-                      <th className="px-4 py-2 text-right font-semibold text-charcoal-700">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-cream-200">
-                    {orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-cream-50">
-                        <td className="px-4 py-3 font-medium text-brown-600">
-                          {order.order_number || order.id.slice(0, 8)}
-                        </td>
-                        <td className="px-4 py-3 text-charcoal-600">{formatDate(order.created_at)}</td>
-                        <td className="px-4 py-3 text-charcoal-600">
-                          {order.delivery_date ? formatDate(order.delivery_date) : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
-                            order.paid 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-orange-100 text-orange-700'
-                          }`}>
-                            {order.paid ? 'Paid' : 'Unpaid'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold text-charcoal-900">
-                          CHF {parseFloat(order.total_amount).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {orders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 bg-cream-50 rounded-lg border border-cream-200 hover:border-brown-300 transition-colors"
+                  >
+                    <div>
+                      <p className="font-semibold text-charcoal-900">
+                        {order.order_number || `#${order.id.slice(0, 8)}`}
+                      </p>
+                      <p className="text-sm text-charcoal-600">
+                        {order.delivery_date
+                          ? new Date(order.delivery_date).toLocaleDateString('ru-RU')
+                          : new Date(order.created_at).toLocaleDateString('ru-RU')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-brown-600">CHF {parseFloat(order.total_amount).toFixed(2)}</p>
+                      <p className={`text-sm ${order.paid ? 'text-green-600' : 'text-orange-600'}`}>
+                        {order.paid ? 'Оплачено' : 'Не оплачено'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white border-2 border-cream-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-charcoal-600 mb-1">Всего заказов</p>
+              <p className="text-2xl font-bold text-brown-600">{client.totalOrders}</p>
+            </div>
+            <div className="bg-white border-2 border-cream-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-charcoal-600 mb-1">{t.totalSpent}</p>
+              <p className="text-2xl font-bold text-brown-600">CHF {parseFloat(client.totalSpent || '0').toFixed(2)}</p>
+            </div>
+            <div className="bg-white border-2 border-cream-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-charcoal-600 mb-1">Первый заказ</p>
+              <p className="text-lg font-semibold text-charcoal-900">
+                {client.firstOrderDate ? new Date(client.firstOrderDate).toLocaleDateString('ru-RU') : '-'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-cream-50 border-t-2 border-cream-200 px-6 py-4 flex justify-between items-center">
+        {/* Footer - Delete Button */}
+        <div className="bg-cream-100 px-6 py-4 border-t-2 border-cream-200">
           <button
-            onClick={handleDeleteClick}
-            disabled={isDeleting || !!(client.totalOrders && client.totalOrders > 0)}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title={client.totalOrders && client.totalOrders > 0 ? 'Cannot delete client with orders' : 'Delete client'}
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isDeleting}
+            className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
           >
-            Delete Client
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-charcoal-700 text-white rounded-lg hover:bg-charcoal-800 transition-colors"
-          >
-            Close
+            {isDeleting ? t.deleting : 'Удалить клиента'}
           </button>
         </div>
       </div>
@@ -394,14 +797,18 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={showDeleteConfirm}
+        title={t.confirmDelete}
+        message="Это действие нельзя отменить. Клиент будет удален навсегда."
+        confirmText={t.delete}
+        cancelText={t.cancel}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Client"
-        message={`Are you sure you want to delete ${client.name}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-        isLoading={isDeleting}
+        onConfirm={async () => {
+          setIsDeleting(true);
+          await onDelete();
+          setIsDeleting(false);
+          setShowDeleteConfirm(false);
+          onClose();
+        }}
       />
     </div>
   );

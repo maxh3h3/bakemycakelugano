@@ -1,20 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import type { Database } from '@/lib/supabase/types';
 import { formatDeliveryAddress } from '@/lib/schemas/delivery';
 import { parseDateFromDB } from '@/lib/utils';
-import EditOrderItemModal from './EditOrderItemModal';
-import AddOrderItemModal from './AddOrderItemModal';
+import EditOrderItemModal from '@/components/admin/EditOrderItemModal';
+import AddOrderItemModal from '@/components/admin/AddOrderItemModal';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import t from '@/lib/admin-translations-extended';
+import { Edit, ChevronDown, Check, Trash2, Pencil, Paintbrush, FileText, Plus } from 'lucide-react';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
+type Client = Database['public']['Tables']['clients']['Row'];
 
 interface OrderWithItems extends Order {
   order_items: OrderItem[];
+  client: Client | null;
 }
 
 interface OrderCardProps {
@@ -58,11 +62,28 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
     orderId: null,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+  const paymentSelectorRef = useRef<HTMLDivElement>(null);
 
   // Sync local state when prop changes (e.g., from router.refresh())
   useEffect(() => {
     setOrder(initialOrder);
   }, [initialOrder]);
+
+  // Close payment selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (paymentSelectorRef.current && !paymentSelectorRef.current.contains(event.target as Node)) {
+        setShowPaymentSelector(false);
+      }
+    };
+
+    if (showPaymentSelector) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showPaymentSelector]);
 
   const formatCurrency = (amount: number, currency: string = 'CHF') => {
     return new Intl.NumberFormat('de-CH', {
@@ -163,7 +184,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
       onUpdate();
     } catch (error) {
       console.error('Error deleting order:', error);
-      alert(error instanceof Error ? error.message : 'Failed to delete order. Please try again.');
+      alert(error instanceof Error ? error.message : t.failedToDeleteOrder + '. ' + t.tryAgain);
       setIsDeleting(false);
       setDeleteConfirm({ isOpen: false, orderId: null });
     }
@@ -179,9 +200,69 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
     onUpdate();
   };
 
+  const handlePaymentStatusChange = async (newPaidStatus: string) => {
+    if (newPaidStatus === '') return;
+    
+    const isPaid = newPaidStatus === 'paid';
+    
+    // If marking as unpaid, we'll just update the order
+    // If marking as paid, we'll call the mark-paid endpoint which creates revenue transaction
+    
+    setIsMarkingPaid(true);
+    setShowPaymentSelector(false);
+
+    try {
+      if (isPaid) {
+        // Call mark-paid endpoint (creates revenue transaction)
+        const response = await fetch(`/api/admin/orders/${order.id}/mark-paid`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_method: 'cash' }), // Default to cash
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to mark order as paid');
+        }
+
+        // Update local state optimistically
+        setOrder(prev => ({
+          ...prev,
+          paid: true,
+          payment_method: 'cash',
+        }));
+      } else {
+        // Mark as unpaid (just update order, don't create revenue transaction)
+        const response = await fetch(`/api/admin/orders/${order.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paid: false }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update payment status');
+        }
+
+        // Update local state optimistically
+        setOrder(prev => ({
+          ...prev,
+          paid: false,
+        }));
+      }
+
+      // Refresh in background
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      alert(error instanceof Error ? error.message : 'Failed to update payment status. Please try again.');
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 overflow-hidden transition-all duration-300 hover:shadow-lg">
+      <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 transition-all duration-300 hover:shadow-lg">
         {/* Order Header */}
         <div className="relative p-6">
           <div className="flex items-stretch gap-4">
@@ -200,11 +281,11 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
 
             {/* Customer */}
             <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 flex-1 min-h-[100px] flex flex-col justify-between">
-              <p className="text-xs font-semibold text-purple-600 uppercase mb-1">Customer</p>
+              <p className="text-xs font-semibold text-purple-600 uppercase mb-1">{t.customer}</p>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="font-bold text-charcoal-900">{order.customer_name}</p>
-                  {order.client_id && (
+                  <p className="font-bold text-charcoal-900">{order.client?.name || 'Unknown Customer'}</p>
+                  {order.client && order.client.total_orders && order.client.total_orders > 1 && (
                     <span
                       className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold"
                       title="Returning customer"
@@ -213,31 +294,63 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-purple-700">{order.customer_email}</p>
+                <p className="text-xs text-purple-700">{order.client?.email || order.client?.phone || 'No contact info'}</p>
               </div>
             </div>
 
             {/* Total & Payment */}
-            <div className={`rounded-xl p-4 border-2 flex-1 min-h-[100px] flex flex-col justify-between ${
-              order.paid 
-                ? 'bg-green-50 border-green-200' 
-                : 'bg-rose-50 border-rose-200'
-            }`}>
+            <div 
+              ref={paymentSelectorRef}
+              className={`rounded-xl p-4 border-2 flex-1 min-h-[100px] flex flex-col justify-between relative ${
+                order.paid 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-rose-50 border-rose-200'
+              }`}
+            >
               <p className={`text-xs font-semibold uppercase mb-1 ${
                 order.paid ? 'text-green-600' : 'text-rose-600'
-              }`}>Total</p>
-              <div>
+              }`}>{t.total}</p>
+              <div 
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => !isMarkingPaid && setShowPaymentSelector(!showPaymentSelector)}
+              >
                 <p className={`text-xl font-bold ${
                   order.paid ? 'text-green-700' : 'text-rose-700'
                 }`}>
-                  {formatCurrency(order.total_amount, order.currency)}
+                  {isMarkingPaid ? 'Обработка...' : formatCurrency(order.total_amount, order.currency)}
                 </p>
               </div>
+
+              {/* Payment Status Selector - Above */}
+              {showPaymentSelector && !isMarkingPaid && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 z-[9999] bg-white rounded-lg shadow-2xl border-2 border-cream-300 overflow-hidden">
+                  <button
+                    onClick={() => handlePaymentStatusChange('paid')}
+                    className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-2 border-b border-cream-200 ${
+                      order.paid 
+                        ? 'bg-green-100 text-green-800 font-semibold' 
+                        : 'hover:bg-green-50 text-charcoal-900'
+                    }`}
+                  >
+                    <span className="text-sm">Оплачено</span>
+                  </button>
+                  <button
+                    onClick={() => handlePaymentStatusChange('unpaid')}
+                    className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-2 ${
+                      !order.paid 
+                        ? 'bg-rose-100 text-rose-800 font-semibold' 
+                        : 'hover:bg-rose-50 text-charcoal-900'
+                    }`}
+                  >
+                    <span className="text-sm">Не оплачено</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Delivery Type */}
             <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200 flex-1 min-h-[100px] flex flex-col justify-between">
-              <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Delivery</p>
+              <p className="text-xs font-semibold text-blue-600 uppercase mb-1">{t.delivery}</p>
               <p className="font-bold text-charcoal-900 capitalize">
                 {order.delivery_type || 'N/A'}
               </p>
@@ -255,16 +368,9 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     startEditingOrder();
                   }}
                   className="p-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
-                  title="Edit Order"
+                  title={t.editOrder}
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
+                  <Edit className="w-5 h-5" />
                 </button>
               )}
 
@@ -272,23 +378,13 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
               <button
                 onClick={toggleExpansion}
                 className="p-3 rounded-full bg-cream-100 text-charcoal-700 hover:bg-cream-200 transition-all"
-                title={isExpanded ? "Collapse" : "Expand"}
+                title={isExpanded ? "Свернуть" : "Развернуть"}
               >
-                <svg
+                <ChevronDown
                   className={`w-5 h-5 transition-transform duration-300 ${
                     isExpanded ? 'rotate-180' : ''
                   }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
             </div>
           </div>
@@ -296,8 +392,8 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
 
         {/* Expanded Order Details */}
         <div
-          className={`border-t-2 border-cream-200 bg-cream-50/30 overflow-hidden transition-all duration-300 ease-in-out ${
-            isExpanded ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+          className={`border-t-2 border-cream-200 bg-cream-50/30 transition-all duration-300 ease-in-out ${
+            isExpanded ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
           }`}
         >
           <div className="p-6">
@@ -311,18 +407,11 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     className="flex-1 px-6 py-3 rounded-full bg-brown-500 text-white font-semibold hover:bg-brown-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
                   >
                     {isSavingOrder ? (
-                      'Saving...'
+                      t.saving
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        Save Changes
+                        <Check className="w-5 h-5" />
+                        {t.save}
                       </>
                     )}
                   </button>
@@ -331,22 +420,15 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     disabled={isSavingOrder}
                     className="flex-1 px-6 py-3 rounded-full border-2 border-cream-300 bg-white text-charcoal-700 font-semibold hover:bg-cream-50 transition-all disabled:opacity-50"
                   >
-                    Cancel
+                    {t.cancel}
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
                     disabled={isSavingOrder}
                     className="flex-1 px-6 py-3 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Delete Order
+                    <Trash2 className="w-5 h-5" />
+                    {t.deleteOrder}
                   </button>
                 </div>
               </div>
@@ -355,7 +437,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
             {/* Delivery Details Section */}
             <div className="mb-6">
               <h4 className="font-heading font-semibold text-brown-500 mb-3">
-                Delivery Information
+                Информация о доставке
               </h4>
               {isEditingOrder ? (
                 // EDIT MODE
@@ -364,7 +446,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     {/* Delivery Type */}
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                        Delivery Type
+                        {t.deliveryType}
                       </label>
                       <select
                         value={editFormData.delivery_type}
@@ -378,15 +460,15 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         }}
                         className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                       >
-                        <option value="delivery">Delivery</option>
-                        <option value="pickup">Pickup</option>
+                        <option value="delivery">{t.delivery}</option>
+                        <option value="pickup">{t.pickup}</option>
                       </select>
                     </div>
 
                     {/* Delivery Date */}
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                        Delivery Date
+                        {t.deliveryDate}
                       </label>
                       <input
                         type="date"
@@ -401,7 +483,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     {/* Delivery Time */}
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                        Delivery Time
+                        {t.deliveryTime}
                       </label>
                       <input
                         type="text"
@@ -414,47 +496,11 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                       />
                     </div>
 
-                    {/* Payment Status */}
-                    <div className="flex items-center pt-6">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={editFormData.paid}
-                          onChange={(e) =>
-                            setEditFormData({ ...editFormData, paid: e.target.checked })
-                          }
-                          className="w-5 h-5 rounded border-2 border-cream-300 text-brown-500 focus:ring-brown-500 focus:ring-2"
-                        />
-                        <span className="ml-2 text-sm font-medium text-charcoal-700">
-                          Mark as Paid
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Payment Method */}
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                        Payment Method
-                      </label>
-                      <select
-                        value={editFormData.payment_method}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, payment_method: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                      >
-                        <option value="">Select payment method...</option>
-                        <option value="cash">Cash</option>
-                        <option value="twint">Twint</option>
-                        <option value="stripe">Stripe</option>
-                      </select>
-                    </div>
-
                     {/* Delivery Address (only if delivery type = delivery) */}
                     {editFormData.delivery_type === 'delivery' && (
                       <div className="col-span-1 md:col-span-2">
                         <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                          Delivery Address
+                          {t.deliveryAddress}
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="col-span-2">
@@ -475,7 +521,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                                   },
                                 })
                               }
-                              placeholder="Street Address"
+                              placeholder="Адрес улицы"
                               className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                             />
                           </div>
@@ -497,7 +543,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                                   },
                                 })
                               }
-                              placeholder="City"
+                              placeholder={t.city}
                               className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                             />
                           </div>
@@ -519,7 +565,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                                   },
                                 })
                               }
-                              placeholder="Postal Code"
+                              placeholder="Индекс"
                               className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                             />
                           </div>
@@ -541,7 +587,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                                   },
                                 })
                               }
-                              placeholder="Country"
+                              placeholder={t.country}
                               className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                             />
                           </div>
@@ -552,14 +598,14 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     {/* Customer Notes */}
                     <div className="col-span-1 md:col-span-2">
                       <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                        Customer Notes
+                        {t.notes}
                       </label>
                       <textarea
                         value={editFormData.customer_notes}
                         onChange={(e) =>
                           setEditFormData({ ...editFormData, customer_notes: e.target.value })
                         }
-                        placeholder="Any special requests or notes"
+                        placeholder="Любые особые пожелания или примечания"
                         rows={3}
                         className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none resize-none"
                       />
@@ -570,14 +616,14 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                 // VIEW MODE
                 <div className="space-y-2 text-sm bg-white p-4 rounded-xl border border-cream-300">
                   <p>
-                    <span className="text-charcoal-500">Type:</span>{' '}
+                    <span className="text-charcoal-500">Тип:</span>{' '}
                     <span className="font-medium capitalize">
-                      {order.delivery_type || 'N/A'}
+                      {order.delivery_type === 'delivery' ? t.delivery : order.delivery_type === 'pickup' ? t.pickup : 'N/A'}
                     </span>
                   </p>
                   {order.delivery_date && (
                     <p>
-                      <span className="text-charcoal-500">Date:</span>{' '}
+                      <span className="text-charcoal-500">Дата:</span>{' '}
                       <span className="font-medium">
                         {format(parseDateFromDB(order.delivery_date), 'MMMM dd, yyyy')}
                       </span>
@@ -585,13 +631,13 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                   )}
                   {order.delivery_address && (
                     <p>
-                      <span className="text-charcoal-500">Address:</span>{' '}
+                      <span className="text-charcoal-500">Адрес:</span>{' '}
                       <span className="font-medium">{formatDeliveryAddress(order.delivery_address)}</span>
                     </p>
                   )}
                   {order.delivery_time && (
                     <p>
-                      <span className="text-charcoal-500">Time:</span>{' '}
+                      <span className="text-charcoal-500">Время:</span>{' '}
                       <span className="font-medium">{order.delivery_time}</span>
                     </p>
                   )}
@@ -603,7 +649,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
             {!isEditingOrder && order.customer_notes && (
               <div className="mb-6">
                 <h4 className="font-heading font-semibold text-brown-500 mb-3">
-                  Customer Notes
+                  {t.notes}
                 </h4>
                 <p className="text-sm text-charcoal-700 bg-white p-4 rounded-xl border border-cream-300">
                   {order.customer_notes}
@@ -613,7 +659,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
 
             {/* Order Items */}
             <div>
-              <h4 className="font-heading font-semibold text-brown-500 mb-3">Order Items</h4>
+              <h4 className="font-heading font-semibold text-brown-500 mb-3">{t.orderItems}</h4>
               <div className="space-y-4">
                 {order.order_items.map((item) => (
                   <div
@@ -658,16 +704,9 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                           <button
                             onClick={() => setEditingItem(item)}
                             className="p-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-105"
-                            title="Edit Item"
+                            title={t.editItem}
                           >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
+                            <Edit className="w-5 h-5" />
                           </button>
                         )}
                       </div>
@@ -678,7 +717,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                       {item.flavour_name && (
                         <div className="bg-purple-50 border-2 border-purple-300 rounded-xl p-3">
                           <p className="text-xs font-semibold text-purple-600 uppercase mb-1">
-                            Flavour
+                            {t.flavour}
                           </p>
                           <p className="text-base font-bold text-charcoal-900">
                             {item.flavour_name}
@@ -688,7 +727,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
 
                       {item.size_label && (
                         <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-3">
-                          <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Size</p>
+                          <p className="text-xs font-semibold text-blue-600 uppercase mb-1">{t.size}</p>
                           <p className="text-base font-bold text-charcoal-900">
                             {item.size_label}
                           </p>
@@ -697,7 +736,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
 
                       <div className="bg-green-50 border-2 border-green-300 rounded-xl p-3">
                         <p className="text-xs font-semibold text-green-600 uppercase mb-1">
-                          Quantity
+                          {t.quantity}
                         </p>
                         <p className="text-base font-bold text-charcoal-900">{item.quantity}</p>
                       </div>
@@ -705,7 +744,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                       {item.weight_kg && (
                         <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-3">
                           <p className="text-xs font-semibold text-orange-600 uppercase mb-1">
-                            Weight
+                            Вес
                           </p>
                           <p className="text-base font-bold text-charcoal-900">
                             {item.weight_kg} kg
@@ -716,7 +755,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                       {item.diameter_cm && (
                         <div className="bg-pink-50 border-2 border-pink-300 rounded-xl p-3">
                           <p className="text-xs font-semibold text-pink-600 uppercase mb-1">
-                            Diameter
+                            Диаметр
                           </p>
                           <p className="text-base font-bold text-charcoal-900">
                             {item.diameter_cm} cm
@@ -727,7 +766,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                       {item.production_status && (
                         <div className="bg-indigo-50 border-2 border-indigo-300 rounded-xl p-3">
                           <p className="text-xs font-semibold text-indigo-600 uppercase mb-1">
-                            Status
+                            {t.status}
                           </p>
                           <p className="text-base font-bold text-charcoal-900 capitalize">
                             {item.production_status}
@@ -742,21 +781,9 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         {item.writing_on_cake && (
                           <div className="bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-300 rounded-xl p-4">
                             <div className="flex items-center gap-3 mb-2">
-                              <svg
-                                className="w-5 h-5 text-purple-600"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                />
-                              </svg>
+                              <Pencil className="w-5 h-5 text-purple-600" />
                               <p className="text-sm font-bold text-purple-700 uppercase tracking-wide">
-                                Writing on Cake
+                                {t.writingOnCake}
                               </p>
                             </div>
                             <p className="text-base text-purple-900 pl-8">
@@ -768,21 +795,9 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         {item.internal_decoration_notes && (
                           <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4">
                             <div className="flex items-center gap-3 mb-2">
-                              <svg
-                                className="w-5 h-5 text-blue-600"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                                />
-                              </svg>
+                              <Paintbrush className="w-5 h-5 text-blue-600" />
                               <p className="text-sm font-bold text-blue-700 uppercase tracking-wide">
-                                Decoration Notes
+                                Примечания по декору
                               </p>
                             </div>
                             <p className="text-base text-blue-900 pl-8">
@@ -794,21 +809,9 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         {item.staff_notes && (
                           <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-300 rounded-xl p-4">
                             <div className="flex items-center gap-3 mb-2">
-                              <svg
-                                className="w-5 h-5 text-amber-600"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                />
-                              </svg>
+                              <FileText className="w-5 h-5 text-amber-600" />
                               <p className="text-sm font-bold text-amber-700 uppercase tracking-wide">
-                                Staff Notes
+                                Примечания персонала
                               </p>
                             </div>
                             <p className="text-base text-amber-900 pl-8">{item.staff_notes}</p>
@@ -825,15 +828,8 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     onClick={() => setIsAddingItem(true)}
                     className="w-full p-6 border-2 border-dashed border-brown-300 rounded-xl hover:border-brown-500 hover:bg-brown-50 transition-all text-brown-600 font-semibold flex items-center justify-center gap-2"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Add New Item to Order
+                    <Plus className="w-6 h-6" />
+                    {t.addItem}
                   </button>
                 )}
               </div>
@@ -870,10 +866,10 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, orderId: null })}
         onConfirm={() => deleteConfirm.orderId && deleteOrder(deleteConfirm.orderId)}
-        title="Delete Order?"
-        message="Are you sure you want to delete this order? This will permanently delete all order items and cannot be undone. The customer's client record will remain but their stats will be updated."
-        confirmText="Delete Order"
-        cancelText="Cancel"
+        title={t.deleteOrder + "?"}
+        message="Вы уверены, что хотите удалить этот заказ? Это безвозвратно удалит все позиции заказа. Запись клиента останется, но его статистика будет обновлена."
+        confirmText={t.deleteOrder}
+        cancelText={t.cancel}
         variant="danger"
         isLoading={isDeleting}
       />

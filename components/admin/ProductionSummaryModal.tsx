@@ -21,6 +21,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import type { Database } from '@/lib/supabase/types';
+import t from '@/lib/admin-translations-extended';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -161,11 +162,11 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
       .sort((a, b) => a.flavour.localeCompare(b.flavour));
   }, [filteredItems]);
 
-  const viewModeLabel = viewMode === 'today' ? 'Today' : viewMode === 'week' ? 'This Week' : 'This Month';
+  const viewModeLabel = viewMode === 'today' ? 'Сегодня' : viewMode === 'week' ? 'Эта неделя' : 'Этот месяц';
   const calculationLabel = 
-    calculationMode === 'daily' ? 'Today Only' :
-    calculationMode === 'until-sunday' ? 'Today → End of Week' : 
-    'Next 7 Days';
+    calculationMode === 'daily' ? 'Только сегодня' :
+    calculationMode === 'until-sunday' ? 'Сегодня → Конец недели' : 
+    'Следующие 7 дней';
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -175,16 +176,16 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-3xl font-heading font-bold text-white mb-1">
-                Production Summary
+                Сводка производства
               </h2>
               <p className="text-brown-100 text-sm">
-                {viewModeLabel} • {filteredItems.length} items • {calculationLabel}
+                {viewModeLabel} • {filteredItems.length} {filteredItems.length === 1 ? 'позиция' : 'позиций'} • {calculationLabel}
               </p>
             </div>
             <button
               onClick={onClose}
               className="text-white/80 hover:text-white text-4xl leading-none transition-colors"
-              aria-label="Close modal"
+              aria-label="Закрыть модальное окно"
             >
               ×
             </button>
@@ -203,7 +204,7 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
                   }
                 `}
               >
-                Today → Sunday
+                Сегодня → Воскресенье
               </button>
               <button
                 onClick={() => setCalculationMode('next-7-days')}
@@ -215,7 +216,7 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
                   }
                 `}
               >
-                Next 7 Days
+                Следующие 7 дней
               </button>
             </div>
           )}
@@ -245,17 +246,17 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
                 </div>
                 <div>
                   <h3 className="text-2xl font-heading font-bold text-charcoal-900">
-                    Cakes by Size & Flavour
+                    Торты по размеру и вкусу
                   </h3>
                   <p className="text-sm text-charcoal-500">
-                    Total cakes to produce grouped by diameter and flavour
+                    Всего тортов к производству, сгруппированных по диаметру и вкусу
                   </p>
                 </div>
               </div>
 
               {diameterFlavourGroups.length === 0 ? (
                 <div className="bg-cream-50 rounded-2xl border-2 border-cream-200 p-8 text-center">
-                  <p className="text-charcoal-500">No cakes with diameter and flavour information</p>
+                  <p className="text-charcoal-500">Нет тортов с информацией о диаметре и вкусе</p>
                 </div>
               ) : (
                 <div className="bg-cream-50 rounded-2xl border-2 border-cream-200 p-6">
@@ -274,7 +275,7 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
                               {group.flavour}
                             </p>
                             <p className="text-xs text-charcoal-500">
-                              {group.diameter} cm diameter
+                              {group.diameter} см диаметр
                             </p>
                           </div>
                         </div>
@@ -311,17 +312,17 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
                 </div>
                 <div>
                   <h3 className="text-2xl font-heading font-bold text-charcoal-900">
-                    Total Weight by Flavour
+                    Общий вес по вкусам
                   </h3>
                   <p className="text-sm text-charcoal-500">
-                    Ingredient preparation planning
+                    Планирование подготовки ингредиентов
                   </p>
                 </div>
               </div>
 
               {flavourWeights.length === 0 ? (
                 <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-200 p-8 text-center">
-                  <p className="text-charcoal-500">No items with weight information</p>
+                  <p className="text-charcoal-500">Нет позиций с информацией о весе</p>
                 </div>
               ) : (
                 <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-200 p-6">
@@ -351,19 +352,19 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
             <div className="bg-gradient-to-br from-brown-50 to-cream-50 rounded-2xl border-2 border-brown-200 p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <p className="text-sm text-charcoal-600 mb-2">Total Items</p>
+                  <p className="text-sm text-charcoal-600 mb-2">Всего позиций</p>
                   <p className="text-3xl font-bold text-brown-600">{filteredItems.length}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-charcoal-600 mb-2">Total Cakes</p>
+                  <p className="text-sm text-charcoal-600 mb-2">Всего тортов</p>
                   <p className="text-3xl font-bold text-brown-600">
                     {diameterFlavourGroups.reduce((sum, g) => sum + g.count, 0)}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-charcoal-600 mb-2">Total Weight</p>
+                  <p className="text-sm text-charcoal-600 mb-2">Общий вес</p>
                   <p className="text-3xl font-bold text-brown-600">
-                    {flavourWeights.reduce((sum, w) => sum + w.totalWeight, 0).toFixed(1)} kg
+                    {flavourWeights.reduce((sum, w) => sum + w.totalWeight, 0).toFixed(1)} кг
                   </p>
                 </div>
               </div>
@@ -377,7 +378,7 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
             onClick={onClose}
             className="w-full bg-brown-500 hover:bg-brown-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
           >
-            Close
+            {t.close}
           </button>
         </div>
       </div>

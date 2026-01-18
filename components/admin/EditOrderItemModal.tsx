@@ -6,6 +6,7 @@ import type { Database } from '@/lib/supabase/types';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { getFlavours } from '@/lib/sanity/queries';
+import { X, Trash2 } from 'lucide-react';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -151,14 +152,14 @@ export default function EditOrderItemModal({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update item');
+        throw new Error('Не удалось обновить позицию');
       }
 
       onUpdate();
       onClose();
     } catch (error) {
       console.error('Error updating item:', error);
-      alert('Failed to update item. Please try again.');
+      alert('Не удалось обновить позицию. Пожалуйста, попробуйте снова.');
     } finally {
       setIsSaving(false);
     }
@@ -217,21 +218,14 @@ export default function EditOrderItemModal({
         <div className="bg-gradient-to-r from-brown-500 to-brown-600 px-6 py-5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-heading font-bold text-white">Edit Order Item</h2>
+              <h2 className="text-2xl font-heading font-bold text-white">Редактировать позицию заказа</h2>
               <p className="text-sm text-brown-100 mt-1">{item.product_name}</p>
             </div>
             <button
               onClick={onClose}
               className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -256,12 +250,12 @@ export default function EditOrderItemModal({
               <div className="flex gap-3 flex-wrap">
                 {item.size_label && (
                   <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
-                    Size: {item.size_label}
+                    Размер: {item.size_label}
                   </span>
                 )}
                 {item.flavour_name && (
                   <span className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-semibold">
-                    Flavour: {item.flavour_name}
+                    Вкус: {item.flavour_name}
                   </span>
                 )}
               </div>
@@ -273,7 +267,7 @@ export default function EditOrderItemModal({
             {/* Quantity */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Quantity *
+                Количество *
               </label>
               <input
                 type="number"
@@ -289,7 +283,7 @@ export default function EditOrderItemModal({
             {/* Unit Price */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Unit Price ({currency}) *
+                Цена за единицу ({currency}) *
               </label>
               <input
                 type="number"
@@ -304,11 +298,11 @@ export default function EditOrderItemModal({
             {/* Flavour */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Flavour
+                Вкус
               </label>
               {isLoadingFlavours ? (
                 <div className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 text-charcoal-500 text-sm">
-                  Loading flavours...
+                  Загрузка вкусов...
                 </div>
               ) : (
                 <select
@@ -316,7 +310,7 @@ export default function EditOrderItemModal({
                   onChange={(e) => handleFlavourChange(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                 >
-                  <option value="">No flavour</option>
+                  <option value="">Без вкуса</option>
                   {flavours.map(flavour => (
                     <option key={flavour._id} value={flavour._id}>
                       {flavour.name}
@@ -332,7 +326,7 @@ export default function EditOrderItemModal({
             {/* Weight */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Weight (kg)
+                Вес (кг)
               </label>
               <input
                 type="number"
@@ -340,7 +334,7 @@ export default function EditOrderItemModal({
                 onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
                 step="0.001"
                 min="0"
-                placeholder="Optional"
+                placeholder="Необязательно"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
             </div>
@@ -348,7 +342,7 @@ export default function EditOrderItemModal({
             {/* Diameter */}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Diameter (cm)
+                Диаметр (см)
               </label>
               <input
                 type="number"
@@ -356,7 +350,7 @@ export default function EditOrderItemModal({
                 onChange={(e) => setFormData({ ...formData, diameter_cm: e.target.value })}
                 step="0.01"
                 min="0"
-                placeholder="Optional"
+                placeholder="Необязательно"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
             </div>
@@ -366,20 +360,20 @@ export default function EditOrderItemModal({
               <ImageUpload
                 value={formData.product_image_url}
                 onChange={(url) => setFormData({ ...formData, product_image_url: url })}
-                label="Reference Image"
+                label="Справочное изображение"
               />
             </div>
 
             {/* Writing on Cake */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Writing on Cake
+                Надпись на торте
               </label>
               <input
                 type="text"
                 value={formData.writing_on_cake}
                 onChange={(e) => setFormData({ ...formData, writing_on_cake: e.target.value })}
-                placeholder="Customer-facing text"
+                placeholder="Текст для клиента"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
             </div>
@@ -387,14 +381,14 @@ export default function EditOrderItemModal({
             {/* Internal Decoration Notes */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Internal Decoration Notes
+                Внутренние заметки о декоре
               </label>
               <textarea
                 value={formData.internal_decoration_notes}
                 onChange={(e) =>
                   setFormData({ ...formData, internal_decoration_notes: e.target.value })
                 }
-                placeholder="Internal notes for decoration team"
+                placeholder="Внутренние заметки для команды декораторов"
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none resize-none"
               />
@@ -403,12 +397,12 @@ export default function EditOrderItemModal({
             {/* Staff Notes */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
-                Staff Notes
+                Заметки персонала
               </label>
               <textarea
                 value={formData.staff_notes}
                 onChange={(e) => setFormData({ ...formData, staff_notes: e.target.value })}
-                placeholder="General staff notes"
+                placeholder="Общие заметки персонала"
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none resize-none"
               />
@@ -418,7 +412,7 @@ export default function EditOrderItemModal({
           {/* Subtotal Preview */}
           <div className="mt-4 pt-4 border-t-2 border-cream-300">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-charcoal-600">Subtotal:</span>
+              <span className="text-sm text-charcoal-600">Подытог:</span>
               <span className="text-lg font-bold text-brown-500">
                 {formatCurrency(calculateSubtotal())}
               </span>
@@ -434,14 +428,14 @@ export default function EditOrderItemModal({
               disabled={isSaving}
               className="flex-1 px-4 py-2 rounded-full border-2 border-cream-300 bg-white text-charcoal-700 font-semibold hover:bg-cream-50 transition-all disabled:opacity-50"
             >
-              Cancel
+              Отмена
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving || !isFormValid}
               className="flex-1 px-4 py-2 rounded-full bg-brown-500 text-white font-semibold hover:bg-brown-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
             </button>
           </div>
           <button
@@ -449,15 +443,8 @@ export default function EditOrderItemModal({
             disabled={isSaving}
             className="w-full px-4 py-2 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-            Delete Item
+            <Trash2 className="w-5 h-5" />
+            Удалить позицию
           </button>
         </div>
       </div>
@@ -467,14 +454,14 @@ export default function EditOrderItemModal({
         isOpen={deleteConfirm}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
-        title={isLastItem ? "Delete Entire Order?" : "Delete Order Item?"}
+        title={isLastItem ? "Удалить весь заказ?" : "Удалить позицию заказа?"}
         message={
           isLastItem
-            ? "This is the last item in the order. Deleting it will remove the entire order. This action cannot be undone."
-            : "Are you sure you want to delete this item? This action cannot be undone and will update the order total."
+            ? "Это последняя позиция в заказе. Её удаление приведёт к удалению всего заказа. Это действие нельзя отменить."
+            : "Вы уверены, что хотите удалить эту позицию? Это действие нельзя отменить, и сумма заказа будет обновлена."
         }
-        confirmText={isLastItem ? "Delete Order" : "Delete Item"}
-        cancelText="Cancel"
+        confirmText={isLastItem ? "Удалить заказ" : "Удалить позицию"}
+        cancelText="Отмена"
         variant="danger"
         isLoading={isDeleting}
       />

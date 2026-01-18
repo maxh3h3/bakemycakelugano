@@ -6,18 +6,11 @@ import AccountingPageClient from '@/components/admin/AccountingPageClient';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function AccountingPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  // Await params
-  const { locale } = await params;
-
+export default async function AccountingPage() {
   // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
-    redirect(`/${locale}/admin/login`);
+    redirect('/admin/login');
   }
 
   // Get user role
@@ -25,7 +18,7 @@ export default async function AccountingPage({
 
   // Only owner can access accounting
   if (role !== 'owner') {
-    redirect(`/${locale}/admin/orders`);
+    redirect('/admin/orders');
   }
 
   return (

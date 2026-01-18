@@ -5,6 +5,7 @@ import { generateOrderNumber } from '@/lib/order-number-generator';
 import { validateDeliveryAddress } from '@/lib/schemas/delivery';
 import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
 import { emitNewOrderEvent } from '@/lib/events/production-events';
+import { createRevenueFromOrder } from '@/lib/accounting/transactions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      client_id: providedClientId, // Optional: pre-existing client ID for quick sales
       customer_name,
       customer_email,
       customer_phone,
@@ -41,16 +43,7 @@ export async function POST(request: NextRequest) {
     if (!customer_name) missingFields.push('customer_name');
     if (!delivery_date) missingFields.push('delivery_date');
     
-    // Validate channel-specific contact fields (skip for immediate sales)
-    if (!is_immediate) {
-      if (channel === 'phone' || channel === 'whatsapp' || channel === 'walk_in') {
-        if (!customer_phone) missingFields.push('customer_phone');
-      } else if (channel === 'instagram') {
-        if (!customer_ig_handle) missingFields.push('customer_ig_handle');
-      } else if (channel === 'email') {
-        if (!customer_email) missingFields.push('customer_email');
-      }
-    }
+    // Contact fields are now optional - no validation required
     
     if (missingFields.length > 0) {
       return NextResponse.json(
@@ -80,9 +73,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find or create client (skip for immediate sales)
-    let clientId: string | null = null;
-    if (!is_immediate) {
+    // Use provided client_id if available, otherwise find or create client
+    let clientId: string;
+    
+    if (providedClientId) {
+      // Verify the provided client exists
+      const { data: existingClient, error: clientError } = await supabaseAdmin
+        .from('clients')
+        .select('id')
+        .eq('id', providedClientId)
+        .single();
+      
+      if (clientError || !existingClient) {
+        return NextResponse.json(
+          { success: false, error: 'Provided client_id does not exist' },
+          { status: 400 }
+        );
+      }
+      
+      clientId = providedClientId;
+      console.log('Using provided client:', clientId);
+    } else {
+      // Find or create client (required for all orders)
       try {
         const { client, isNew } = await findOrCreateClient(
           {
@@ -98,14 +110,23 @@ export async function POST(request: NextRequest) {
         console.log(`${isNew ? 'Created new' : 'Found existing'} client:`, clientId);
       } catch (clientError) {
         console.error('Failed to find/create client:', clientError);
-        // Continue without client_id - order will still be created with legacy fields
+        return NextResponse.json(
+          { success: false, error: 'Failed to create or find client for this order' },
+          { status: 500 }
+        );
       }
-    } else {
-      console.log('Immediate sale - skipping client tracking');
     }
 
     // Generate order number (format: DD-MM-NN)
     const order_number = await generateOrderNumber(delivery_date);
+
+    // Ensure we have a client_id before creating the order
+    if (!clientId) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to create or find client for this order' },
+        { status: 500 }
+      );
+    }
 
     // Create order
     const { data: order, error: orderError } = await supabaseAdmin
@@ -113,10 +134,6 @@ export async function POST(request: NextRequest) {
       .insert({
         order_number,
         client_id: clientId,
-        customer_name,
-        customer_email,
-        customer_phone,
-        customer_ig_handle: customer_ig_handle || null,
         delivery_date,
         delivery_time: delivery_time || null,
         delivery_type,
@@ -188,6 +205,27 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to create order items' },
         { status: 500 }
       );
+    }
+
+    // Create revenue transaction if order is paid
+    if (paid) {
+      try {
+        await createRevenueFromOrder({
+          orderId: (order as any).id,
+          orderNumber: order_number,
+          customerName: customer_name,
+          totalAmount: total_amount?.toString() || '0',
+          currency: 'CHF',
+          clientId: clientId,
+          paymentMethod: payment_method || 'cash',
+          channel: channel || 'phone',
+          createdAt: (order as any).created_at,
+        });
+        console.log('Revenue transaction created for paid order');
+      } catch (revenueError) {
+        console.error('Failed to create revenue transaction:', revenueError);
+        // Don't throw - order is already created, revenue can be added manually
+      }
     }
 
     // Emit SSE event for real-time production view updates (skip for immediate sales)

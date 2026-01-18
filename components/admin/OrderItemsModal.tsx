@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { Database } from '@/lib/supabase/types';
 import { parseDateFromDB } from '@/lib/utils';
+import t from '@/lib/admin-translations-extended';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -43,13 +44,13 @@ interface OrderItemsModalProps {
 type ProductionStatus = 'new' | 'prepared' | 'baked' | 'creamed' | 'decorated' | 'packaged' | 'delivered';
 
 const statusOptions: { value: ProductionStatus; label: string; color: string }[] = [
-  { value: 'new', label: 'New', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  { value: 'prepared', label: 'Prepared', color: 'bg-purple-100 text-purple-700 border-purple-300' },
-  { value: 'baked', label: 'Baked', color: 'bg-orange-100 text-orange-700 border-orange-300' },
-  { value: 'creamed', label: 'Creamed', color: 'bg-pink-100 text-pink-700 border-pink-300' },
-  { value: 'decorated', label: 'Decorated', color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
-  { value: 'packaged', label: 'Packaged', color: 'bg-green-100 text-green-700 border-green-300' },
-  { value: 'delivered', label: 'Delivered', color: 'bg-gray-100 text-gray-700 border-gray-300' },
+  { value: 'new', label: 'Новый', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+  { value: 'prepared', label: 'Подготовлен', color: 'bg-purple-100 text-purple-700 border-purple-300' },
+  { value: 'baked', label: 'Испечен', color: 'bg-orange-100 text-orange-700 border-orange-300' },
+  { value: 'creamed', label: 'Покрыт кремом', color: 'bg-pink-100 text-pink-700 border-pink-300' },
+  { value: 'decorated', label: 'Украшен', color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
+  { value: 'packaged', label: 'Упакован', color: 'bg-green-100 text-green-700 border-green-300' },
+  { value: 'delivered', label: 'Доставлен', color: 'bg-gray-100 text-gray-700 border-gray-300' },
 ];
 
 export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModalProps) {
@@ -94,14 +95,14 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
       );
 
       // Show success message
-      setSuccessMessage('Status updated successfully!');
+      setSuccessMessage('Статус успешно обновлен!');
       setTimeout(() => setSuccessMessage(null), 3000);
 
       // Refresh the page data in the background (without reload)
       router.refresh();
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update item status. Please try again.');
+      alert('Не удалось обновить статус позиции. Попробуйте еще раз.');
     } finally {
       setUpdatingItemId(null);
     }
@@ -120,7 +121,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
               <div className="flex items-center gap-4 text-sm">
                 {orderGroup.delivery_date && (
                   <span>
-                    Delivery: {format(parseDateFromDB(orderGroup.delivery_date), 'MMM dd, yyyy')}
+                    {t.delivery}: {format(parseDateFromDB(orderGroup.delivery_date), 'MMM dd, yyyy')}
                   </span>
                 )}
               </div>
@@ -152,7 +153,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
           {/* Order Items */}
           <div>
             <h3 className="font-heading font-bold text-brown-500 text-xl mb-4">
-              Order Items ({localItems.length})
+              {t.orderItems} ({localItems.length})
             </h3>
             <div className="space-y-4">
               {localItems.length > 0 ? (
@@ -172,25 +173,25 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {item.weight_kg && (
                             <div className="bg-orange-50 rounded-xl px-4 py-3 border-2 border-orange-300">
-                              <p className="text-sm font-semibold text-orange-600 uppercase mb-1">Weight</p>
-                              <p className="text-2xl font-bold text-orange-900">{item.weight_kg}kg</p>
+                              <p className="text-sm font-semibold text-orange-600 uppercase mb-1">Вес</p>
+                              <p className="text-2xl font-bold text-orange-900">{item.weight_kg}кг</p>
                             </div>
                           )}
                           {item.diameter_cm && (
                             <div className="bg-blue-50 rounded-xl px-4 py-3 border-2 border-blue-300">
-                              <p className="text-sm font-semibold text-blue-600 uppercase mb-1">Diameter</p>
-                              <p className="text-2xl font-bold text-blue-900">{item.diameter_cm}cm</p>
+                              <p className="text-sm font-semibold text-blue-600 uppercase mb-1">Диаметр</p>
+                              <p className="text-2xl font-bold text-blue-900">{item.diameter_cm}см</p>
                             </div>
                           )}
                           {item.flavour_name && (
                             <div className="bg-purple-50 rounded-xl px-4 py-3 border-2 border-purple-300">
-                              <p className="text-sm font-semibold text-purple-600 uppercase mb-1">Flavour</p>
+                              <p className="text-sm font-semibold text-purple-600 uppercase mb-1">{t.flavour}</p>
                               <p className="text-2xl font-bold text-purple-900">{item.flavour_name}</p>
                             </div>
                           )}
                           {item.size_label && (
                             <div className="bg-green-50 rounded-xl px-4 py-3 border-2 border-green-300">
-                              <p className="text-sm font-semibold text-green-600 uppercase mb-1">Size</p>
+                              <p className="text-sm font-semibold text-green-600 uppercase mb-1">{t.size}</p>
                               <p className="text-lg font-bold text-green-900">{item.size_label}</p>
                             </div>
                           )}
@@ -216,7 +217,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                     {/* Writing on Cake (Customer Request) */}
                     {item.writing_on_cake && (
                       <div className="mb-4 bg-purple-50 border-2 border-purple-300 rounded-lg p-3">
-                        <p className="text-xs text-purple-600 font-semibold mb-1">Writing on Cake</p>
+                        <p className="text-xs text-purple-600 font-semibold mb-1">{t.writingOnCake}</p>
                         <p className="text-lg text-purple-900 font-bold">{item.writing_on_cake}</p>
                       </div>
                     )}
@@ -224,7 +225,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                     {/* Internal Decoration Notes */}
                     {item.internal_decoration_notes && (
                       <div className="mb-4 bg-orange-50 border-2 border-orange-300 rounded-lg p-3">
-                        <p className="text-xs text-orange-600 font-semibold mb-1">Internal Decoration Notes</p>
+                        <p className="text-xs text-orange-600 font-semibold mb-1">Примечания по декору</p>
                         <p className="text-sm text-orange-900">{item.internal_decoration_notes}</p>
                       </div>
                     )}
@@ -232,7 +233,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                     {/* Staff Notes */}
                     {item.staff_notes && (
                       <div className="mb-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
-                        <p className="text-xs text-blue-600 font-semibold mb-1">Staff Notes</p>
+                        <p className="text-xs text-blue-600 font-semibold mb-1">Примечания персонала</p>
                         <p className="text-sm text-blue-900">{item.staff_notes}</p>
                       </div>
                     )}
@@ -240,7 +241,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                     {/* Status Selector */}
                     <div>
                       <label className="block text-sm font-semibold text-charcoal-700 mb-2">
-                        Production Status
+                        Статус производства
                       </label>
                       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
                         {statusOptions.map((status) => {
@@ -273,7 +274,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                   </div>
                 ))
               ) : (
-                <p className="text-charcoal-500 text-center py-8">No items in this order</p>
+                <p className="text-charcoal-500 text-center py-8">Нет позиций в этом заказе</p>
               )}
             </div>
           </div>
@@ -285,7 +286,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
             onClick={onClose}
             className="px-6 py-3 bg-brown-500 text-white rounded-xl font-semibold hover:bg-brown-600 transition-colors"
           >
-            Close
+            {t.close}
           </button>
         </div>
       </div>

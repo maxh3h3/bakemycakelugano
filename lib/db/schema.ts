@@ -7,6 +7,9 @@ export const clients = pgTable('clients', {
   // Basic information
   name: text('name').notNull(),
   
+  // Client classification
+  clientType: text('client_type').default('individual'), // 'individual' or 'business'
+  
   // Contact methods (at least one required - enforced at application level)
   email: text('email'),
   phone: text('phone'),
@@ -34,18 +37,12 @@ export const clients = pgTable('clients', {
 export const orders = pgTable('orders', {
   id: uuid('id').defaultRandom().primaryKey(),
   
-  // Client reference (replaces individual customer fields)
-  clientId: uuid('client_id').references(() => clients.id, { onDelete: 'set null' }),
+  // Client reference - all customer information is in clients table
+  clientId: uuid('client_id').references(() => clients.id, { onDelete: 'set null' }).notNull(),
   
   // Stripe fields (optional for manual orders)
   stripeSessionId: text('stripe_session_id'),
   stripePaymentIntentId: text('stripe_payment_intent_id'),
-  
-  // Customer information (deprecated - kept for backward compatibility)
-  customerEmail: text('customer_email'),
-  customerName: text('customer_name').notNull(),
-  customerPhone: text('customer_phone'),
-  customerIgHandle: text('customer_ig_handle'),
   
   // Order details
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
@@ -150,7 +147,7 @@ export const checkoutAttempts = pgTable('checkout_attempts', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Expenses table for accounting
+// Expenses table for accounting (legacy - being phased out in favor of financial_transactions)
 export const expenses = pgTable('expenses', {
   id: uuid('id').defaultRandom().primaryKey(),
   
@@ -173,6 +170,43 @@ export const expenses = pgTable('expenses', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Financial Transactions table - Unified ledger for all revenues and expenses
+export const financialTransactions = pgTable('financial_transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  
+  // Core transaction details
+  date: date('date').notNull(),
+  type: text('type').notNull(), // 'revenue' or 'expense'
+  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+  currency: text('currency').default('CHF').notNull(),
+  
+  // Description and notes
+  description: text('description').notNull(),
+  notes: text('notes'),
+  
+  // Source tracking
+  sourceType: text('source_type').notNull(), // 'order', 'manual', 'recurring'
+  sourceId: uuid('source_id').references(() => orders.id, { onDelete: 'cascade' }), // Reference to order.id if from order
+  
+  // Client relationship (for revenues)
+  clientId: uuid('client_id').references(() => clients.id, { onDelete: 'set null' }),
+  
+  // Revenue-specific fields (null for expenses)
+  paymentMethod: text('payment_method'), // 'cash', 'card', 'twint', 'bank_transfer', etc.
+  channel: text('channel'), // 'website', 'divoraa', 'walk_in', 'restaurant', etc.
+  
+  // Expense-specific fields (null for revenues)
+  expenseCategory: text('expense_category'), // 'ingredients', 'utilities', 'labor', etc.
+  receiptUrl: text('receipt_url'), // URL to receipt/invoice in storage
+  
+  // Metadata
+  createdByUserId: uuid('created_by_user_id'),
+  
+  // Timestamps
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Export types
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
@@ -184,4 +218,6 @@ export type CheckoutAttempt = typeof checkoutAttempts.$inferSelect;
 export type NewCheckoutAttempt = typeof checkoutAttempts.$inferInsert;
 export type Expense = typeof expenses.$inferSelect;
 export type NewExpense = typeof expenses.$inferInsert;
+export type FinancialTransaction = typeof financialTransactions.$inferSelect;
+export type NewFinancialTransaction = typeof financialTransactions.$inferInsert;
 

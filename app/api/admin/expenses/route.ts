@@ -5,7 +5,7 @@ import type { NewExpense } from '@/lib/db/schema';
 
 /**
  * GET /api/admin/expenses
- * List expenses with filtering, pagination, and date range support
+ * List expenses from financial_transactions with filtering, pagination, and date range support
  */
 export async function GET(request: NextRequest) {
   try {
@@ -29,14 +29,15 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query for expense transactions
     let query = (supabaseAdmin as any)
-      .from('expenses')
-      .select('*', { count: 'exact' });
+      .from('financial_transactions')
+      .select('*', { count: 'exact' })
+      .eq('type', 'expense'); // Only get expenses
 
     // Apply category filter
     if (category) {
-      query = query.eq('category', category);
+      query = query.eq('expense_category', category);
     }
 
     // Apply date range filter
@@ -64,9 +65,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Transform to match old Expense type for backward compatibility
+    const expenses = data?.map((t: any) => ({
+      id: t.id,
+      date: t.date,
+      category: t.expense_category,
+      amount: t.amount,
+      currency: t.currency,
+      description: t.description,
+      notes: t.notes,
+      receiptUrl: t.receipt_url,
+      createdByUserId: t.created_by_user_id,
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+    }));
+
     return NextResponse.json({
       success: true,
-      expenses: data,
+      expenses: expenses || [],
       pagination: {
         page,
         limit,
@@ -85,7 +101,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/expenses
- * Create a new expense entry
+ * Create a new expense as a financial transaction
  */
 export async function POST(request: NextRequest) {
   try {
@@ -127,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate category
-    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'other'];
+    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'packaging', 'delivery', 'other'];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
         { success: false, error: `Category must be one of: ${validCategories.join(', ')}` },
@@ -135,31 +151,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create expense
-    const newExpense = {
+    // Create expense transaction
+    const newTransaction = {
+      type: 'expense',
       date,
-      category,
       amount: parseFloat(amount).toFixed(2),
       currency: currency || 'CHF',
       description: description.trim(),
       notes: notes?.trim() || null,
+      source_type: 'manual',
+      source_id: null,
+      client_id: null,
+      payment_method: null,
+      channel: null,
+      expense_category: category,
       receipt_url: receipt_url || null,
       created_by_user_id: created_by_user_id || null,
     };
 
-    const { data: expense, error: createError } = await (supabaseAdmin as any)
-      .from('expenses')
-      .insert(newExpense)
+    const { data: transaction, error: createError } = await (supabaseAdmin as any)
+      .from('financial_transactions')
+      .insert(newTransaction)
       .select()
       .single();
 
     if (createError) {
-      console.error('Error creating expense:', createError);
+      console.error('Error creating expense transaction:', createError);
       return NextResponse.json(
         { success: false, error: 'Failed to create expense' },
         { status: 500 }
       );
     }
+
+    // Transform back to Expense format for compatibility
+    const expense = {
+      id: transaction.id,
+      date: transaction.date,
+      category: transaction.expense_category,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      description: transaction.description,
+      notes: transaction.notes,
+      receiptUrl: transaction.receipt_url,
+      createdByUserId: transaction.created_by_user_id,
+      createdAt: transaction.created_at,
+      updatedAt: transaction.updated_at,
+    };
 
     return NextResponse.json(
       {

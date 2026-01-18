@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import t from '@/lib/admin-translations-extended';
+import { Search, Plus } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -133,16 +135,14 @@ export default function ClientSearchInput({ onClientSelect, onCreateNew }: Clien
             if (results.length > 0) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search clients by name, email, or phone..."
+          placeholder="Поиск клиентов по имени, email или телефону..."
           className="w-full px-4 py-3 pr-10 rounded-xl border-2 border-cream-300 focus:border-brown-500 focus:outline-none text-base"
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           {isLoading ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brown-500"></div>
           ) : (
-            <svg className="w-5 h-5 text-charcoal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Search className="w-5 h-5 text-charcoal-400" />
           )}
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function ClientSearchInput({ onClientSelect, onCreateNew }: Clien
           {results.length > 0 ? (
             <div className="py-2">
               <div className="px-4 py-2 text-xs font-semibold text-charcoal-500 uppercase tracking-wide">
-                Existing Clients
+                {t.existingClient}
               </div>
               {results.map((client, index) => (
                 <button
@@ -193,10 +193,8 @@ export default function ClientSearchInput({ onClientSelect, onCreateNew }: Clien
             </div>
           ) : query.length >= 2 ? (
             <div className="px-4 py-8 text-center text-charcoal-500">
-              <svg className="w-12 h-12 mx-auto mb-3 text-charcoal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p className="text-sm">No clients found matching "{query}"</p>
+              <Search className="w-12 h-12 mx-auto mb-3 text-charcoal-300" />
+              <p className="text-sm">Клиенты не найдены по запросу "{query}"</p>
             </div>
           ) : null}
 
@@ -209,13 +207,11 @@ export default function ClientSearchInput({ onClientSelect, onCreateNew }: Clien
               }`}
             >
               <div className="w-10 h-10 rounded-full bg-brown-100 flex items-center justify-center">
-                <svg className="w-6 h-6 text-brown-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-6 h-6 text-brown-600" />
               </div>
               <div>
-                <p className="font-semibold text-brown-700">Create New Client</p>
-                <p className="text-sm text-brown-600">Add a new customer to the system</p>
+                <p className="font-semibold text-brown-700">{t.newClient}</p>
+                <p className="text-sm text-brown-600">Добавить нового клиента в систему</p>
               </div>
             </button>
           </div>

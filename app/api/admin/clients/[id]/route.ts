@@ -44,10 +44,25 @@ export async function GET(
       );
     }
 
-    // Fetch client's orders
+    // Fetch client's orders with order items
     const { data: orders, error: ordersError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_number, total_amount, delivery_date, created_at, paid, channel')
+      .select(`
+        id,
+        order_number,
+        total_amount,
+        delivery_date,
+        created_at,
+        paid,
+        channel,
+        order_items (
+          id,
+          product_name,
+          quantity,
+          unit_price,
+          subtotal
+        )
+      `)
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
 
@@ -70,6 +85,7 @@ export async function GET(
       totalOrders: client.total_orders,
       totalSpent: client.total_spent,
       notes: client.notes,
+      clientType: client.client_type || 'individual',
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     };
@@ -116,10 +132,11 @@ export async function PATCH(
       instagram_handle,
       preferred_contact,
       notes,
+      client_type,
     } = body;
 
     // Validate at least name or one contact method is being updated
-    if (!name && !email && !phone && !instagram_handle && !preferred_contact && notes === undefined) {
+    if (!name && !email && !phone && !instagram_handle && !preferred_contact && notes === undefined && client_type === undefined) {
       return NextResponse.json(
         { success: false, error: 'No fields to update' },
         { status: 400 }
@@ -135,6 +152,7 @@ export async function PATCH(
     if (instagram_handle !== undefined) updates.instagram_handle = instagram_handle?.trim() || null;
     if (preferred_contact !== undefined) updates.preferred_contact = preferred_contact || null;
     if (notes !== undefined) updates.notes = notes?.trim() || null;
+    if (client_type !== undefined) updates.client_type = client_type;
 
     // Update client
     const { data: client, error: updateError } = await (supabaseAdmin as any)
@@ -179,6 +197,7 @@ export async function PATCH(
       totalOrders: client.total_orders,
       totalSpent: client.total_spent,
       notes: client.notes,
+      clientType: client.client_type || 'individual',
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     };

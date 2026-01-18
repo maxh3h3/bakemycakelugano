@@ -176,6 +176,25 @@ export async function DELETE(
         .eq('id', orderId)
         .single() as { data: { client_id: string | null } | null };
 
+      // Delete associated financial transaction first (if exists)
+      try {
+        const { error: financeDeleteError } = await supabaseAdmin
+          .from('financial_transactions')
+          .delete()
+          .eq('source_type', 'order')
+          .eq('source_id', orderId);
+
+        if (financeDeleteError) {
+          console.error('Error deleting financial transaction:', financeDeleteError);
+          // Don't fail the order deletion if this fails
+        } else {
+          console.log('Associated financial transaction deleted for order:', orderId);
+        }
+      } catch (financeError) {
+        console.error('Failed to delete financial transaction:', financeError);
+        // Continue with order deletion
+      }
+
       // Delete the order (cascades to order_items via foreign key)
       const { error: orderDeleteError } = await supabaseAdmin
         .from('orders')

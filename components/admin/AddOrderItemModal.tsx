@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { getFlavours } from '@/lib/sanity/queries';
 import ImageUpload from '@/components/admin/ImageUpload';
+import t from '@/lib/admin-translations-extended';
+import { X } from 'lucide-react';
 
 interface AddOrderItemModalProps {
   orderId: string;
@@ -118,14 +120,14 @@ export default function AddOrderItemModal({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add item');
+        throw new Error(t.failedToAddItem);
       }
 
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error adding item:', error);
-      alert('Failed to add item. Please try again.');
+      alert(t.failedToAddItem + '. ' + t.tryAgain);
     } finally {
       setIsSaving(false);
     }
@@ -160,9 +162,7 @@ export default function AddOrderItemModal({
               onClick={onClose}
               className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function AddOrderItemModal({
                 onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
                 step="0.001"
                 min="0"
-                placeholder="Optional"
+                placeholder="Необязательно"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
             </div>
@@ -267,7 +267,7 @@ export default function AddOrderItemModal({
                 onChange={(e) => setFormData({ ...formData, diameter_cm: e.target.value })}
                 step="0.01"
                 min="0"
-                placeholder="Optional"
+                placeholder="Необязательно"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
             </div>
@@ -277,7 +277,7 @@ export default function AddOrderItemModal({
               <ImageUpload
                 value={formData.product_image_url}
                 onChange={(url) => setFormData({ ...formData, product_image_url: url })}
-                label="Product Image (optional)"
+                label={t.productImageOptional}
               />
             </div>
 
@@ -290,7 +290,7 @@ export default function AddOrderItemModal({
                 type="text"
                 value={formData.writing_on_cake}
                 onChange={(e) => setFormData({ ...formData, writing_on_cake: e.target.value })}
-                placeholder="Customer-facing text"
+                placeholder="Текст для клиента"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
             </div>
@@ -305,7 +305,7 @@ export default function AddOrderItemModal({
                 onChange={(e) =>
                   setFormData({ ...formData, internal_decoration_notes: e.target.value })
                 }
-                placeholder="Internal notes for decoration team"
+                placeholder="Внутренние заметки для команды декораторов"
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none resize-none"
               />
@@ -319,7 +319,7 @@ export default function AddOrderItemModal({
               <textarea
                 value={formData.staff_notes}
                 onChange={(e) => setFormData({ ...formData, staff_notes: e.target.value })}
-                placeholder="General staff notes"
+                placeholder="Общие заметки персонала"
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none resize-none"
               />

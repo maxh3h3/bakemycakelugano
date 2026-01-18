@@ -79,10 +79,7 @@ export async function findOrCreateClient(
 ): Promise<FindOrCreateClientResult> {
   const { name, email, phone, whatsapp, instagramHandle, notes } = contactInfo;
 
-  // Validate: at least one contact method is required
-  if (!email && !phone && !instagramHandle) {
-    throw new Error('At least one contact method (email, phone, or Instagram) is required');
-  }
+  // Contact methods are now optional - only name is required
 
   try {
     // Step 1: Try to find existing client by email (case-insensitive) or phone

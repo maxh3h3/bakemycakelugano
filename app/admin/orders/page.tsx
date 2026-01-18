@@ -1,50 +1,45 @@
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { validateSession, getUserRole } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import AdminHeader from '@/components/admin/AdminHeader';
 import OrdersViewTabs from '@/components/admin/OrdersViewTabs';
 import CreateOrderButton from '@/components/admin/CreateOrderButton';
+import QuickSaleButton from '@/components/admin/QuickSaleButton';
 import type { Database } from '@/lib/supabase/types';
-import { parseDateFromDB } from '@/lib/utils';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
+type Client = Database['public']['Tables']['clients']['Row'];
 
 interface OrderWithItems extends Order {
   order_items: OrderItem[];
+  client: Client | null;
 }
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function AdminOrdersPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  // Await params
-  const { locale } = await params;
-
-  // Get translations
-  const t = await getTranslations('admin');
-
+export default async function AdminOrdersPage() {
   // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
-    redirect(`/${locale}/admin/login`);
+    redirect('/admin/login');
   }
 
   // Check role (only owner can see orders page)
   const role = await getUserRole();
   if (role !== 'owner') {
-    redirect(`/${locale}/admin/production`); // Cooks go to production
+    redirect('/admin/production'); // Cooks go to production
   }
   
-  // Fetch all orders with their items
+  // Fetch all orders with their items and client info
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .select('*, order_items(*)')
+    .select(`
+      *,
+      order_items(*),
+      client:clients(*)
+    `)
     .order('created_at', { ascending: false });
 
   if (error || !data) {
@@ -71,10 +66,10 @@ export default async function AdminOrdersPage({
                 </svg>
               </div>
               <h2 className="text-2xl font-heading font-bold text-charcoal-900 mb-2">
-                {t('errorLoadingOrders')}
+                Ошибка загрузки заказов
               </h2>
               <p className="text-charcoal-600">
-                {t('errorFetchingOrders')}
+                Возникла проблема при получении заказов из базы данных.
               </p>
               {error && (
                 <p className="text-sm text-charcoal-500 mt-2">
@@ -90,34 +85,6 @@ export default async function AdminOrdersPage({
 
   const orders = data as OrderWithItems[];
 
-  // Calculate stats
-  const stats = {
-    total: orders.length,
-    today: orders.filter(o => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const orderDate = o.delivery_date ? parseDateFromDB(o.delivery_date) : null;
-      if (!orderDate) return false;
-      return orderDate.getTime() === today.getTime();
-    }).length,
-    thisWeek: orders.filter(o => {
-      const today = new Date();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 7);
-      const orderDate = o.delivery_date ? parseDateFromDB(o.delivery_date) : null;
-      if (!orderDate) return false;
-      return orderDate >= weekStart && orderDate < weekEnd;
-    }).length,
-    unpaid: orders.filter((o) => !o.paid).length,
-    paid: orders.filter((o) => o.paid).length,
-    totalRevenue: orders
-      .filter((o) => o.paid)
-      .reduce((sum, o) => sum + o.total_amount, 0),
-  };
-
   return (
     <div className="min-h-screen bg-cream-50">
       <AdminHeader role={role} />
@@ -127,62 +94,15 @@ export default async function AdminOrdersPage({
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-heading font-bold text-brown-500 mb-2">
-                Orders Dashboard
+                Панель заказов
               </h1>
               <p className="text-charcoal-600">
-                Manage all orders, track payments, and view detailed information
+                Управление всеми заказами, отслеживание платежей и просмотр детальной информации
               </p>
             </div>
-            <CreateOrderButton />
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Total Orders</p>
-              <p className="text-3xl font-mono font-bold text-brown-500 tabular-nums">
-                {stats.total}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Today</p>
-              <p className="text-3xl font-mono font-bold text-blue-600 tabular-nums">
-                {stats.today}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">This Week</p>
-              <p className="text-3xl font-mono font-bold text-purple-600 tabular-nums">
-                {stats.thisWeek}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Total Revenue</p>
-              <p className="text-3xl font-mono font-bold text-green-600 tabular-nums">
-                {new Intl.NumberFormat('de-CH', {
-                  style: 'currency',
-                  currency: 'CHF',
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                }).format(stats.totalRevenue)}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Paid Orders</p>
-              <p className="text-3xl font-mono font-bold text-green-500 tabular-nums">
-                {stats.paid}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">Unpaid Orders</p>
-              <p className="text-3xl font-mono font-bold text-orange-600 tabular-nums">
-                {stats.unpaid}
-              </p>
+            <div className="flex gap-3">
+              <QuickSaleButton />
+              <CreateOrderButton />
             </div>
           </div>
 
@@ -207,10 +127,10 @@ export default async function AdminOrdersPage({
                 </svg>
               </div>
               <h2 className="text-2xl font-heading font-bold text-charcoal-900 mb-2">
-                No Orders Yet
+                Пока нет заказов
               </h2>
               <p className="text-charcoal-600">
-                Orders will appear here once customers start placing them
+                Заказы появятся здесь, когда клиенты начнут их оформлять
               </p>
             </div>
           )}

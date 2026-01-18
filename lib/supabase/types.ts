@@ -73,11 +73,7 @@ export interface Database {
           id: string
           stripe_session_id: string | null
           stripe_payment_intent_id: string | null
-          client_id: string | null
-          customer_email: string
-          customer_name: string
-          customer_phone: string | null
-          customer_ig_handle: string | null
+          client_id: string
           total_amount: number
           currency: string
           delivery_type: string | null
@@ -97,11 +93,7 @@ export interface Database {
           id?: string
           stripe_session_id?: string | null
           stripe_payment_intent_id?: string | null
-          client_id?: string | null
-          customer_email: string
-          customer_name: string
-          customer_phone?: string | null
-          customer_ig_handle?: string | null
+          client_id: string
           total_amount: number
           currency?: string
           delivery_type?: string | null
@@ -121,11 +113,7 @@ export interface Database {
           id: string
           stripe_session_id: string | null
           stripe_payment_intent_id: string | null
-          client_id: string | null
-          customer_email: string
-          customer_name: string
-          customer_phone: string | null
-          customer_ig_handle: string | null
+          client_id: string
           total_amount: number
           currency: string
           delivery_type: string | null

@@ -11,6 +11,7 @@ import { generateOrderNotificationMessage } from '@/lib/telegram/templates/order
 import { generateOrderNumber } from '@/lib/order-number-generator';
 import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
 import { emitNewOrderEvent } from '@/lib/events/production-events';
+import { createRevenueFromOrder } from '@/lib/accounting/transactions';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
@@ -121,8 +122,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }
     }
 
-    // Find or create client
-    let clientId: string | null = null;
+    // Find or create client (required for all orders)
+    let clientId: string;
     try {
       const { client, isNew } = await findOrCreateClient(
         {
@@ -137,7 +138,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       console.log(`${isNew ? 'Created new' : 'Found existing'} client:`, clientId);
     } catch (clientError) {
       console.error('Failed to find/create client:', clientError);
-      // Continue without client_id - order will still be created with legacy fields
+      throw new Error('Failed to create or find client for this order');
     }
 
     // Reconstruct delivery address JSONB from flattened Stripe metadata
@@ -161,9 +162,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         payment_method: 'stripe',
         channel: 'website',
         order_number: orderNumber,
-        customer_email: metadata.customerEmail,
-        customer_name: metadata.customerName,
-        customer_phone: metadata.customerPhone || null,
         total_amount: totalAmount,
         currency: 'chf',
         delivery_type: metadata.deliveryType || null,
@@ -222,6 +220,27 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     console.log(`Created ${orderItemsData.length} order items`);
+
+    // Create revenue transaction if order is paid
+    if (isPaid) {
+      try {
+        await createRevenueFromOrder({
+          orderId: (order as any).id,
+          orderNumber: (order as any).order_number,
+          customerName: metadata.customerName,
+          totalAmount: totalAmount.toString(),
+          currency: 'CHF',
+          clientId: clientId,
+          paymentMethod: 'card', // Stripe payment
+          channel: 'website',
+          createdAt: (order as any).created_at,
+        });
+        console.log('Revenue transaction created for order');
+      } catch (revenueError) {
+        console.error('Failed to create revenue transaction:', revenueError);
+        // Don't throw - order is already created, revenue can be added manually
+      }
+    }
 
     // Mark checkout attempt as converted
     try {
@@ -359,6 +378,18 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   console.log('Payment intent succeeded:', paymentIntent.id);
 
   try {
+    // Fetch the order first to get details for revenue transaction
+    const { data: order, error: fetchError } = await (supabaseAdmin
+      .from('orders') as any)
+      .select('*')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .single();
+
+    if (fetchError || !order) {
+      console.error('Failed to fetch order:', fetchError);
+      return;
+    }
+
     // Mark order as paid
     const { error } = await (supabaseAdmin
       .from('orders') as any)
@@ -370,8 +401,28 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
     if (error) {
       console.error('Failed to update order payment status:', error);
-    } else {
-      console.log('Order marked as paid');
+      return;
+    }
+
+    console.log('Order marked as paid');
+
+    // Create revenue transaction
+    try {
+      await createRevenueFromOrder({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        totalAmount: order.total_amount,
+        currency: order.currency,
+        clientId: order.client_id,
+        paymentMethod: order.payment_method || 'card',
+        channel: order.channel || 'website',
+        createdAt: order.created_at,
+      });
+      console.log('Revenue transaction created for payment intent');
+    } catch (revenueError) {
+      console.error('Failed to create revenue transaction:', revenueError);
+      // Don't throw - order is already marked as paid
     }
   } catch (error) {
     console.error('Error updating order payment status:', error);

@@ -230,7 +230,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
                       setShowSummaryModal(true);
                     }}
                     className="bg-white/20 hover:bg-white/30 text-white rounded-lg p-2 flex items-center justify-center transition-all cursor-pointer"
-                    title="Production Summary"
+                    title="Сводка производства"
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -278,7 +278,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
                       setShowSummaryModal(true);
                     }}
                     className="bg-white/20 hover:bg-white/30 text-white rounded-lg p-2 flex items-center justify-center transition-all cursor-pointer"
-                    title="Production Summary"
+                    title="Сводка производства"
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {

@@ -1,0 +1,345 @@
+/**
+ * Russian translations for Admin Panel
+ * All admin interface text in one place for easy maintenance
+ */
+
+export const adminTranslations = {
+  // Navigation & Header
+  dashboard: 'Панель управления',
+  orders: 'Заказы',
+  clients: 'Клиенты',
+  accounting: 'Бухгалтерия',
+  production: 'Производство',
+  analytics: 'Аналитика',
+  logout: 'Выйти',
+  loggingOut: 'Выход...',
+  
+  // Login Page
+  loginTitle: 'Вход в админ-панель',
+  loginWelcome: 'Добро пожаловать! Введите пароль для продолжения.',
+  password: 'Пароль',
+  passwordPlaceholder: 'Введите пароль администратора',
+  rememberMe: 'Запомнить меня на 7 дней',
+  login: 'Войти',
+  loggingIn: 'Вход...',
+  secureAccess: 'Безопасный доступ для Bake My Cake',
+  forgotPassword: 'Если вы забыли пароль, проверьте переменные окружения',
+  invalidPassword: 'Неверный пароль',
+  loginError: 'Что-то пошло не так. Попробуйте еще раз.',
+  
+  // Orders Dashboard
+  ordersDashboard: 'Панель заказов',
+  ordersDescription: 'Управление всеми заказами клиентов в одном месте',
+  totalOrders: 'Всего заказов',
+  pending: 'В ожидании',
+  preparing: 'В процессе',
+  completed: 'Завершено',
+  cancelled: 'Отменено',
+  errorLoadingOrders: 'Ошибка загрузки заказов',
+  errorFetchingOrders: 'Возникла проблема при получении заказов из базы данных.',
+  noOrdersYet: 'Пока нет заказов',
+  noOrdersDescription: 'Когда клиенты сделают заказы, они появятся здесь.',
+  
+  // Orders Table & Filters
+  searchOrders: 'Поиск заказов',
+  searchPlaceholder: 'Поиск по имени, email или ID заказа...',
+  allOrders: 'Все заказы',
+  paid: 'Оплачено',
+  unpaid: 'Не оплачено',
+  showing: 'Показано',
+  of: 'из',
+  ordersText: 'заказов',
+  noOrdersFound: 'Заказы не найдены',
+  
+  // Order Card
+  orderNumber: 'Заказ №',
+  customer: 'Клиент',
+  customerName: 'Имя клиента',
+  email: 'Email',
+  phone: 'Телефон',
+  deliveryDate: 'Дата доставки',
+  deliveryTime: 'Время доставки',
+  deliveryType: 'Тип доставки',
+  pickup: 'Самовывоз',
+  delivery: 'Доставка',
+  immediate: 'Немедленно',
+  address: 'Адрес',
+  status: 'Статус',
+  paymentStatus: 'Статус оплаты',
+  items: 'Позиции',
+  item: 'Позиция',
+  total: 'Итого',
+  notes: 'Примечания',
+  specialInstructions: 'Особые указания',
+  actions: 'Действия',
+  viewDetails: 'Подробнее',
+  viewItems: 'Просмотр позиций',
+  editOrder: 'Редактировать заказ',
+  deleteOrder: 'Удалить заказ',
+  markAsPaid: 'Отметить как оплаченный',
+  markAsUnpaid: 'Отметить как неоплаченный',
+  updateStatus: 'Обновить статус',
+  
+  // Order Items
+  orderItems: 'Позиции заказа',
+  productName: 'Название продукта',
+  quantity: 'Количество',
+  size: 'Размер',
+  flavour: 'Вкус',
+  price: 'Цена',
+  unitPrice: 'Цена за ед.',
+  subtotal: 'Промежуточный итог',
+  writingOnCake: 'Надпись на торте',
+  addItem: 'Добавить позицию',
+  editItem: 'Редактировать позицию',
+  deleteItem: 'Удалить позицию',
+  
+  // Create Order
+  createOrder: 'Создать заказ',
+  createNewOrder: 'Создать новый заказ',
+  orderDetails: 'Детали заказа',
+  customerInfo: 'Информация о клиенте',
+  deliveryInfo: 'Информация о доставке',
+  orderSummary: 'Итоговая сумма заказа',
+  
+  // AI Order Assistant
+  aiAssistant: 'AI Помощник',
+  aiOrderAssistant: 'AI Помощник по заказам',
+  pasteMessage: 'Вставьте сообщение клиента',
+  messagePlaceholder: 'Вставьте сообщение от клиента из WhatsApp, Instagram или email...',
+  extractOrder: 'Извлечь заказ',
+  extracting: 'Извлечение...',
+  useExtractedData: 'Использовать данные',
+  aiError: 'Ошибка AI',
+  noDataExtracted: 'Не удалось извлечь данные',
+  
+  // Client Form
+  selectClient: 'Выбрать клиента',
+  existingClient: 'Существующий клиент',
+  newClient: 'Новый клиент',
+  searchClient: 'Поиск клиента...',
+  name: 'Имя',
+  namePlaceholder: 'Иван Иванов',
+  emailPlaceholder: 'ivan@example.com',
+  phonePlaceholder: '+41 79 123 4567',
+  instagramHandle: 'Instagram',
+  instagramPlaceholder: 'username',
+  preferredContact: 'Предпочитаемый способ связи',
+  whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+  clientNotes: 'Примечания о клиенте',
+  clientNotesPlaceholder: 'Особые предпочтения, аллергии и т.д.',
+  
+  // Delivery Form
+  selectDate: 'Выберите дату',
+  selectTime: 'Выберите время',
+  timePlaceholder: 'например, 15:00',
+  addressPlaceholder: 'ул. Примерная, 123',
+  city: 'Город',
+  cityPlaceholder: 'Лугано',
+  postalCode: 'Индекс',
+  postalCodePlaceholder: '6900',
+  country: 'Страна',
+  deliveryNotes: 'Примечания к доставке',
+  deliveryNotesPlaceholder: 'Особые инструкции...',
+  
+  // Order Items Form
+  selectProduct: 'Выбрать продукт',
+  selectSize: 'Выбрать размер',
+  selectFlavour: 'Выбрать вкус',
+  writingPlaceholder: 'например, С днем рождения, Саша!',
+  customPrice: 'Индивидуальная цена',
+  useCustomPrice: 'Использовать индивидуальную цену',
+  
+  // Buttons & Actions
+  save: 'Сохранить',
+  saving: 'Сохранение...',
+  cancel: 'Отмена',
+  close: 'Закрыть',
+  delete: 'Удалить',
+  deleting: 'Удаление...',
+  edit: 'Редактировать',
+  add: 'Добавить',
+  adding: 'Добавление...',
+  update: 'Обновить',
+  updating: 'Обновление...',
+  confirm: 'Подтвердить',
+  back: 'Назад',
+  next: 'Далее',
+  refresh: 'Обновить',
+  
+  // Clients Page
+  clientsDashboard: 'База клиентов',
+  clientsDescription: 'Управление информацией о клиентах и история заказов',
+  totalClients: 'Всего клиентов',
+  noClientsYet: 'Пока нет клиентов',
+  noClientsDescription: 'Клиенты появятся здесь при создании заказов',
+  viewClient: 'Просмотр клиента',
+  clientDetails: 'Детали клиента',
+  orderHistory: 'История заказов',
+  totalSpent: 'Общая сумма',
+  lastOrder: 'Последний заказ',
+  lastOrderDate: 'Дата последнего заказа',
+  
+  // Analytics Page
+  analyticsTitle: 'Аналитика оформления заказов',
+  analyticsDescription: 'Отслеживание конверсии, брошенных корзин и доходов',
+  totalCheckouts: 'Всего оформлений',
+  conversionRate: 'Конверсия',
+  lostRevenue: 'Упущенный доход',
+  avgCartValue: 'Средний чек',
+  converted: 'завершено',
+  abandoned: 'брошено',
+  successfulPayments: 'успешных платежей',
+  fromAbandonedCarts: 'Из {count} брошенных корзин',
+  acrossAllAttempts: 'По всем попыткам оформления',
+  recentAbandoned: 'Недавно брошенные корзины',
+  last24Hours: '(За последние 24 часа)',
+  noRecentAbandoned: 'Нет брошенных корзин за последние 24 часа',
+  mostAbandonedProducts: 'Наиболее часто брошенные товары',
+  noAbandonedProducts: 'Пока нет брошенных товаров',
+  unitsInAbandonedCarts: 'ед. в брошенных корзинах',
+  times: 'раз',
+  allAbandonedCarts: 'Все брошенные корзины',
+  amount: 'Сумма',
+  date: 'Дата',
+  noAbandonedCarts: 'Пока нет брошенных корзин',
+  
+  // Accounting Page
+  accountingDashboard: 'Панель бухгалтерии',
+  accountingDescription: 'Финансовая сводка и управление расходами',
+  revenue: 'Доход',
+  expenses: 'Расходы',
+  profit: 'Прибыль',
+  profitMargin: 'Маржа прибыли',
+  thisMonth: 'В этом месяце',
+  expenseBreakdown: 'Разбивка расходов',
+  addExpense: 'Добавить расход',
+  editExpense: 'Редактировать расход',
+  deleteExpense: 'Удалить расход',
+  expenseCategory: 'Категория расхода',
+  expenseAmount: 'Сумма расхода',
+  expenseDate: 'Дата расхода',
+  expenseDescription: 'Описание',
+  expenseDescriptionPlaceholder: 'Описание расхода...',
+  noExpenses: 'Нет расходов',
+  
+  // Expense Categories
+  ingredients: 'Ингредиенты',
+  packaging: 'Упаковка',
+  utilities: 'Коммунальные услуги',
+  rent: 'Аренда',
+  salaries: 'Зарплаты',
+  marketing: 'Маркетинг',
+  equipment: 'Оборудование',
+  other: 'Другое',
+  
+  // Production Page
+  productionDashboard: 'Панель производства',
+  productionDescription: 'Просмотр и управление производственным графиком',
+  productionSchedule: 'График производства',
+  todaysProduction: 'Производство на сегодня',
+  upcomingOrders: 'Предстоящие заказы',
+  inProduction: 'В производстве',
+  readyForPickup: 'Готово к выдаче',
+  noProductionToday: 'Сегодня нет производства',
+  
+  // Date & Time
+  today: 'Сегодня',
+  tomorrow: 'Завтра',
+  yesterday: 'Вчера',
+  thisWeek: 'На этой неделе',
+  nextWeek: 'На следующей неделе',
+  
+  // Validation & Errors
+  required: 'Обязательно',
+  invalidEmail: 'Неверный email',
+  invalidPhone: 'Неверный телефон',
+  fieldRequired: 'Это поле обязательно',
+  selectOption: 'Выберите вариант',
+  errorOccurred: 'Произошла ошибка',
+  tryAgain: 'Попробуйте еще раз',
+  
+  // Error Messages
+  failedToSaveExpense: 'Не удалось сохранить расход',
+  failedToCreateOrder: 'Не удалось создать заказ',
+  failedToUpdateOrder: 'Не удалось обновить заказ',
+  failedToDeleteOrder: 'Не удалось удалить заказ',
+  failedToUpdateClient: 'Не удалось обновить клиента',
+  failedToDeleteClient: 'Не удалось удалить клиента',
+  failedToDeleteExpense: 'Не удалось удалить расход',
+  failedToUpdateItem: 'Не удалось обновить позицию',
+  failedToDeleteItem: 'Не удалось удалить позицию',
+  failedToAddItem: 'Не удалось добавить позицию',
+  failedToProcessOrder: 'Не удалось обработать заказ',
+  failedToExtractOrderData: 'Не удалось извлечь данные заказа',
+  failedToTranscribeAudio: 'Не удалось расшифровать аудио. Попробуйте ввести текст вручную',
+  failedToAccessMicrophone: 'Не удалось получить доступ к микрофону. Проверьте разрешения',
+  transcriptionFailed: 'Расшифровка не удалась',
+  
+  // Validation Messages
+  pleaseSelectDeliveryDate: 'Пожалуйста, выберите дату доставки',
+  pleaseAddAtLeastOneItem: 'Пожалуйста, добавьте хотя бы одну позицию',
+  pleaseEnsureItemsValid: 'Пожалуйста, убедитесь, что все позиции имеют название и валидную цену',
+  pleaseProvideInput: 'Пожалуйста, предоставьте текст, изображения или голосовой ввод',
+  pleaseUploadImagesOnly: 'Пожалуйста, загружайте только изображения (PNG, JPG, JPEG)',
+  maximumImagesAllowed: 'Максимум 5 изображений разрешено',
+  missingFields: 'Отсутствующие поля',
+  
+  // Labels & Placeholders
+  productImageOptional: 'Изображение продукта (необязательно)',
+  deliveryPickupTimeOptional: 'Время доставки/самовывоза (необязательно)',
+  optional: 'Необязательно',
+  optionalPlaceholder: 'Необязательно',
+  
+  // Other Labels
+  internalDecorationNotes: 'Заметки о внутреннем декоре (для персонала)',
+  staffNotes: 'Заметки персонала',
+  paymentDetails: 'Детали оплаты',
+  deliveryDetails: 'Доставка и детали',
+  confirmPaymentMethod: 'Подтвердите способ оплаты',
+  whenAndHowDeliver: 'Когда и как доставить?',
+  deliveryInformation: 'Информация о доставке',
+  uploadScreenshotsOptional: 'Загрузить скриншоты (необязательно)',
+  voiceInputOptional: 'Голосовой ввод (необязательно)',
+  typeOrderDetailsOptional: 'Введите детали заказа (необязательно)',
+  
+  // Success Messages
+  orderCreated: 'Заказ создан успешно',
+  orderUpdated: 'Заказ обновлен успешно',
+  orderDeleted: 'Заказ удален успешно',
+  clientCreated: 'Клиент создан успешно',
+  clientUpdated: 'Клиент обновлен успешно',
+  expenseCreated: 'Расход создан успешно',
+  expenseUpdated: 'Расход обновлен успешно',
+  expenseDeleted: 'Расход удален успешно',
+  changesSaved: 'Изменения сохранены',
+  
+  // Confirmation Messages
+  confirmDelete: 'Вы уверены, что хотите удалить?',
+  confirmDeleteOrder: 'Вы уверены, что хотите удалить этот заказ?',
+  confirmDeleteExpense: 'Вы уверены, что хотите удалить этот расход?',
+  cannotBeUndone: 'Это действие нельзя отменить',
+  
+  // Common
+  yes: 'Да',
+  no: 'Нет',
+  loading: 'Загрузка...',
+  noData: 'Нет данных',
+  search: 'Поиск',
+  filter: 'Фильтр',
+  sort: 'Сортировка',
+  view: 'Просмотр',
+  export: 'Экспорт',
+  print: 'Печать',
+} as const;
+
+// Type for autocomplete
+export type AdminTranslationKey = keyof typeof adminTranslations;
+
+// Helper function for easy access
+export const t = (key: AdminTranslationKey): string => {
+  return adminTranslations[key];
+};
+
+export default adminTranslations;

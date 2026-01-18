@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -22,21 +21,11 @@ interface CheckoutAttempt {
   converted_at: string | null;
 }
 
-export default async function AdminAnalyticsPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  // Await params
-  const { locale } = await params;
-
-  // Get translations
-  const t = await getTranslations('admin');
-
+export default async function AdminAnalyticsPage() {
   // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
-    redirect(`/${locale}/admin/login`);
+    redirect('/admin/login');
   }
 
   // Get user role
@@ -109,10 +98,10 @@ export default async function AdminAnalyticsPage({
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-heading font-bold text-brown-500 mb-2">
-              {t('analyticsTitle')}
+              Аналитика оформления заказов
             </h1>
             <p className="text-charcoal-600">
-              {t('analyticsDescription')}
+              Отслеживание конверсии, брошенных корзин и доходов
             </p>
           </div>
 
@@ -120,45 +109,45 @@ export default async function AdminAnalyticsPage({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Total Checkouts */}
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">{t('totalCheckouts')}</p>
+              <p className="text-sm text-charcoal-500 mb-1">Всего оформлений</p>
               <p className="text-3xl font-mono font-bold text-brown-500 tabular-nums">
                 {totalAttempts}
               </p>
               <p className="text-xs text-charcoal-500 mt-2">
-                {convertedAttempts.length} {t('converted')}, {abandonedAttempts.length} {t('abandoned')}
+                {convertedAttempts.length} завершено, {abandonedAttempts.length} брошено
               </p>
             </div>
 
             {/* Conversion Rate */}
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">{t('conversionRate')}</p>
+              <p className="text-sm text-charcoal-500 mb-1">Конверсия</p>
               <p className="text-3xl font-mono font-bold text-green-600 tabular-nums">
                 {conversionRate.toFixed(1)}%
               </p>
               <p className="text-xs text-charcoal-500 mt-2">
-                {convertedAttempts.length} {t('successfulPayments')}
+                {convertedAttempts.length} успешных платежей
               </p>
             </div>
 
             {/* Lost Revenue */}
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">{t('lostRevenue')}</p>
+              <p className="text-sm text-charcoal-500 mb-1">Упущенный доход</p>
               <p className="text-3xl font-mono font-bold text-rose-500 tabular-nums">
                 {formatCurrency(lostRevenue)}
               </p>
               <p className="text-xs text-charcoal-500 mt-2">
-                {t('fromAbandonedCarts', { count: abandonedAttempts.length })}
+                Из {abandonedAttempts.length} брошенных корзин
               </p>
             </div>
 
             {/* Average Cart Value */}
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
-              <p className="text-sm text-charcoal-500 mb-1">{t('avgCartValue')}</p>
+              <p className="text-sm text-charcoal-500 mb-1">Средний чек</p>
               <p className="text-3xl font-mono font-bold text-brown-500 tabular-nums">
                 {formatCurrency(averageCartValue)}
               </p>
               <p className="text-xs text-charcoal-500 mt-2">
-                {t('acrossAllAttempts')}
+                По всем попыткам оформления
               </p>
             </div>
           </div>
@@ -168,15 +157,15 @@ export default async function AdminAnalyticsPage({
             {/* Recent Abandoned Carts */}
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
               <h2 className="text-2xl font-heading font-bold text-brown-500 mb-4">
-                {t('recentAbandoned')}
+                Недавно брошенные корзины
                 <span className="text-sm font-body font-normal text-charcoal-500 ml-2">
-                  {t('last24Hours')}
+                  (За последние 24 часа)
                 </span>
               </h2>
               
               {recentAbandoned.length === 0 ? (
                 <p className="text-charcoal-500 text-center py-8">
-                  {t('noRecentAbandoned')}
+                  Нет брошенных корзин за последние 24 часа
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -199,7 +188,7 @@ export default async function AdminAnalyticsPage({
                         </p>
                       </div>
                       <div className="flex items-center justify-between text-xs text-charcoal-500">
-                        <span>{attempt.cart_items.length} {t('items')}</span>
+                        <span>{attempt.cart_items.length} позиций</span>
                         <span>{format(new Date(attempt.created_at), 'HH:mm')}</span>
                       </div>
                     </div>
@@ -211,12 +200,12 @@ export default async function AdminAnalyticsPage({
             {/* Most Abandoned Products */}
             <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
               <h2 className="text-2xl font-heading font-bold text-brown-500 mb-4">
-                {t('mostAbandonedProducts')}
+                Наиболее часто брошенные товары
               </h2>
               
               {topAbandonedProducts.length === 0 ? (
                 <p className="text-charcoal-500 text-center py-8">
-                  {t('noAbandonedProducts')}
+                  Пока нет брошенных товаров
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -236,13 +225,13 @@ export default async function AdminAnalyticsPage({
                             {productName}
                           </p>
                           <p className="text-xs text-charcoal-500">
-                            {data.quantity} {t('unitsInAbandonedCarts')}
+                            {data.quantity} ед. в брошенных корзинах
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-rose-500">{data.count}</p>
-                        <p className="text-xs text-charcoal-500">{t('times')}</p>
+                        <p className="text-xs text-charcoal-500">раз</p>
                       </div>
                     </div>
                   ))}
@@ -254,12 +243,12 @@ export default async function AdminAnalyticsPage({
           {/* All Abandoned Carts Table */}
           <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
             <h2 className="text-2xl font-heading font-bold text-brown-500 mb-4">
-              {t('allAbandonedCarts')} ({abandonedAttempts.length})
+              Все брошенные корзины ({abandonedAttempts.length})
             </h2>
 
             {abandonedAttempts.length === 0 ? (
               <p className="text-charcoal-500 text-center py-8">
-                {t('noAbandonedCarts')}
+                Пока нет брошенных корзин
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -267,19 +256,19 @@ export default async function AdminAnalyticsPage({
                   <thead>
                     <tr className="border-b-2 border-cream-300">
                       <th className="text-left py-3 px-2 text-sm font-semibold text-charcoal-700">
-                        {t('customer')}
+                        Клиент
                       </th>
                       <th className="text-left py-3 px-2 text-sm font-semibold text-charcoal-700">
-                        {t('email')}
+                        Email
                       </th>
                       <th className="text-center py-3 px-2 text-sm font-semibold text-charcoal-700">
-                        {t('items')}
+                        Позиции
                       </th>
                       <th className="text-right py-3 px-2 text-sm font-semibold text-charcoal-700">
-                        {t('amount')}
+                        Сумма
                       </th>
                       <th className="text-right py-3 px-2 text-sm font-semibold text-charcoal-700">
-                        {t('date')}
+                        Дата
                       </th>
                     </tr>
                   </thead>
@@ -316,4 +305,3 @@ export default async function AdminAnalyticsPage({
     </div>
   );
 }
-

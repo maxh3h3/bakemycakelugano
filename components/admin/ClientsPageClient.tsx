@@ -6,6 +6,7 @@ import ClientsTable from '@/components/admin/ClientsTable';
 import ClientDetailModal from '@/components/admin/ClientDetailModal';
 import ClientForm, { type ClientFormData } from '@/components/admin/ClientForm';
 import type { Client } from '@/lib/db/schema';
+import t from '@/lib/admin-translations-extended';
 
 export default function ClientsPageClient() {
   const router = useRouter();
@@ -59,11 +60,11 @@ export default function ClientsPageClient() {
         fetchClients(); // Refresh list
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to create client');
+        alert(error.error || 'Не удалось создать клиента');
       }
     } catch (error) {
       console.error('Error creating client:', error);
-      alert('Failed to create client');
+      alert('Не удалось создать клиента');
     } finally {
       setIsSaving(false);
     }
@@ -90,27 +91,27 @@ export default function ClientsPageClient() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-heading font-bold text-charcoal-900 mb-2">Clients</h1>
-          <p className="text-charcoal-600">Manage your customer relationships</p>
+          <h1 className="text-4xl font-heading font-bold text-charcoal-900 mb-2">{t.clients}</h1>
+          <p className="text-charcoal-600">Управление отношениями с клиентами</p>
         </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-md p-6">
             <p className="text-3xl font-bold text-brown-600">{clients.length}</p>
-            <p className="text-sm text-charcoal-600">Total Clients</p>
+            <p className="text-sm text-charcoal-600">Всего клиентов</p>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6">
             <p className="text-3xl font-bold text-brown-600">
               {clients.filter((c) => c.totalOrders && c.totalOrders > 0).length}
             </p>
-            <p className="text-sm text-charcoal-600">Active Clients</p>
+            <p className="text-sm text-charcoal-600">Активные клиенты</p>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6">
             <p className="text-3xl font-bold text-brown-600">
               {clients.filter((c) => c.totalOrders && c.totalOrders > 3).length}
             </p>
-            <p className="text-sm text-charcoal-600">Repeat Customers</p>
+            <p className="text-sm text-charcoal-600">Постоянные клиенты</p>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6">
             <p className="text-3xl font-bold text-brown-600">
@@ -119,7 +120,7 @@ export default function ClientsPageClient() {
                 .reduce((sum, c) => sum + parseFloat(c.totalSpent || '0'), 0)
                 .toFixed(2)}
             </p>
-            <p className="text-sm text-charcoal-600">Total Revenue</p>
+            <p className="text-sm text-charcoal-600">{t.revenue}</p>
           </div>
         </div>
 
@@ -133,7 +134,7 @@ export default function ClientsPageClient() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Поиск по имени, email или телефону..."
                   className="w-full px-4 py-2 pl-10 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                 />
                 <svg
@@ -159,9 +160,9 @@ export default function ClientsPageClient() {
                 onChange={(e) => setFilterPreferredContact(e.target.value)}
                 className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               >
-                <option value="">All Contacts</option>
+                <option value="">Все контакты</option>
                 <option value="email">📧 Email</option>
-                <option value="phone">📞 Phone</option>
+                <option value="phone">📞 Телефон</option>
                 <option value="whatsapp">💬 WhatsApp</option>
                 <option value="instagram">📸 Instagram</option>
               </select>
@@ -175,7 +176,7 @@ export default function ClientsPageClient() {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add Client
+              {t.newClient}
             </button>
           </div>
         </div>
@@ -184,7 +185,7 @@ export default function ClientsPageClient() {
         {isLoading ? (
           <div className="bg-white rounded-2xl shadow-md p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-500 mx-auto mb-4"></div>
-            <p className="text-charcoal-600">Loading clients...</p>
+            <p className="text-charcoal-600">{t.loading}</p>
           </div>
         ) : (
           <ClientsTable
@@ -210,8 +211,8 @@ export default function ClientsPageClient() {
             <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-heading font-bold">Create New Client</h2>
-                  <p className="text-sm text-white/80">Add a new customer to the system</p>
+                  <h2 className="text-2xl font-heading font-bold">{t.newClient}</h2>
+                  <p className="text-sm text-white/80">Добавить нового клиента в систему</p>
                 </div>
                 <button
                   onClick={() => setIsCreating(false)}

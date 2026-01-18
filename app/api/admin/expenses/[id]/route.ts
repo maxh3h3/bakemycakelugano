@@ -49,7 +49,7 @@ export async function PUT(
     }
 
     // Validate category
-    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'other'];
+    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'packaging', 'delivery', 'other'];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
         { success: false, error: `Category must be one of: ${validCategories.join(', ')}` },
@@ -57,46 +57,62 @@ export async function PUT(
       );
     }
 
-    // Check if expense exists
-    const { data: existingExpense, error: fetchError } = await (supabaseAdmin as any)
-      .from('expenses')
+    // Check if expense transaction exists
+    const { data: existingTransaction, error: fetchError } = await (supabaseAdmin as any)
+      .from('financial_transactions')
       .select('*')
       .eq('id', id)
+      .eq('type', 'expense')
       .single();
 
-    if (fetchError || !existingExpense) {
+    if (fetchError || !existingTransaction) {
       return NextResponse.json(
         { success: false, error: 'Expense not found' },
         { status: 404 }
       );
     }
 
-    // Update expense
+    // Update expense transaction
     const updates = {
       date,
-      category,
       amount: parseFloat(amount).toFixed(2),
       currency: currency || 'CHF',
       description: description.trim(),
       notes: notes?.trim() || null,
+      expense_category: category,
       receipt_url: receipt_url || null,
       updated_at: new Date().toISOString(),
     };
 
-    const { data: expense, error: updateError } = await (supabaseAdmin as any)
-      .from('expenses')
+    const { data: transaction, error: updateError } = await (supabaseAdmin as any)
+      .from('financial_transactions')
       .update(updates)
       .eq('id', id)
       .select()
       .single();
 
     if (updateError) {
-      console.error('Error updating expense:', updateError);
+      console.error('Error updating expense transaction:', updateError);
       return NextResponse.json(
         { success: false, error: 'Failed to update expense' },
         { status: 500 }
       );
     }
+
+    // Transform back to Expense format for compatibility
+    const expense = {
+      id: transaction.id,
+      date: transaction.date,
+      category: transaction.expense_category,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      description: transaction.description,
+      notes: transaction.notes,
+      receiptUrl: transaction.receipt_url,
+      createdByUserId: transaction.created_by_user_id,
+      createdAt: transaction.created_at,
+      updatedAt: transaction.updated_at,
+    };
 
     return NextResponse.json({
       success: true,
@@ -132,28 +148,29 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Check if expense exists
-    const { data: existingExpense, error: fetchError } = await (supabaseAdmin as any)
-      .from('expenses')
+    // Check if expense transaction exists
+    const { data: existingTransaction, error: fetchError } = await (supabaseAdmin as any)
+      .from('financial_transactions')
       .select('*')
       .eq('id', id)
+      .eq('type', 'expense')
       .single();
 
-    if (fetchError || !existingExpense) {
+    if (fetchError || !existingTransaction) {
       return NextResponse.json(
         { success: false, error: 'Expense not found' },
         { status: 404 }
       );
     }
 
-    // Delete expense
+    // Delete expense transaction
     const { error: deleteError } = await (supabaseAdmin as any)
-      .from('expenses')
+      .from('financial_transactions')
       .delete()
       .eq('id', id);
 
     if (deleteError) {
-      console.error('Error deleting expense:', deleteError);
+      console.error('Error deleting expense transaction:', deleteError);
       return NextResponse.json(
         { success: false, error: 'Failed to delete expense' },
         { status: 500 }

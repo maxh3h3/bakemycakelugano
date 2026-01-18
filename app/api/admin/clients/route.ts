@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       totalOrders: client.total_orders,
       totalSpent: client.total_spent,
       notes: client.notes,
+      clientType: client.client_type || 'individual',
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     }));
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
       instagram_handle,
       preferred_contact,
       notes,
+      client_type,
     } = body;
 
     // Validate required fields
@@ -131,13 +133,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate at least one contact method
-    if (!email && !phone && !instagram_handle) {
-      return NextResponse.json(
-        { success: false, error: 'At least one contact method (email, phone, or Instagram) is required' },
-        { status: 400 }
-      );
-    }
+    // Contact methods are now optional - no validation required
 
     // Create client - use snake_case for Supabase column names
     const newClient = {
@@ -148,6 +144,7 @@ export async function POST(request: NextRequest) {
       instagram_handle: instagram_handle?.trim() || null,
       preferred_contact: preferred_contact || null,
       notes: notes?.trim() || null,
+      client_type: client_type || 'individual',
       total_orders: 0,
       total_spent: '0',
       first_order_date: null,
@@ -190,6 +187,7 @@ export async function POST(request: NextRequest) {
       totalOrders: client.total_orders,
       totalSpent: client.total_spent,
       notes: client.notes,
+      clientType: client.client_type || 'individual',
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     };

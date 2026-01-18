@@ -37,13 +37,14 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
       session = await stripe.checkout.sessions.retrieve(session_id);
     }
 
-    // Retrieve order from database
+    // Retrieve order from database with client info
     // Note: Order might not exist yet if webhook hasn't processed
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
         *,
-        order_items (*)
+        order_items (*),
+        client:clients(*)
       `)
       .eq('stripe_session_id', session_id)
       .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 results

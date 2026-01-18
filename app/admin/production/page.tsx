@@ -11,24 +11,17 @@ type OrderItem = Database['public']['Tables']['order_items']['Row'];
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function AdminProductionPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  // Await params
-  const { locale } = await params;
-
+export default async function AdminProductionPage() {
   // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
-    redirect(`/${locale}/admin/login`);
+    redirect('/admin/login');
   }
 
   // Check role (cook or owner can see production)
   const role = await getUserRole();
   if (role !== 'cook' && role !== 'owner') {
-    redirect(`/${locale}/admin/orders`);
+    redirect('/admin/orders');
   }
 
   // Get today's date for filtering
@@ -67,13 +60,13 @@ export default async function AdminProductionPage({
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-heading font-bold text-brown-500 mb-2">
-              Production Schedule
+              График производства
             </h1>
             <p className="text-charcoal-600">
-              Kitchen workflow - Click items to view details and update status
+              Рабочий процесс кухни - Нажмите на позиции для просмотра деталей и обновления статуса
             </p>
             <p className="text-sm text-charcoal-500 mt-1">
-              {today.toLocaleDateString('en-US', { 
+              {today.toLocaleDateString('ru-RU', { 
                 weekday: 'long', 
                 month: 'long', 
                 day: 'numeric', 
@@ -103,10 +96,10 @@ export default async function AdminProductionPage({
                 </svg>
               </div>
               <h2 className="text-2xl font-heading font-bold text-charcoal-900 mb-2">
-                No orders scheduled
+                Нет запланированных заказов
               </h2>
               <p className="text-charcoal-600">
-                All caught up! Check back when new orders come in.
+                Все выполнено! Проверьте снова, когда поступят новые заказы.
               </p>
             </div>
           )}

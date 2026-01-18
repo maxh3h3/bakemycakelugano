@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
+import { adminTranslations as t } from '@/lib/admin-translations';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const params = useParams();
-  const locale = params.locale as string;
-  const t = useTranslations('admin');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -33,15 +30,15 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Redirect to admin dashboard (with locale)
-        router.push(`/${locale}/admin/orders`);
+        // Redirect to admin dashboard (no locale needed)
+        router.push('/admin/orders');
         router.refresh();
       } else {
-        setError(data.error || t('invalidPassword'));
+        setError(data.error || t.invalidPassword);
         setIsLoading(false);
       }
     } catch (err) {
-      setError(t('loginError'));
+      setError(t.loginError);
       setIsLoading(false);
     }
   };
@@ -61,10 +58,10 @@ export default function AdminLoginPage() {
             />
           </div>
           <h1 className="text-4xl font-heading font-bold text-brown-500 mb-2">
-            {t('loginTitle')}
+            {t.loginTitle}
           </h1>
           <p className="text-charcoal-700">
-            {t('loginWelcome')}
+            {t.loginWelcome}
           </p>
         </div>
 
@@ -77,7 +74,7 @@ export default function AdminLoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-charcoal-900 mb-2"
               >
-                {t('password')}
+                {t.password}
               </label>
               <input
                 type="password"
@@ -85,7 +82,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-full border-2 border-cream-300 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 transition-all bg-cream-50/50"
-                placeholder={t('passwordPlaceholder')}
+                placeholder={t.passwordPlaceholder}
                 required
                 autoFocus
                 disabled={isLoading}
@@ -106,7 +103,7 @@ export default function AdminLoginPage() {
                 htmlFor="rememberMe"
                 className="ml-2 block text-sm text-charcoal-700"
               >
-                {t('rememberMe')}
+                {t.rememberMe}
               </label>
             </div>
 
@@ -125,16 +122,16 @@ export default function AdminLoginPage() {
               disabled={isLoading}
               className="w-full"
             >
-              {isLoading ? t('loggingIn') : t('login')}
+              {isLoading ? t.loggingIn : t.login}
             </Button>
           </form>
 
           {/* Additional Info */}
           <div className="mt-6 pt-6 border-t border-cream-200">
             <p className="text-xs text-center text-charcoal-500">
-              {t('secureAccess')}
+              {t.secureAccess}
               <br />
-              {t('forgotPassword')}
+              {t.forgotPassword}
             </p>
           </div>
         </div>
@@ -142,4 +139,3 @@ export default function AdminLoginPage() {
     </div>
   );
 }
-

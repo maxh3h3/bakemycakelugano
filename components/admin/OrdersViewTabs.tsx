@@ -4,12 +4,16 @@ import { useState } from 'react';
 import type { Database } from '@/lib/supabase/types';
 import OrdersTable from './OrdersTable';
 import { parseDateFromDB } from '@/lib/utils';
+import t from '@/lib/admin-translations-extended';
+import { User, Soup } from 'lucide-react';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
+type Client = Database['public']['Tables']['clients']['Row'];
 
 interface OrderWithItems extends Order {
   order_items: OrderItem[];
+  client: Client | null;
 }
 
 interface OrdersViewTabsProps {
@@ -18,12 +22,19 @@ interface OrdersViewTabsProps {
 
 type ViewTab = 'today' | 'week' | 'month' | 'all';
 
+// Quick sale client IDs
+const VITRINA_CLIENT_ID = '06efda69-8386-4365-a2f7-3bcf5bdc483e';
+const RAMENNAYA_CLIENT_ID = '9323a8bb-6ec4-481c-b040-aa762dc626bd';
+
 export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('today');
+  const [showVitrina, setShowVitrina] = useState(true);
+  const [showRamennaya, setShowRamennaya] = useState(true);
 
-  // Filter orders based on active tab
+  // Filter orders based on active tab and walk-in client toggles
   const getFilteredOrders = (): OrderWithItems[] => {
     const now = new Date();
+    let filtered: OrderWithItems[] = [];
     
     switch (activeTab) {
       case 'today': {
@@ -32,11 +43,12 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
         
-        return orders.filter(o => {
+        filtered = orders.filter(o => {
           if (!o.delivery_date) return false;
           const orderDate = parseDateFromDB(o.delivery_date);
           return orderDate.getTime() >= today.getTime() && orderDate.getTime() < tomorrow.getTime();
         });
+        break;
       }
       
       case 'week': {
@@ -46,11 +58,12 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 7);
         
-        return orders.filter(o => {
+        filtered = orders.filter(o => {
           if (!o.delivery_date) return false;
           const orderDate = parseDateFromDB(o.delivery_date);
           return orderDate >= weekStart && orderDate < weekEnd;
         });
+        break;
       }
       
       case 'month': {
@@ -58,17 +71,25 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         monthEnd.setHours(23, 59, 59, 999);
         
-        return orders.filter(o => {
+        filtered = orders.filter(o => {
           if (!o.delivery_date) return false;
           const orderDate = parseDateFromDB(o.delivery_date);
           return orderDate >= monthStart && orderDate <= monthEnd;
         });
+        break;
       }
       
       case 'all':
       default:
-        return orders;
+        filtered = orders;
     }
+
+    // Apply walk-in client filters
+    return filtered.filter(o => {
+      if (!showVitrina && o.client_id === VITRINA_CLIENT_ID) return false;
+      if (!showRamennaya && o.client_id === RAMENNAYA_CLIENT_ID) return false;
+      return true;
+    });
   };
 
   const filteredOrders = getFilteredOrders();
@@ -78,7 +99,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
     const now = new Date();
     switch (activeTab) {
       case 'today':
-        return now.toLocaleDateString('en-US', { 
+        return now.toLocaleDateString('ru-RU', { 
           weekday: 'long', 
           month: 'long', 
           day: 'numeric', 
@@ -89,20 +110,20 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         weekStart.setDate(now.getDate() - now.getDay());
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
-        return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        return `${weekStart.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' })}`;
       }
       case 'month':
-        return now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        return now.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
       case 'all':
-        return 'All time';
+        return 'За все время';
     }
   };
 
   const tabs = [
-    { id: 'today' as ViewTab, label: 'Today' },
-    { id: 'week' as ViewTab, label: 'This Week' },
-    { id: 'month' as ViewTab, label: 'This Month' },
-    { id: 'all' as ViewTab, label: 'All Orders' },
+    { id: 'today' as ViewTab, label: 'Сегодня' },
+    { id: 'week' as ViewTab, label: 'Эта неделя' },
+    { id: 'month' as ViewTab, label: 'Этот месяц' },
+    { id: 'all' as ViewTab, label: t.allOrders },
   ];
 
   return (
@@ -128,15 +149,48 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         </div>
       </div>
 
-      {/* Date Range & Count */}
+      {/* Date Range & Count with Walk-in Filters */}
       <div className="flex items-center justify-between px-2">
         <div>
           <h3 className="text-lg font-heading font-bold text-charcoal-900">
             {getDateRangeText()}
           </h3>
           <p className="text-sm text-charcoal-500">
-            Showing {filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'}
+            {t.showing} {filteredOrders.length} {filteredOrders.length === 1 ? 'заказ' : 'заказов'}
           </p>
+        </div>
+
+        {/* Walk-in Client Filter Buttons */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-charcoal-600 font-semibold mr-2">Фильтры:</span>
+          
+          {/* Vitrina Toggle */}
+          <button
+            onClick={() => setShowVitrina(!showVitrina)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all border-2 ${
+              showVitrina
+                ? 'bg-brown-500 text-white border-brown-500 shadow-md'
+                : 'bg-gray-100 text-gray-400 border-gray-300 opacity-50 hover:opacity-70'
+            }`}
+            title={showVitrina ? 'Скрыть заказы Витрины' : 'Показать заказы Витрины'}
+          >
+            <User className="w-4 h-4" />
+            <span>Витрина</span>
+          </button>
+
+          {/* Ramennaya Toggle */}
+          <button
+            onClick={() => setShowRamennaya(!showRamennaya)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all border-2 ${
+              showRamennaya
+                ? 'bg-brown-500 text-white border-brown-500 shadow-md'
+                : 'bg-gray-100 text-gray-400 border-gray-300 opacity-50 hover:opacity-70'
+            }`}
+            title={showRamennaya ? 'Скрыть заказы Раменной' : 'Показать заказы Раменной'}
+          >
+            <Soup className="w-4 h-4" />
+            <span>Раменная</span>
+          </button>
         </div>
       </div>
 
@@ -161,10 +215,10 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
             </svg>
           </div>
           <h3 className="text-xl font-heading font-bold text-charcoal-900 mb-2">
-            No orders for this period
+            Нет заказов за этот период
           </h3>
           <p className="text-charcoal-600">
-            Try selecting a different time range
+            Попробуйте выбрать другой временной диапазон
           </p>
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { AIExtractedOrderData, AIOrderProcessingResponse } from '@/types/ai-order';
+import t from '@/lib/admin-translations-extended';
 
 interface AIOrderAssistantModalProps {
   onClose: () => void;
@@ -59,12 +60,12 @@ export default function AIOrderAssistantModal({ onClose, onOrderExtracted }: AIO
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
     if (imageFiles.length === 0) {
-      setError('Please upload image files only (PNG, JPG, JPEG)');
+      setError(t.pleaseUploadImagesOnly);
       return;
     }
 
     if (images.length + imageFiles.length > 5) {
-      setError('Maximum 5 images allowed');
+      setError(t.maximumImagesAllowed);
       return;
     }
 
@@ -164,14 +165,14 @@ export default function AIOrderAssistantModal({ onClose, onOrderExtracted }: AIO
           setTextInput(prev => prev + (prev ? '\n\n' : '') + data.text);
           setStep('input');
         } else {
-          throw new Error(data.error || 'Transcription failed');
+          throw new Error(data.error || t.transcriptionFailed);
         }
       };
       reader.readAsDataURL(audioBlob);
 
     } catch (err) {
       console.error('Transcription error:', err);
-      setError('Failed to transcribe audio. Please try typing instead.');
+      setError(t.failedToTranscribeAudio);
       setStep('input');
     }
   };
@@ -203,7 +204,7 @@ export default function AIOrderAssistantModal({ onClose, onOrderExtracted }: AIO
       const data: AIOrderProcessingResponse = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to extract order data');
+        throw new Error(data.error || t.failedToExtractOrderData);
       }
 
       // Automatically use the extracted data without review step
@@ -214,7 +215,7 @@ export default function AIOrderAssistantModal({ onClose, onOrderExtracted }: AIO
 
     } catch (err) {
       console.error('Processing error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process order');
+      setError(err instanceof Error ? err.message : t.failedToProcessOrder);
       setStep('error');
     }
   };
@@ -352,7 +353,7 @@ export default function AIOrderAssistantModal({ onClose, onOrderExtracted }: AIO
               {/* Voice Recording */}
               <div>
                 <label className="block text-sm font-semibold text-charcoal-700 mb-3">
-                  Voice Input (Optional)
+                  {t.voiceInputOptional}
                 </label>
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl p-6">
                   {!isRecording ? (
@@ -398,12 +399,12 @@ export default function AIOrderAssistantModal({ onClose, onOrderExtracted }: AIO
               {/* Text Input */}
               <div>
                 <label className="block text-sm font-semibold text-charcoal-700 mb-3">
-                  Type Order Details (Optional)
+                  {t.typeOrderDetailsOptional}
                 </label>
                 <textarea
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  placeholder="Paste conversation or type order details here...&#10;&#10;Example:&#10;Customer: Maria Rossi&#10;Phone: +41 79 123 4567&#10;Order: Chocolate birthday cake, 2kg, writing &quot;Happy Birthday Sofia&quot;&#10;Delivery: Tomorrow at 3pm, pickup&#10;Payment: Twint, already paid"
+                  placeholder="Вставьте разговор или введите детали заказа здесь...&#10;&#10;Пример:&#10;Клиент: Мария Росси&#10;Телефон: +41 79 123 4567&#10;Заказ: Шоколадный торт на день рождения, 2кг, надпись &quot;С Днём Рождения София&quot;&#10;Доставка: Завтра в 15:00, самовывоз&#10;Оплата: Twint, уже оплачено"
                   rows={8}
                   className="w-full px-4 py-3 rounded-xl border-2 border-cream-300 focus:border-purple-500 focus:outline-none font-mono text-sm"
                 />

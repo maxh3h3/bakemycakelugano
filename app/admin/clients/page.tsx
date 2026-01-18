@@ -6,18 +6,11 @@ import ClientsPageClient from '@/components/admin/ClientsPageClient';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function ClientsPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  // Await params
-  const { locale } = await params;
-
+export default async function ClientsPage() {
   // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
-    redirect(`/${locale}/admin/login`);
+    redirect('/admin/login');
   }
 
   // Get user role
