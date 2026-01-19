@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { updateClientStats } from '@/lib/clients/utils';
+import { generateOrderNumber } from '@/lib/order-number-generator';
 
 // Update an order
 export async function PATCH(
@@ -74,6 +75,22 @@ export async function PATCH(
       );
     }
 
+    // If delivery_date is being updated, regenerate order number
+    let newOrderNumber: string | null = null;
+    if (updateData.delivery_date) {
+      try {
+        newOrderNumber = await generateOrderNumber(updateData.delivery_date);
+        updateData.order_number = newOrderNumber;
+        console.log(`Generated new order number: ${newOrderNumber} for delivery date: ${updateData.delivery_date}`);
+      } catch (orderNumberError) {
+        console.error('Error generating order number:', orderNumberError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to generate new order number' },
+          { status: 500 }
+        );
+      }
+    }
+
     // Update the order
     const { data: updatedOrder, error: updateError } = await (supabaseAdmin as any)
       .from('orders')
@@ -88,6 +105,33 @@ export async function PATCH(
         { success: false, error: 'Failed to update order' },
         { status: 500 }
       );
+    }
+
+    // If delivery_date was updated, also update all related order_items
+    if (updateData.delivery_date) {
+      const orderItemsUpdate: any = {
+        delivery_date: updateData.delivery_date,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Also update order_number in order_items if it was regenerated
+      if (newOrderNumber) {
+        orderItemsUpdate.order_number = newOrderNumber;
+      }
+
+      const { error: itemsUpdateError } = await (supabaseAdmin as any)
+        .from('order_items')
+        .update(orderItemsUpdate)
+        .eq('order_id', id);
+
+      if (itemsUpdateError) {
+        console.error('Error updating order items:', itemsUpdateError);
+        // Log the error but don't fail the entire request
+        // The order was updated successfully, items can be fixed manually if needed
+        console.warn('Order updated successfully but failed to update related order items');
+      } else {
+        console.log(`Updated delivery_date${newOrderNumber ? ' and order_number' : ''} for all order items in order ${id}`);
+      }
     }
 
     // If paid status changed, update client stats
