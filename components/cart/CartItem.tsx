@@ -29,11 +29,6 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
     ? urlFor(item.product.images[0]).width(200).height(200).url()
     : '/images/placeholders/product.jpg';
 
-  // Get size label
-  const sizeLabel = item.selectedSize && item.product.sizes
-    ? item.product.sizes.find(s => s.value === item.selectedSize)?.label
-    : null;
-
   // Get flavour name
   const flavourName = item.selectedFlavour && item.product.availableFlavours
     ? item.product.availableFlavours.find(f => f._id === item.selectedFlavour)?.name
@@ -79,10 +74,10 @@ export default function CartItem({ item, index, locale }: CartItemProps) {
                 {item.product.name}
               </h3>
 
-              {/* Size (if applicable) */}
-              {sizeLabel && (
+              {/* Weight (if applicable) */}
+              {item.weight_kg && (
                 <p className="text-sm text-charcoal-900/70 mb-1">
-                  {t('size')}: {sizeLabel}
+                  {t('weight')}: {item.weight_kg}
                 </p>
               )}
 

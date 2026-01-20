@@ -57,7 +57,7 @@ Return ONLY valid JSON with this EXACT structure:
       "quantity": number (required, default 1),
       "unit_price": number (required, use 0 if unknown),
       "flavour_name": "string or null",
-      "weight_kg": number or null,
+      "weight_kg": string or null (e.g., "1.5", "1.5 kg", "approx 2"),
       "diameter_cm": number or null,
       "writing_on_cake": "string or null",
       "internal_decoration_notes": "string or null",

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFlavours } from '@/lib/sanity/queries';
 import DatePicker from '@/components/products/DatePicker';
-import ImageUpload from '@/components/admin/ImageUpload';
+import MultiImageUpload from '@/components/admin/MultiImageUpload';
 import ClientSearchInput from '@/components/admin/ClientSearchInput';
 import AIOrderAssistantModal from '@/components/admin/AIOrderAssistantModal';
 import { formatDateForDB } from '@/lib/utils';
@@ -19,12 +19,12 @@ interface CreateOrderModalProps {
 
 interface OrderItem {
   product_name: string;
-  product_image_url: string;
+  product_image_urls: string[];
   quantity: number;
   unit_price: number;
   selected_flavour: string | null;
   flavour_name: string | null;
-  weight_kg: number | null;
+  weight_kg: string | null;
   diameter_cm: number | null;
   writing_on_cake: string | null;
   internal_decoration_notes: string | null;
@@ -79,7 +79,7 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
   const [orderItems, setOrderItems] = useState<OrderItem[]>(
     initialData?.order_items?.map(item => ({
       product_name: item.product_name,
-      product_image_url: '',
+      product_image_urls: [],
       quantity: item.quantity,
       unit_price: item.unit_price,
       selected_flavour: item.selected_flavour || null,
@@ -161,7 +161,7 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
   const addOrderItem = () => {
     setOrderItems(prev => [...prev, {
       product_name: '',
-      product_image_url: '',
+      product_image_urls: [],
       quantity: 1,
       unit_price: 0,
       selected_flavour: null,
@@ -295,7 +295,7 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
     if (data.order_items && data.order_items.length > 0) {
       setOrderItems(data.order_items.map(item => ({
         product_name: item.product_name,
-        product_image_url: '',
+        product_image_urls: [],
         quantity: item.quantity,
         unit_price: item.unit_price,
         selected_flavour: item.selected_flavour || null,
@@ -855,12 +855,10 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
                             Вес (кг)
                           </label>
                           <input
-                            type="number"
-                            step="0.5"
-                            min="0"
+                            type="text"
                             value={item.weight_kg || ''}
-                            onChange={(e) => updateOrderItem(index, 'weight_kg', e.target.value ? parseFloat(e.target.value) : null)}
-                            placeholder="напр., 1.5"
+                            onChange={(e) => updateOrderItem(index, 'weight_kg', e.target.value ? e.target.value : null)}
+                            placeholder="напр., 1.5 или 1.5 кг"
                             className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                           />
                         </div>
@@ -881,11 +879,11 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
                           />
                         </div>
 
-                        {/* Product Image */}
+                        {/* Product Images */}
                         <div className="md:col-span-3">
-                          <ImageUpload
-                            value={item.product_image_url || ''}
-                            onChange={(url) => updateOrderItem(index, 'product_image_url', url)}
+                          <MultiImageUpload
+                            value={item.product_image_urls || []}
+                            onChange={(urls) => updateOrderItem(index, 'product_image_urls', urls)}
                             label={t.productImageOptional}
                           />
                         </div>

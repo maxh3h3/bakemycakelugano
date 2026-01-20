@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getFlavours } from '@/lib/sanity/queries';
-import ImageUpload from '@/components/admin/ImageUpload';
+import MultiImageUpload from '@/components/admin/MultiImageUpload';
 import t from '@/lib/admin-translations-extended';
 import { X } from 'lucide-react';
 
@@ -16,7 +16,7 @@ interface AddOrderItemModalProps {
 
 interface NewItemFormData {
   product_name: string;
-  product_image_url: string;
+  product_image_urls: string[];
   quantity: string;
   unit_price: string;
   selected_flavour: string;
@@ -36,7 +36,7 @@ export default function AddOrderItemModal({
 }: AddOrderItemModalProps) {
   const [formData, setFormData] = useState<NewItemFormData>({
     product_name: '',
-    product_image_url: '',
+    product_image_urls: [],
     quantity: '1',
     unit_price: '',
     selected_flavour: '',
@@ -99,12 +99,14 @@ export default function AddOrderItemModal({
       const selectedFlavour = flavours.find(f => f._id === formData.selected_flavour);
       const flavourName = selectedFlavour ? selectedFlavour.name : null;
 
+      const weightValue = formData.weight_kg.trim();
+
       const response = await fetch(`/api/admin/orders/${orderId}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_name: formData.product_name,
-          product_image_url: formData.product_image_url || null,
+          product_image_urls: formData.product_image_urls.length ? formData.product_image_urls : null,
           quantity,
           unit_price: unitPrice,
           subtotal,
@@ -113,7 +115,7 @@ export default function AddOrderItemModal({
           writing_on_cake: formData.writing_on_cake || null,
           internal_decoration_notes: formData.internal_decoration_notes || null,
           staff_notes: formData.staff_notes || null,
-          weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : null,
+          weight_kg: weightValue ? weightValue : null,
           diameter_cm: formData.diameter_cm ? parseFloat(formData.diameter_cm) : null,
           delivery_date: orderDeliveryDate,
         }),
@@ -246,11 +248,9 @@ export default function AddOrderItemModal({
                 Weight (kg)
               </label>
               <input
-                type="number"
+                type="text"
                 value={formData.weight_kg}
                 onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
-                step="0.001"
-                min="0"
                 placeholder="Необязательно"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
@@ -272,11 +272,11 @@ export default function AddOrderItemModal({
               />
             </div>
 
-            {/* Product Image Upload */}
+            {/* Product Images Upload */}
             <div className="col-span-2">
-              <ImageUpload
-                value={formData.product_image_url}
-                onChange={(url) => setFormData({ ...formData, product_image_url: url })}
+              <MultiImageUpload
+                value={formData.product_image_urls}
+                onChange={(urls) => setFormData({ ...formData, product_image_urls: urls })}
                 label={t.productImageOptional}
               />
             </div>

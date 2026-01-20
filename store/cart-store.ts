@@ -5,14 +5,14 @@ import type { Product } from '@/types/sanity';
 export interface CartItem {
   product: Product;
   quantity: number;
-  selectedSize?: string; // Size value (e.g., "1kg")
+  weight_kg?: string; // Weight value (e.g., "1kg")
   selectedFlavour?: string; // Flavour ID
   writingOnCake?: string; // Custom text to write on cake
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product, quantity: number, selectedSize?: string, selectedFlavour?: string, writingOnCake?: string) => void;
+  addItem: (product: Product, quantity: number, weightKg?: string, selectedFlavour?: string, writingOnCake?: string) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -29,22 +29,22 @@ export const useCartStore = create<CartStore>()(
       // Helper to calculate item price with size modifier
       getItemPrice: (item) => {
         const basePrice = item.product.price;
-        if (!item.selectedSize || !item.product.sizes) {
+        if (!item.weight_kg || !item.product.sizes) {
           return basePrice;
         }
-        const sizeOption = item.product.sizes.find(s => s.value === item.selectedSize);
+        const sizeOption = item.product.sizes.find(s => s.value === item.weight_kg);
         return basePrice + (sizeOption?.priceModifier || 0);
       },
 
-      addItem: (product, quantity, selectedSize, selectedFlavour, writingOnCake) => {
+      addItem: (product, quantity, weightKg, selectedFlavour, writingOnCake) => {
         set((state) => {
           // Generate unique ID for cart item (product + size + flavour + writing combination)
           // Note: Items with different writing are separate cart items
-          const itemId = `${product._id}-${selectedSize || 'default'}-${selectedFlavour || 'default'}-${writingOnCake || 'none'}`;
+          const itemId = `${product._id}-${weightKg || 'default'}-${selectedFlavour || 'default'}-${writingOnCake || 'none'}`;
           
           const existingItem = state.items.find(
             (item) => {
-              const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}-${item.writingOnCake || 'none'}`;
+              const existingItemId = `${item.product._id}-${item.weight_kg || 'default'}-${item.selectedFlavour || 'default'}-${item.writingOnCake || 'none'}`;
               return existingItemId === itemId;
             }
           );
@@ -53,7 +53,7 @@ export const useCartStore = create<CartStore>()(
             // If same product with same size, flavour, and writing exists, increase quantity
             return {
               items: state.items.map((item) => {
-                const existingItemId = `${item.product._id}-${item.selectedSize || 'default'}-${item.selectedFlavour || 'default'}-${item.writingOnCake || 'none'}`;
+                const existingItemId = `${item.product._id}-${item.weight_kg || 'default'}-${item.selectedFlavour || 'default'}-${item.writingOnCake || 'none'}`;
                 return existingItemId === itemId
                   ? { ...item, quantity: item.quantity + quantity }
                   : item;
@@ -63,7 +63,7 @@ export const useCartStore = create<CartStore>()(
 
           // Add new item to cart
           return {
-            items: [...state.items, { product, quantity, selectedSize, selectedFlavour, writingOnCake }],
+            items: [...state.items, { product, quantity, weight_kg: weightKg, selectedFlavour, writingOnCake }],
           };
         });
       },

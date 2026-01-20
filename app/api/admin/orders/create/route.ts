@@ -175,12 +175,10 @@ export async function POST(request: NextRequest) {
       delivery_type: delivery_type, // Denormalized for filtering immediate sales
       product_id: item.product_id || null, // Nullable for custom manual orders
       product_name: item.product_name,
-      product_image_url: item.product_image_url || null,
+      product_image_urls: item.product_image_urls?.length ? item.product_image_urls : null,
       quantity: item.quantity,
       unit_price: item.unit_price,
       subtotal: item.subtotal,
-      selected_size: item.selected_size || null,
-      size_label: item.size_label || null,
       selected_flavour: item.selected_flavour || null,
       flavour_name: item.flavour_name || null,
       weight_kg: item.weight_kg || null,

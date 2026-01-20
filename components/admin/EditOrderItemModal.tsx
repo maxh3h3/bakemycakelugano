@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import type { Database } from '@/lib/supabase/types';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
-import ImageUpload from '@/components/admin/ImageUpload';
+import MultiImageUpload from '@/components/admin/MultiImageUpload';
+import OrderItemImageCarousel from '@/components/admin/OrderItemImageCarousel';
 import { getFlavours } from '@/lib/sanity/queries';
 import { X, Trash2 } from 'lucide-react';
 
@@ -28,7 +28,7 @@ interface ItemFormData {
   diameter_cm: string;
   selected_flavour: string;
   flavour_name: string;
-  product_image_url: string;
+  product_image_urls: string[];
 }
 
 export default function EditOrderItemModal({
@@ -48,7 +48,7 @@ export default function EditOrderItemModal({
     diameter_cm: item.diameter_cm?.toString() || '',
     selected_flavour: item.selected_flavour || '',
     flavour_name: item.flavour_name || '',
-    product_image_url: item.product_image_url || '',
+    product_image_urls: item.product_image_urls || [],
   });
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -133,6 +133,8 @@ export default function EditOrderItemModal({
       const unitPrice = parseFloat(formData.unit_price);
       const subtotal = quantity * unitPrice;
 
+      const weightValue = formData.weight_kg.trim();
+
       const response = await fetch(`/api/admin/orders/items/${item.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -143,11 +145,11 @@ export default function EditOrderItemModal({
           writing_on_cake: formData.writing_on_cake || null,
           internal_decoration_notes: formData.internal_decoration_notes || null,
           staff_notes: formData.staff_notes || null,
-          weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : null,
+          weight_kg: weightValue ? weightValue : null,
           diameter_cm: formData.diameter_cm ? parseFloat(formData.diameter_cm) : null,
           selected_flavour: formData.selected_flavour || null,
           flavour_name: formData.flavour_name || null,
-          product_image_url: formData.product_image_url || null,
+          product_image_urls: formData.product_image_urls.length ? formData.product_image_urls : null,
         }),
       });
 
@@ -234,13 +236,11 @@ export default function EditOrderItemModal({
         <div className="p-6 overflow-y-auto flex-1">
           {/* Product Info Header */}
           <div className="flex items-start gap-4 mb-6 pb-4 border-b-2 border-cream-200">
-            {item.product_image_url && (
-              <Image
-                src={item.product_image_url}
-                alt={item.product_name}
-                width={100}
-                height={100}
-                className="rounded-lg object-cover border-2 border-cream-300 shadow-md"
+            {item.product_image_urls && item.product_image_urls.length > 0 && (
+              <OrderItemImageCarousel
+                urls={item.product_image_urls}
+                containerClassName="relative w-24 h-24 rounded-lg border-2 border-cream-300 shadow-md overflow-hidden"
+                imageClassName="object-cover"
               />
             )}
             <div className="flex-grow">
@@ -248,9 +248,9 @@ export default function EditOrderItemModal({
                 {item.product_name}
               </h3>
               <div className="flex gap-3 flex-wrap">
-                {item.size_label && (
+                {item.weight_kg && (
                   <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
-                    Размер: {item.size_label}
+                    Вес: {item.weight_kg}
                   </span>
                 )}
                 {item.flavour_name && (
@@ -329,11 +329,9 @@ export default function EditOrderItemModal({
                 Вес (кг)
               </label>
               <input
-                type="number"
+                type="text"
                 value={formData.weight_kg}
                 onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
-                step="0.001"
-                min="0"
                 placeholder="Необязательно"
                 className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
               />
@@ -355,11 +353,11 @@ export default function EditOrderItemModal({
               />
             </div>
 
-            {/* Reference Image */}
+            {/* Reference Images */}
             <div className="col-span-2">
-              <ImageUpload
-                value={formData.product_image_url}
-                onChange={(url) => setFormData({ ...formData, product_image_url: url })}
+              <MultiImageUpload
+                value={formData.product_image_urls}
+                onChange={(urls) => setFormData({ ...formData, product_image_urls: urls })}
                 label="Справочное изображение"
               />
             </div>

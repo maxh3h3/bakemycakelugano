@@ -5,7 +5,7 @@ import type { Database } from '@/lib/supabase/types';
 import OrdersTable from './OrdersTable';
 import { parseDateFromDB } from '@/lib/utils';
 import t from '@/lib/admin-translations-extended';
-import { User, Soup } from 'lucide-react';
+import { ArrowDown, ArrowUp, User, Soup } from 'lucide-react';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -30,6 +30,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('today');
   const [showVitrina, setShowVitrina] = useState(true);
   const [showRamennaya, setShowRamennaya] = useState(true);
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
 
   // Filter orders based on active tab and walk-in client toggles
   const getFilteredOrders = (): OrderWithItems[] => {
@@ -93,6 +94,18 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
   };
 
   const filteredOrders = getFilteredOrders();
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    const aHasDate = Boolean(a.delivery_date);
+    const bHasDate = Boolean(b.delivery_date);
+
+    if (!aHasDate && !bHasDate) return 0;
+    if (!aHasDate) return 1;
+    if (!bHasDate) return -1;
+
+    const aTime = parseDateFromDB(a.delivery_date as string).getTime();
+    const bTime = parseDateFromDB(b.delivery_date as string).getTime();
+    return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+  });
 
   // Get date range text
   const getDateRangeText = (): string => {
@@ -163,6 +176,18 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         {/* Walk-in Client Filter Buttons */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-charcoal-600 font-semibold mr-2">Фильтры:</span>
+          <button
+            onClick={() => setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+            className="flex items-center justify-center w-9 h-9 rounded-full border-2 border-cream-300 text-charcoal-700 hover:bg-cream-100 transition-colors"
+            title={sortDirection === 'desc' ? t.sortNewest : t.sortOldest}
+            aria-label={sortDirection === 'desc' ? t.sortNewest : t.sortOldest}
+          >
+            {sortDirection === 'desc' ? (
+              <ArrowDown className="w-4 h-4" />
+            ) : (
+              <ArrowUp className="w-4 h-4" />
+            )}
+          </button>
           
           {/* Vitrina Toggle */}
           <button
@@ -195,8 +220,8 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
       </div>
 
       {/* Orders Table */}
-      {filteredOrders.length > 0 ? (
-        <OrdersTable orders={filteredOrders} />
+      {sortedOrders.length > 0 ? (
+        <OrdersTable orders={sortedOrders} />
       ) : (
         <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-12 text-center">
           <div className="text-charcoal-400 mb-4">

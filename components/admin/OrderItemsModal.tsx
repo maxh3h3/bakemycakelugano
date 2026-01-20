@@ -7,14 +7,14 @@
 //
 // Business Rules:
 // - Displays all items grouped by order_number for coordinated production
-// - Shows critical production info: weight, diameter, flavour, size (for recipe/assembly)
+// - Shows critical production info: weight, diameter, flavour (for recipe/assembly)
 // - Highlights customer requests: writing on cake (exact text to write)
 // - Shows decoration notes and staff notes for production guidance
 // - Production status workflow: new → prepared → baked → creamed → decorated → packaged → delivered
 // - Status updates are optimistic (instant UI feedback) with background persistence
 //
 // Data Relationships: order_items (grouped by order_number from orders table)
-// Critical Fields: product_image_url (visual reference), writing_on_cake (customer text),
+// Critical Fields: product_image_urls (visual reference), writing_on_cake (customer text),
 //                  production_status (workflow stage), delivery_date (deadline)
 
 'use client';
@@ -22,7 +22,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import OrderItemImageCarousel from '@/components/admin/OrderItemImageCarousel';
 import type { Database } from '@/lib/supabase/types';
 import { parseDateFromDB } from '@/lib/utils';
 import t from '@/lib/admin-translations-extended';
@@ -174,7 +174,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                           {item.weight_kg && (
                             <div className="bg-orange-50 rounded-xl px-4 py-3 border-2 border-orange-300">
                               <p className="text-sm font-semibold text-orange-600 uppercase mb-1">Вес</p>
-                              <p className="text-2xl font-bold text-orange-900">{item.weight_kg}кг</p>
+                              <p className="text-2xl font-bold text-orange-900">{item.weight_kg}</p>
                             </div>
                           )}
                           {item.diameter_cm && (
@@ -189,27 +189,17 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                               <p className="text-2xl font-bold text-purple-900">{item.flavour_name}</p>
                             </div>
                           )}
-                          {item.size_label && (
-                            <div className="bg-green-50 rounded-xl px-4 py-3 border-2 border-green-300">
-                              <p className="text-sm font-semibold text-green-600 uppercase mb-1">{t.size}</p>
-                              <p className="text-lg font-bold text-green-900">{item.size_label}</p>
-                            </div>
-                          )}
                         </div>
                       </div>
 
-                      {/* Product Image Reference */}
-                      {item.product_image_url && (
+                      {/* Product Images Reference */}
+                      {item.product_image_urls && item.product_image_urls.length > 0 && (
                         <div className="flex-shrink-0">
-                          <div className="relative w-64 h-64 rounded-2xl overflow-hidden border-4 border-brown-300 shadow-2xl">
-                            <Image
-                              src={item.product_image_url}
-                              alt={item.product_name}
-                              fill
-                              className="object-cover"
-                              sizes="256px"
-                            />
-                          </div>
+                          <OrderItemImageCarousel
+                            urls={item.product_image_urls}
+                            containerClassName="relative w-64 h-64 rounded-2xl overflow-hidden border-4 border-brown-300 shadow-2xl"
+                            imageClassName="object-cover"
+                          />
                         </div>
                       )}
                     </div>

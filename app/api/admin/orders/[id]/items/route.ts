@@ -67,7 +67,7 @@ export async function POST(
     const body = await request.json();
     const {
       product_name,
-      product_image_url,
+      product_image_urls,
       quantity,
       unit_price,
       subtotal,
@@ -112,12 +112,10 @@ export async function POST(
         delivery_type: order.delivery_type, // Denormalized for filtering immediate sales
         product_id: null, // Manual items don't have product_id
         product_name,
-        product_image_url: product_image_url || null,
+        product_image_urls: product_image_urls?.length ? product_image_urls : null,
         quantity,
         unit_price,
         subtotal: subtotal || quantity * unit_price,
-        selected_size: null,
-        size_label: null,
         selected_flavour: selected_flavour || null,
         flavour_name: flavour_name || null,
         writing_on_cake,

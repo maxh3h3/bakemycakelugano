@@ -6,7 +6,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
-  size_label?: string | null;
+  weight_kg?: string | null;
   flavour_name?: string | null;
 }
 
@@ -42,7 +42,7 @@ const translations = {
     deliveryFee: 'Costo di consegna',
     deliveryOutsideArea: '⚠️ Il tuo indirizzo è fuori dall\'area di consegna standard di Lugano. Ti contatteremo presto per confermare la disponibilità e i costi di consegna.',
     subtotal: 'Subtotale',
-    size: 'Dimensione',
+    weight: 'Peso',
     flavour: 'Gusto',
     deliveryDate: 'Data di consegna',
     specialInstructions: 'Istruzioni Speciali',
@@ -66,7 +66,7 @@ const translations = {
     deliveryFee: 'Delivery Fee',
     deliveryOutsideArea: '⚠️ Your address is outside the standard Lugano delivery area. We will contact you soon to confirm delivery availability and costs.',
     subtotal: 'Subtotal',
-    size: 'Size',
+    weight: 'Weight',
     flavour: 'Flavour',
     deliveryDate: 'Delivery date',
     specialInstructions: 'Special Instructions',
@@ -259,7 +259,7 @@ export function generateCustomerConfirmationEmail({
                 <td>${item.quantity}×</td>
                 <td>
                   <div class="item-name">${item.product_name}</div>
-                  ${item.size_label ? `<div class="item-meta">📏 ${t.size}: ${item.size_label}</div>` : ''}
+                  ${item.weight_kg ? `<div class="item-meta">⚖️ ${t.weight}: ${item.weight_kg}</div>` : ''}
                   ${item.flavour_name ? `<div class="item-meta">🍰 ${t.flavour}: ${item.flavour_name}</div>` : ''}
                 </td>
                 <td style="text-align: right; font-weight: 500;">

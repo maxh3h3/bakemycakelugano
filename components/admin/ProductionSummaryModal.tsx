@@ -152,8 +152,11 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
       // Skip items without weight or flavour
       if (!item.weight_kg || !item.flavour_name) return;
 
+      const parsedWeight = Number.parseFloat(item.weight_kg);
+      if (Number.isNaN(parsedWeight)) return;
+
       const currentWeight = weights.get(item.flavour_name) || 0;
-      weights.set(item.flavour_name, currentWeight + (item.weight_kg * item.quantity));
+      weights.set(item.flavour_name, currentWeight + (parsedWeight * item.quantity));
     });
 
     // Convert to array and sort by flavour name

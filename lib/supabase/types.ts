@@ -136,17 +136,15 @@ export interface Database {
           order_id: string
           product_id: string | null
           product_name: string
-          product_image_url: string | null
+          product_image_urls: string[] | null
           quantity: number
           unit_price: number
           subtotal: number
-          selected_size: string | null
-          size_label: string | null
           selected_flavour: string | null
           flavour_name: string | null
           production_status: string | null
           order_number: string | null
-          weight_kg: number | null
+          weight_kg: string | null
           diameter_cm: number | null
           product_category: string | null
           writing_on_cake: string | null
@@ -163,17 +161,15 @@ export interface Database {
           order_id: string
           product_id?: string | null
           product_name: string
-          product_image_url?: string | null
+          product_image_urls?: string[] | null
           quantity: number
           unit_price: number
           subtotal: number
-          selected_size?: string | null
-          size_label?: string | null
           selected_flavour?: string | null
           flavour_name?: string | null
           production_status?: string | null
           order_number?: string | null
-          weight_kg?: number | null
+          weight_kg?: string | null
           diameter_cm?: number | null
           product_category?: string | null
           writing_on_cake?: string | null
@@ -190,17 +186,15 @@ export interface Database {
           order_id: string
           product_id: string | null
           product_name: string
-          product_image_url: string | null
+          product_image_urls: string[] | null
           quantity: number
           unit_price: number
           subtotal: number
-          selected_size: string | null
-          size_label: string | null
           selected_flavour: string | null
           flavour_name: string | null
           production_status: string | null
           order_number: string | null
-          weight_kg: number | null
+          weight_kg: string | null
           diameter_cm: number | null
           product_category: string | null
           writing_on_cake: string | null

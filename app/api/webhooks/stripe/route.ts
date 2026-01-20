@@ -191,21 +191,20 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     // Create order items
-    // Note: product_image_url is null since we don't store images in Stripe metadata
+    // Note: product_image_urls is null since we don't store images in Stripe metadata
     // Images can be fetched from Sanity using product_id if needed for display
     const orderItemsData = orderItems.map((item: any) => ({
       order_id: (order as any).id,
       order_number: orderNumber, // Denormalized for production view
       product_id: item.productId,
       product_name: item.productName,
-      product_image_url: null, // Not stored in metadata to save space
+      product_image_urls: null, // Not stored in metadata to save space
       quantity: item.quantity,
       unit_price: item.unitPrice,
       subtotal: item.unitPrice * item.quantity,
-      selected_size: item.selectedSize || null,
-      size_label: item.sizeLabel || null,
       selected_flavour: item.selectedFlavour || null,
       flavour_name: item.flavourName || null,
+      weight_kg: item.weight_kg ?? item.weightKg ?? null,
       writing_on_cake: item.writingOnCake || null,
       delivery_date: metadata.deliveryDate || null, // Denormalized for production view
       production_status: 'new',

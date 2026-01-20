@@ -358,9 +358,9 @@ export default function ProductionView({ items }: ProductionViewProps) {
                                 🍰 {item.flavour_name}
                               </span>
                             )}
-                            {item.size_label && (
+                            {item.weight_kg && (
                               <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                📏 {item.size_label}
+                                ⚖️ {item.weight_kg}
                               </span>
                             )}
                             {item.diameter_cm && (
@@ -444,14 +444,11 @@ export default function ProductionView({ items }: ProductionViewProps) {
                                   {item.flavour_name && (
                                     <span className="text-charcoal-600">🍰 {item.flavour_name}</span>
                                   )}
-                                  {item.size_label && (
-                                    <span className="text-charcoal-600">📏 {item.size_label}</span>
+                                  {item.weight_kg && (
+                                    <span className="text-charcoal-600">⚖️ {item.weight_kg}</span>
                                   )}
                                   {item.diameter_cm && (
                                     <span className="text-charcoal-600">⭕ {item.diameter_cm}cm</span>
-                                  )}
-                                  {item.weight_kg && (
-                                    <span className="text-charcoal-600">⚖️ {item.weight_kg}kg</span>
                                   )}
                                 </div>
                               </div>
@@ -532,7 +529,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
                                 </p>
                                 <div className="text-[9px] text-charcoal-600 space-x-1">
                                   {item.flavour_name && <span>🍰{item.flavour_name}</span>}
-                                  {item.size_label && <span>📏{item.size_label}</span>}
+                                  {item.weight_kg && <span>⚖️{item.weight_kg}</span>}
                                   {item.diameter_cm && <span>⭕{item.diameter_cm}cm</span>}
                                 </div>
                               </div>

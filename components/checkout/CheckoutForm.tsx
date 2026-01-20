@@ -137,10 +137,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
         productImageUrl: item.product.images?.[0] ? item.product.images[0] : null,
         quantity: item.quantity,
         unitPrice: useCartStore.getState().getItemPrice(item),
-        selectedSize: item.selectedSize || null,
-        sizeLabel: item.selectedSize 
-          ? item.product.sizes?.find(s => s.value === item.selectedSize)?.label || null
-          : null,
+        weight_kg: item.weight_kg || null,
         selectedFlavour: item.selectedFlavour || null,
         flavourName: item.selectedFlavour
           ? item.product.availableFlavours?.find(f => f._id === item.selectedFlavour)?.name || null

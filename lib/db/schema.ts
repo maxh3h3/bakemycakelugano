@@ -84,7 +84,7 @@ export const orderItems = pgTable('order_items', {
   // Product information (product_id nullable for custom manual orders)
   productId: text('product_id'),
   productName: text('product_name').notNull(),
-  productImageUrl: text('product_image_url'),
+  productImageUrls: jsonb('product_image_urls').$type<string[] | null>(),
   
   // Pricing
   quantity: numeric('quantity', { precision: 10, scale: 2 }).notNull(),
@@ -92,8 +92,6 @@ export const orderItems = pgTable('order_items', {
   subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
   
   // Product options
-  selectedSize: text('selected_size'),
-  sizeLabel: text('size_label'),
   selectedFlavour: text('selected_flavour'),
   flavourName: text('flavour_name'),
   
@@ -101,7 +99,7 @@ export const orderItems = pgTable('order_items', {
   productionStatus: text('production_status').default('new'),
   orderNumber: text('order_number'), // Denormalized from orders for production view
   deliveryType: text('delivery_type'), // Denormalized from orders for filtering immediate sales
-  weightKg: numeric('weight_kg', { precision: 6, scale: 3 }),
+  weightKg: text('weight_kg'),
   diameterCm: numeric('diameter_cm', { precision: 5, scale: 2 }),
   productCategory: text('product_category'),
   

@@ -186,9 +186,9 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                             <p className="font-medium text-charcoal-900">
                               {item.quantity}× {item.product_name}
                             </p>
-                            {item.size_label && (
+                            {item.weight_kg && (
                               <p className="text-xs text-charcoal-900/60">
-                                {item.size_label}
+                                {tCheckout('weight')}: {item.weight_kg}
                               </p>
                             )}
                             {item.flavour_name && (

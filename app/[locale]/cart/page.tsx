@@ -45,7 +45,7 @@ export default function CartPage({ params }: CartPageProps) {
                 <div className="lg:col-span-2 space-y-4">
                   {items.map((item, index) => (
                     <CartItem
-                      key={`${item.product._id}-${item.selectedSize}-${item.selectedFlavour}-${index}`}
+                      key={`${item.product._id}-${item.weight_kg}-${item.selectedFlavour}-${index}`}
                       item={item}
                       index={index}
                       locale={locale}

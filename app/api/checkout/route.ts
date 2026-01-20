@@ -34,10 +34,9 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       // Only include optional fields if present to save space
-      ...(item.selectedSize && { selectedSize: item.selectedSize }),
-      ...(item.sizeLabel && { sizeLabel: item.sizeLabel }),
       ...(item.selectedFlavour && { selectedFlavour: item.selectedFlavour }),
       ...(item.flavourName && { flavourName: item.flavourName }),
+      ...(item.weight_kg && { weight_kg: item.weight_kg }),
       ...(item.writingOnCake && { writingOnCake: item.writingOnCake }),
     }));
 
@@ -46,8 +45,8 @@ export async function POST(request: NextRequest) {
       ...items.map((item: any) => {
         // Build description with size and flavour
         const descriptionParts: string[] = [];
-        if (item.sizeLabel) {
-          descriptionParts.push(`Size: ${item.sizeLabel}`);
+        if (item.weight_kg) {
+          descriptionParts.push(`Weight: ${item.weight_kg}`);
         }
         if (item.flavourName) {
           descriptionParts.push(`Flavour: ${item.flavourName}`);

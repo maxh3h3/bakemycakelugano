@@ -31,7 +31,7 @@ export async function PATCH(
       diameter_cm,
       selected_flavour,
       flavour_name,
-      product_image_url,
+      product_image_urls,
     } = body;
 
     // Validate required fields
@@ -56,7 +56,7 @@ export async function PATCH(
         diameter_cm,
         selected_flavour: selected_flavour || null,
         flavour_name: flavour_name || null,
-        product_image_url: product_image_url || null,
+        product_image_urls: product_image_urls?.length ? product_image_urls : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

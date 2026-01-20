@@ -6,7 +6,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
-  size_label?: string | null;
+  weight_kg?: string | null;
   flavour_name?: string | null;
 }
 
@@ -304,7 +304,7 @@ export function generateOwnerNotificationEmail({
                 <td style="font-weight: 700; font-size: 18px;">${item.quantity}×</td>
                 <td>
                   <div class="item-name">${item.product_name}</div>
-                  ${item.size_label ? `<div class="item-meta">📏 Dimensione: ${item.size_label}</div>` : ''}
+                  ${item.weight_kg ? `<div class="item-meta">⚖️ Peso: ${item.weight_kg}</div>` : ''}
                   ${item.flavour_name ? `<div class="item-meta">🍰 Gusto: ${item.flavour_name}</div>` : ''}
                 </td>
                 <td style="text-align: right; font-weight: 600; font-size: 16px;">

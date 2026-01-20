@@ -9,7 +9,7 @@ import { formatPrice } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import ProductImageGallery from './ProductImageGallery';
-import SizeSelector from './SizeSelector';
+import WeightSelector from './WeightSelector';
 import FlavourSelector from './FlavourSelector';
 import QuantitySelector from './QuantitySelector';
 
@@ -23,7 +23,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
   const addItem = useCartStore((state) => state.addItem);
 
   // Form state
-  const [selectedSize, setSelectedSize] = useState<string | null>(
+  const [selectedWeight, setSelectedWeight] = useState<string | null>(
     product.sizes && product.sizes.length > 0 ? product.sizes[0].value : null
   );
   const [selectedFlavour, setSelectedFlavour] = useState<string | null>(
@@ -33,14 +33,14 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
   const [writingOnCake, setWritingOnCake] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [errors, setErrors] = useState<{ size?: string; flavour?: string }>({});
+  const [errors, setErrors] = useState<{ weight?: string; flavour?: string }>({});
 
   // Calculate current price based on selected size
   const getCurrentPrice = () => {
-    if (!selectedSize || !product.sizes) {
+    if (!selectedWeight || !product.sizes) {
       return product.price;
     }
-    const sizeOption = product.sizes.find((s) => s.value === selectedSize);
+    const sizeOption = product.sizes.find((s) => s.value === selectedWeight);
     return product.price + (sizeOption?.priceModifier || 0);
   };
 
@@ -49,10 +49,10 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
   // Validation
   const validate = () => {
-    const newErrors: { size?: string; flavour?: string } = {};
+    const newErrors: { weight?: string; flavour?: string } = {};
 
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      newErrors.size = t('sizeRequired');
+    if (product.sizes && product.sizes.length > 0 && !selectedWeight) {
+      newErrors.weight = t('weightRequired');
     }
 
     if (product.availableFlavours && product.availableFlavours.length > 0 && !selectedFlavour) {
@@ -75,7 +75,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
       addItem(
         product,
         quantity,
-        selectedSize || undefined,
+        selectedWeight || undefined,
         selectedFlavour || undefined,
         writingOnCake || undefined
       );
@@ -159,18 +159,18 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
             {/* Configuration Section */}
             <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-cream-200">
-              {/* Size Selector */}
+              {/* Weight Selector */}
               {product.sizes && product.sizes.length > 0 && (
                 <div>
-                  <SizeSelector
+                  <WeightSelector
                     sizes={product.sizes}
                     basePrice={product.price}
-                    selectedSize={selectedSize}
-                    onSizeChange={setSelectedSize}
+                    selectedWeight={selectedWeight}
+                    onWeightChange={setSelectedWeight}
                     required
                   />
-                  {errors.size && (
-                    <p className="text-xs text-rose-500 mt-1">{errors.size}</p>
+                  {errors.weight && (
+                    <p className="text-xs text-rose-500 mt-1">{errors.weight}</p>
                   )}
                 </div>
               )}

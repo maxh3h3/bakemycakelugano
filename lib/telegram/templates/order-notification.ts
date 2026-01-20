@@ -6,7 +6,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
-  size_label?: string | null;
+  weight_kg?: string | null;
   flavour_name?: string | null;
 }
 
@@ -83,8 +83,8 @@ export function generateOrderNotificationMessage({
   orderItems.forEach((item, index) => {
     message += `${index + 1}. <b>${item.product_name}</b>\n`;
     message += `   Quantità: ${item.quantity}x\n`;
-    if (item.size_label) {
-      message += `   Dimensione: ${item.size_label}\n`;
+    if (item.weight_kg) {
+      message += `   Peso: ${item.weight_kg}\n`;
     }
     if (item.flavour_name) {
       message += `   Gusto: ${item.flavour_name}\n`;

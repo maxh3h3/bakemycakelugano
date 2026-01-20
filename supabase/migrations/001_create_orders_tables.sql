@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   -- Product information (snapshot from Sanity at time of order)
   product_id TEXT NOT NULL,n  -- Sanity product _id
   product_name TEXT NOT NULL,
-  product_image_url TEXT,
+  product_image_urls JSONB,
   
   -- Order specifics
   quantity INTEGER NOT NULL CHECK (quantity > 0),
@@ -59,8 +59,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   subtotal DECIMAL(10, 2) NOT NULL,
   
   -- Product options
-  selected_size TEXT,  -- Size value (e.g., "1kg", "1.5kg") - NULL if no size
-  size_label TEXT,     -- Human-readable size (e.g., "1 kg for 5-8 persons")
   delivery_date DATE,  -- Requested delivery date for this item
   
   -- Timestamps
@@ -93,6 +91,5 @@ CREATE TRIGGER update_orders_updated_at
 -- Add comments for documentation
 COMMENT ON TABLE orders IS 'Main orders table storing customer orders from the bakery website';
 COMMENT ON TABLE order_items IS 'Individual items within each order, including size and delivery date options';
-COMMENT ON COLUMN order_items.selected_size IS 'Size option value if product has size variants (e.g., 1kg, 2kg)';
 COMMENT ON COLUMN order_items.delivery_date IS 'Requested delivery date for this specific item';
 

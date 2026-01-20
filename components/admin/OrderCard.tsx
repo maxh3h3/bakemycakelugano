@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import OrderItemImageCarousel from '@/components/admin/OrderItemImageCarousel';
 import { format } from 'date-fns';
 import type { Database } from '@/lib/supabase/types';
 import { formatDeliveryAddress } from '@/lib/schemas/delivery';
@@ -669,15 +669,13 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     {/* Item Header with Title and Price */}
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-start gap-4 flex-grow">
-                        {/* Product Image */}
-                        {item.product_image_url && (
+                        {/* Product Images */}
+                        {item.product_image_urls && item.product_image_urls.length > 0 && (
                           <div className="flex-shrink-0">
-                            <Image
-                              src={item.product_image_url}
-                              alt={item.product_name}
-                              width={80}
-                              height={80}
-                              className="rounded-xl object-cover border-2 border-cream-300 shadow-sm"
+                            <OrderItemImageCarousel
+                              urls={item.product_image_urls}
+                              containerClassName="relative w-20 h-20 rounded-xl border-2 border-cream-300 shadow-sm overflow-hidden"
+                              imageClassName="object-cover"
                             />
                           </div>
                         )}
@@ -725,15 +723,6 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         </div>
                       )}
 
-                      {item.size_label && (
-                        <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-3">
-                          <p className="text-xs font-semibold text-blue-600 uppercase mb-1">{t.size}</p>
-                          <p className="text-base font-bold text-charcoal-900">
-                            {item.size_label}
-                          </p>
-                        </div>
-                      )}
-
                       <div className="bg-green-50 border-2 border-green-300 rounded-xl p-3">
                         <p className="text-xs font-semibold text-green-600 uppercase mb-1">
                           {t.quantity}
@@ -747,7 +736,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                             Вес
                           </p>
                           <p className="text-base font-bold text-charcoal-900">
-                            {item.weight_kg} kg
+                            {item.weight_kg}
                           </p>
                         </div>
                       )}

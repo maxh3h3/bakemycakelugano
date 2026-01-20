@@ -60,9 +60,9 @@ export default function OrderSummary({ locale, isProcessing, deliveryFee = 0 }: 
                 <h3 className="font-medium text-sm text-charcoal-900 line-clamp-1">
                   {item.product.name}
                 </h3>
-                {item.selectedSize && (
+                {item.weight_kg && (
                   <p className="text-xs text-charcoal-900/60">
-                    {item.product.sizes?.find(s => s.value === item.selectedSize)?.label}
+                    {tCart('weight')}: {item.weight_kg}
                   </p>
                 )}
                 {item.selectedFlavour && (
