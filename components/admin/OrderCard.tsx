@@ -669,22 +669,46 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     {/* Item Header with Title and Price */}
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-start gap-4 flex-grow">
-                        {/* Product Images */}
-                        {item.product_image_urls && item.product_image_urls.length > 0 && (
+                        {/* Product Images - Enhanced Size */}
+                        {item.product_image_urls && item.product_image_urls.length > 0 ? (
                           <div className="flex-shrink-0">
                             <OrderItemImageCarousel
                               urls={item.product_image_urls}
-                              containerClassName="relative w-20 h-20 rounded-xl border-2 border-cream-300 shadow-sm overflow-hidden"
-                              imageClassName="object-cover"
+                              containerClassName="relative w-32 h-32 rounded-xl border-2 border-cream-300 shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                              imageClassName="object-cover hover:scale-105 transition-transform duration-200"
                             />
+                          </div>
+                        ) : (
+                          <div className="flex-shrink-0 w-32 h-32 rounded-xl border-2 border-dashed border-cream-400 bg-cream-50 flex items-center justify-center">
+                            <div className="text-center px-3">
+                              <svg 
+                                className="w-10 h-10 mx-auto mb-2 text-cream-400" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round" 
+                                  strokeWidth={2} 
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                                />
+                              </svg>
+                              <p className="text-xs text-cream-500 font-medium">No photo</p>
+                            </div>
                           </div>
                         )}
 
                         {/* Product Title */}
-                        <div>
+                        <div className="flex-grow">
                           <h5 className="font-heading font-bold text-2xl text-charcoal-900">
                             {item.product_name}
                           </h5>
+                          {item.product_image_urls && item.product_image_urls.length > 0 && (
+                            <p className="text-xs text-charcoal-500 mt-1">
+                              {item.product_image_urls.length} {item.product_image_urls.length === 1 ? 'photo' : 'photos'}
+                            </p>
+                          )}
                         </div>
                       </div>
 
