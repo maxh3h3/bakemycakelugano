@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import DatePicker from '@/components/products/DatePicker';
 import { X, User, Soup, Smartphone } from 'lucide-react';
@@ -46,6 +46,20 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
   const [items, setItems] = useState<OrderItem[]>([{ product_name: '', quantity: 1, unit_price: 0 }]);
   
   const isRamennaya = selectedClient === '9323a8bb-6ec4-481c-b040-aa762dc626bd';
+  
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    // Store original body overflow style
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
+    // Prevent scrolling on mount
+    document.body.style.overflow = 'hidden';
+    
+    // Re-enable scrolling on cleanup
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
   
   // Calculate total for Раменная
   const calculateTotal = () => {
@@ -160,10 +174,18 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-        {/* Header */}
-        <div className="bg-brown-500 px-6 py-4 rounded-t-2xl">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      onClick={(e) => {
+        // Close modal when clicking backdrop
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[90vh] flex flex-col">
+        {/* Header - Fixed */}
+        <div className="bg-brown-500 px-6 py-4 rounded-t-2xl flex-shrink-0">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-heading font-bold text-white">
               Быстрая продажа
@@ -177,8 +199,8 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Form - Scrollable */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
           {error && (
             <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
               <p className="text-red-700 text-sm font-medium">{error}</p>

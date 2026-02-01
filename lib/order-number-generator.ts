@@ -16,20 +16,29 @@ export async function generateOrderNumber(deliveryDate: string): Promise<string>
   // Pattern: __-MM-% matches any day, specific month, any sequential number
   const monthPattern = `__-${month}-%`;
 
-  // Find the highest existing sequential number for this month
-  const { data: lastOrder, error: lastOrderError } = await (supabaseAdmin
+  // Fetch ALL orders for this month (not just sorted by string)
+  // We need to parse sequential numbers numerically to find the true maximum
+  const { data: monthOrders, error: ordersError } = await (supabaseAdmin
     .from('orders') as any)
     .select('order_number')
-    .ilike('order_number', monthPattern)
-    .order('order_number', { ascending: false })
-    .limit(1)
-    .single();
+    .ilike('order_number', monthPattern);
 
   let nextNum = 1;
-  if (lastOrder && !lastOrderError && lastOrder.order_number) {
-    const lastNum = parseInt(lastOrder.order_number.split('-')[2]);
-    if (!isNaN(lastNum)) {
-      nextNum = lastNum + 1;
+  
+  if (monthOrders && !ordersError && monthOrders.length > 0) {
+    // Extract all sequential numbers and find the maximum numerically
+    const sequentialNumbers = monthOrders
+      .map((order: any) => {
+        if (!order.order_number) return 0;
+        const parts = order.order_number.split('-');
+        const num = parseInt(parts[2]);
+        return isNaN(num) ? 0 : num;
+      })
+      .filter((num: number) => num > 0);
+    
+    if (sequentialNumbers.length > 0) {
+      const maxNum = Math.max(...sequentialNumbers);
+      nextNum = maxNum + 1;
     }
   }
 
