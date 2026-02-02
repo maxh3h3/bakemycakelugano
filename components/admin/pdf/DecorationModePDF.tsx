@@ -51,125 +51,141 @@ Font.register({
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#FDFCFB', // cream-50
-    padding: 30,
+    padding: 20,
     fontFamily: 'Roboto',
+    orientation: 'landscape',
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 15,
     borderBottom: '2 solid #EDD7B8', // cream-300
-    paddingBottom: 15,
+    paddingBottom: 10,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   logo: {
-    width: 50,
-    height: 50,
-    marginRight: 15,
+    width: 40,
+    height: 40,
+    marginRight: 12,
   },
   brandingContainer: {
     flexDirection: 'column',
   },
   companyName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#8B6B47', // brown-500
     marginBottom: 2,
   },
   tagline: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#533D29', // brown-700
     fontStyle: 'italic',
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8B6B47', // brown-500
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  dateRange: {
-    fontSize: 11,
-    color: '#2C2C2C', // charcoal-900
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  orderCard: {
-    marginBottom: 25,
-    padding: 15,
-    borderTop: '2 solid #8B6B47', // brown-500
-    backgroundColor: '#FFFFFF',
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottom: '1 solid #F5E6D3',
-  },
-  orderNumber: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#8B6B47', // brown-500
-  },
-  deliveryDate: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#2C2C2C',
-  },
-  productName: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#2C2C2C',
-    marginBottom: 10,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#8B6B47', // brown-500
+    textAlign: 'center',
     marginTop: 8,
     marginBottom: 4,
   },
-  sectionContent: {
+  dateRange: {
+    fontSize: 10,
+    color: '#2C2C2C', // charcoal-900
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  // Table styles
+  table: {
+    marginTop: 10,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#8B6B47', // brown-500
+    padding: 10,
+    borderBottom: '2 solid #533D29',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottom: '1 solid #F5E6D3',
+    minHeight: 60,
+  },
+  tableRowAlt: {
+    backgroundColor: '#F9F6F1', // cream-100
+  },
+  // Column styles (widths)
+  colOrderNum: {
+    width: '12%',
+    padding: 10,
+  },
+  colProduct: {
+    width: '15%',
+    padding: 10,
+  },
+  colDelivery: {
+    width: '12%',
+    padding: 10,
+  },
+  colNotes: {
+    width: '28%',
+    padding: 10,
+  },
+  colImages: {
+    width: '33%',
+    padding: 10,
+  },
+  // Header text
+  headerText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  // Cell text
+  cellOrderNum: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#8B6B47',
+  },
+  cellProduct: {
     fontSize: 11,
     color: '#2C2C2C',
-    lineHeight: 1.5,
-    paddingLeft: 10,
   },
-  writingContent: {
-    fontSize: 12,
+  cellDelivery: {
+    fontSize: 10,
     color: '#2C2C2C',
+  },
+  cellNotes: {
+    fontSize: 9,
+    color: '#2C2C2C',
+    lineHeight: 1.4,
+  },
+  notesLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#8B6B47',
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  writingText: {
+    fontSize: 10,
     fontStyle: 'italic',
-    paddingLeft: 10,
+    color: '#2C2C2C',
     marginBottom: 4,
   },
+  // Images in table
   imagesContainer: {
-    marginTop: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
-  referenceImage: {
-    width: 150, // Large images
-    height: 150,
+  tableImage: {
+    width: 100,
+    height: 100,
     objectFit: 'cover',
     border: '2 solid #8B6B47',
-  },
-  imagePlaceholder: {
-    width: 150,
-    height: 150,
-    backgroundColor: '#F5E6D3',
-    border: '2 solid #8B6B47',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 9,
-    color: '#808080',
-    textAlign: 'center',
   },
   footer: {
     position: 'absolute',
@@ -191,8 +207,18 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
     minute: '2-digit',
   });
 
-  // Group items by order number
-  const itemsByOrder = items.reduce((acc, item) => {
+  // Filter items to only include those with images or notes
+  const filteredItems = items.filter(item => {
+    const hasImages = item.product_image_urls && Array.isArray(item.product_image_urls) && item.product_image_urls.length > 0;
+    const hasWriting = !!item.writing_on_cake;
+    const hasInternalNotes = !!item.internal_decoration_notes;
+    const hasStaffNotes = !!item.staff_notes;
+    
+    return hasImages || hasWriting || hasInternalNotes || hasStaffNotes;
+  });
+
+  // Group filtered items by order number
+  const itemsByOrder = filteredItems.reduce((acc, item) => {
     const orderNum = item.order_number || 'N/A';
     if (!acc[orderNum]) {
       acc[orderNum] = [];
@@ -210,7 +236,7 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header with Logo */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -227,85 +253,99 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
           <Text style={styles.dateRange}>Период: {dateRange}</Text>
         </View>
 
-        {/* Order Cards */}
-        {sortedOrders.map(([orderNumber, orderItems]) => (
-          <View key={orderNumber} wrap={false}>
-            {orderItems.map((item) => (
-              <View key={item.id} style={styles.orderCard}>
-                {/* Order Header */}
-                <View style={styles.orderHeader}>
-                  <Text style={styles.orderNumber}>ЗАКАЗ: {orderNumber}</Text>
-                  <Text style={styles.deliveryDate}>
-                    ДОСТАВКА: {item.delivery_date ? new Date(item.delivery_date).toLocaleDateString('ru-RU') : 'Не указано'}
-                  </Text>
-                </View>
-
-                {/* Product Name */}
-                <Text style={styles.productName}>
-                  Продукт: {item.product_name}
-                </Text>
-
-                {/* Writing on Cake */}
-                {item.writing_on_cake && (
-                  <View>
-                    <Text style={styles.sectionLabel}>Надпись на торте:</Text>
-                    <Text style={styles.writingContent}>
-                      "{item.writing_on_cake}"
-                    </Text>
-                  </View>
-                )}
-
-                {/* Internal Decoration Notes */}
-                {item.internal_decoration_notes && (
-                  <View>
-                    <Text style={styles.sectionLabel}>Внутренние заметки:</Text>
-                    <Text style={styles.sectionContent}>
-                      {item.internal_decoration_notes}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Staff Notes */}
-                {item.staff_notes && (
-                  <View>
-                    <Text style={styles.sectionLabel}>Заметки персонала:</Text>
-                    <Text style={styles.sectionContent}>
-                      {item.staff_notes}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Reference Images */}
-                {item.product_image_urls && Array.isArray(item.product_image_urls) && item.product_image_urls.length > 0 && (
-                  <View>
-                    <Text style={styles.sectionLabel}>РЕФЕРЕНСНЫЕ ИЗОБРАЖЕНИЯ:</Text>
-                    <View style={styles.imagesContainer}>
-                      {item.product_image_urls.slice(0, 3).map((url, idx) => (
-                        <Image
-                          key={idx}
-                          src={url}
-                          style={styles.referenceImage}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {/* No images placeholder */}
-                {(!item.product_image_urls || !Array.isArray(item.product_image_urls) || item.product_image_urls.length === 0) && (
-                  <View>
-                    <Text style={styles.sectionLabel}>РЕФЕРЕНСНЫЕ ИЗОБРАЖЕНИЯ:</Text>
-                    <View style={styles.imagePlaceholder}>
-                      <Text style={styles.placeholderText}>
-                        Изображения не загружены
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-            ))}
+        {/* Table */}
+        <View style={styles.table}>
+          {/* Table Header */}
+          <View style={styles.tableHeader}>
+            <View style={styles.colOrderNum}>
+              <Text style={styles.headerText}>Заказ №</Text>
+            </View>
+            <View style={styles.colProduct}>
+              <Text style={styles.headerText}>Продукт</Text>
+            </View>
+            <View style={styles.colDelivery}>
+              <Text style={styles.headerText}>Доставка</Text>
+            </View>
+            <View style={styles.colNotes}>
+              <Text style={styles.headerText}>Надписи и Заметки</Text>
+            </View>
+            <View style={styles.colImages}>
+              <Text style={styles.headerText}>Референсные Изображения</Text>
+            </View>
           </View>
-        ))}
+
+          {/* Table Rows */}
+          {sortedOrders.map(([orderNumber, orderItems], orderIdx) => (
+            <View key={orderNumber}>
+              {orderItems.map((item, itemIdx) => (
+                <View
+                  key={item.id}
+                  wrap={false}
+                  style={[
+                    styles.tableRow,
+                    (orderIdx + itemIdx) % 2 === 1 ? styles.tableRowAlt : {},
+                  ]}
+                >
+                  {/* Order Number Column */}
+                  <View style={styles.colOrderNum}>
+                    <Text style={styles.cellOrderNum}>{orderNumber}</Text>
+                  </View>
+
+                  {/* Product Column */}
+                  <View style={styles.colProduct}>
+                    <Text style={styles.cellProduct}>{item.product_name}</Text>
+                  </View>
+
+                  {/* Delivery Column */}
+                  <View style={styles.colDelivery}>
+                    <Text style={styles.cellDelivery}>
+                      {item.delivery_date ? new Date(item.delivery_date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                    </Text>
+                  </View>
+
+                  {/* Notes Column */}
+                  <View style={styles.colNotes}>
+                    {item.writing_on_cake && (
+                      <View>
+                        <Text style={styles.notesLabel}>Надпись:</Text>
+                        <Text style={styles.writingText}>"{item.writing_on_cake}"</Text>
+                      </View>
+                    )}
+                    {item.internal_decoration_notes && (
+                      <View>
+                        <Text style={styles.notesLabel}>Внутренние:</Text>
+                        <Text style={styles.cellNotes}>{item.internal_decoration_notes}</Text>
+                      </View>
+                    )}
+                    {item.staff_notes && (
+                      <View>
+                        <Text style={styles.notesLabel}>Персонал:</Text>
+                        <Text style={styles.cellNotes}>{item.staff_notes}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Images Column */}
+                  <View style={styles.colImages}>
+                    {item.product_image_urls && Array.isArray(item.product_image_urls) && item.product_image_urls.length > 0 ? (
+                      <View style={styles.imagesContainer}>
+                        {item.product_image_urls.slice(0, 4).map((url, idx) => (
+                          <Image
+                            key={idx}
+                            src={url}
+                            style={styles.tableImage}
+                          />
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={styles.cellNotes}>—</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
 
         {/* Footer */}
         <Text style={styles.footer} fixed>

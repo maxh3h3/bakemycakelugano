@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFCFB', // cream-50
     padding: 30,
     fontFamily: 'Roboto',
+    orientation: 'landscape',
   },
   header: {
     marginBottom: 20,
@@ -169,7 +170,7 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header with Logo */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -202,9 +203,10 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
           {items.map((item, index) => (
             <View
               key={item.id}
+              wrap={false}
               style={[
                 styles.tableRow,
-                index % 2 === 1 && styles.tableRowAlt,
+                index % 2 === 1 ? styles.tableRowAlt : {},
               ]}
             >
               <Text style={styles.colOrderNum}>

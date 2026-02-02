@@ -56,7 +56,6 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
   const [showInvoiceGenerator, setShowInvoiceGenerator] = useState(false);
   const [invoiceFromDate, setInvoiceFromDate] = useState<Date | undefined>();
   const [invoiceToDate, setInvoiceToDate] = useState<Date | undefined>();
-  // Removed: isGeneratingPDF state (no longer needed with PDFDownloadLink)
   const [formData, setFormData] = useState({
     name: client.name,
     email: client.email || '',
@@ -196,7 +195,288 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
     };
   };
 
-    return (
+  // OLD jsPDF function removed - using @react-pdf/renderer now
+  // (All jsPDF code has been replaced with the InvoicePDF component and PDFDownloadLink)
+      
+      // Function to safely encode text for PDF (transliterate Cyrillic if needed)
+      const safeText = (text: string) => {
+        // Simple transliteration map for common Cyrillic characters
+        const cyrillicMap: { [key: string]: string } = {
+          'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+          'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+          'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+          'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch',
+          'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+          'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo',
+          'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M',
+          'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U',
+          'Ф': 'F', 'Х': 'H', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Sch',
+          'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
+        };
+        
+        return text.split('').map(char => cyrillicMap[char] || char).join('');
+      };
+      
+      // Load and add logo at top
+      const logoImg = new Image();
+      logoImg.src = '/images/icons/logo_white_back.png';
+      
+      await new Promise<void>((resolve) => {
+        logoImg.onload = () => {
+          try {
+            // Add cream background to entire page
+            doc.setFillColor(253, 252, 251); // cream-50
+            doc.rect(0, 0, 210, 297, 'F');
+            
+            // Add logo at top left
+            const logoSize = 25;
+            doc.addImage(logoImg, 'PNG', 15, 12, logoSize, logoSize);
+            
+            // Add branding next to logo with elegant serif font
+            doc.setFontSize(28);
+            doc.setFont('times', 'bold');
+            doc.setTextColor(139, 107, 71); // brown-500
+            doc.text('Bake My Cake', 45, 25);
+            
+            doc.setFontSize(11);
+            doc.setFont('times', 'italic');
+            doc.setTextColor(83, 61, 41); // brown-700
+            doc.text('Pasticceria Artigianale', 45, 32);
+            
+            // Decorative line under header
+            doc.setDrawColor(237, 215, 184); // cream-300
+            doc.setLineWidth(1);
+            doc.line(15, 42, 195, 42);
+            
+            resolve();
+          } catch (error) {
+            console.error('Error adding logo:', error);
+            resolve();
+          }
+        };
+        logoImg.onerror = () => {
+          // Fallback: render without logo
+          doc.setFillColor(253, 252, 251); // cream-50
+          doc.rect(0, 0, 210, 297, 'F');
+          
+          doc.setFontSize(28);
+          doc.setFont('times', 'bold');
+          doc.setTextColor(139, 107, 71);
+          doc.text('Bake My Cake', 15, 25);
+          
+          doc.setFontSize(11);
+          doc.setFont('times', 'italic');
+          doc.setTextColor(83, 61, 41);
+          doc.text('Pasticceria Artigianale', 15, 32);
+          
+          doc.setDrawColor(237, 215, 184);
+          doc.setLineWidth(1);
+          doc.line(15, 42, 195, 42);
+          
+          resolve();
+        };
+      });
+      
+      // Invoice title in a soft rounded box
+      doc.setFillColor(245, 230, 211); // cream-200
+      doc.roundedRect(15, 50, 50, 12, 3, 3, 'F');
+      doc.setFontSize(16);
+      doc.setFont('times', 'bold');
+      doc.setTextColor(83, 61, 41); // brown-700 for better contrast
+      doc.text('Fattura', 40, 58.5, { align: 'center' });
+      
+      // Client info box (left side) - soft cream background
+      doc.setFillColor(249, 246, 241); // cream-100
+      doc.roundedRect(15, 68, 85, 30, 4, 4, 'F');
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 107, 71); // brown-500
+      doc.text('Cliente', 20, 75);
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(44, 44, 44); // charcoal-900
+      doc.text(safeText(client.name), 20, 82);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(74, 74, 74); // charcoal-700
+      let yPos = 88;
+      if (client.email) {
+        doc.text(safeText(client.email), 20, yPos);
+        yPos += 5;
+      }
+      if (client.phone) {
+        doc.text(safeText(client.phone), 20, yPos);
+      }
+      
+      // Invoice details box (right side) - soft cream background
+      doc.setFillColor(249, 246, 241); // cream-100
+      doc.roundedRect(110, 68, 85, 30, 4, 4, 'F');
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 107, 71); // brown-500
+      doc.text('Dettagli Fattura', 115, 75);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(44, 44, 44);
+      
+      const fromDateStr = invoiceFromDate ? invoiceFromDate.toLocaleDateString('it-IT') : 'Inizio';
+      const toDateStr = invoiceToDate ? invoiceToDate.toLocaleDateString('it-IT') : 'Oggi';
+      doc.text(`Periodo: ${fromDateStr} - ${toDateStr}`, 115, 82);
+      
+      const invoiceNum = `${new Date().getFullYear()}-${client.id.slice(0, 8)}`;
+      doc.text(`N. Fattura: ${invoiceNum}`, 115, 88);
+      doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 115, 94);
+      
+      // Build table data with order items
+      const tableData: any[] = [];
+      
+      filteredOrders.forEach(order => {
+        // Add order header row
+        const orderNum = order.order_number || order.id.slice(0, 8);
+        const deliveryDate = order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('it-IT') : '-';
+        
+        tableData.push([
+          {
+            content: `Ordine: ${orderNum} | Consegna: ${deliveryDate}`,
+            colSpan: 4,
+            styles: { 
+              fillColor: [245, 230, 211], // cream-200
+              textColor: [83, 61, 41], // brown-700 for better contrast
+              fontStyle: 'bold',
+              fontSize: 10,
+              cellPadding: 4
+            }
+          }
+        ]);
+        
+        // Add order items
+        if (order.order_items && order.order_items.length > 0) {
+          order.order_items.forEach(item => {
+            tableData.push([
+              safeText(item.product_name),
+              item.quantity.toString(),
+              `CHF ${parseFloat(item.unit_price).toFixed(2)}`,
+              `CHF ${parseFloat(item.subtotal).toFixed(2)}`
+            ]);
+          });
+        } else {
+          // Fallback if no items (shouldn't happen)
+          tableData.push([
+            'Ordine completo',
+            '1',
+            `CHF ${parseFloat(order.total_amount).toFixed(2)}`,
+            `CHF ${parseFloat(order.total_amount).toFixed(2)}`
+          ]);
+        }
+      });
+      
+      // Calculate table dimensions for perfect centering
+      const tableWidth = 80 + 20 + 35 + 35; // 170mm total
+      const pageWidth = 210; // A4 width in mm
+      const tableMarginX = (pageWidth - tableWidth) / 2; // Center horizontally
+      
+      autoTable(doc, {
+        startY: 108,
+        margin: { left: tableMarginX, right: tableMarginX },
+        head: [['Prodotto', 'Qta', 'Prezzo Unit.', 'Subtotale']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [139, 107, 71], // brown-500
+          textColor: [253, 252, 251], // cream-50
+          fontStyle: 'bold',
+          fontSize: 11,
+          cellPadding: 5
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 5,
+          lineColor: [237, 215, 184], // cream-300
+          lineWidth: 0.5
+        },
+        alternateRowStyles: {
+          fillColor: [253, 252, 251] // cream-50
+        },
+        bodyStyles: {
+          textColor: [44, 44, 44] // charcoal-900
+        },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 35, halign: 'right' },
+          3: { cellWidth: 35, halign: 'right', fontStyle: 'bold' }
+        }
+      });
+      
+      // Calculate totals
+      const totalAmount = filteredOrders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
+      
+      const finalY = (doc as any).lastAutoTable?.finalY || 150;
+      
+      // Draw totals box - perfectly aligned with table
+      const boxStartY = finalY + 12;
+      const boxWidth = 80; // Wider for better proportion
+      const boxHeight = 18;
+      // Align box to right edge of table
+      const boxX = tableMarginX + tableWidth - boxWidth;
+      
+      // Gradient-like effect with nested rounded rectangles
+      doc.setFillColor(139, 107, 71); // brown-500
+      doc.roundedRect(boxX, boxStartY, boxWidth, boxHeight, 4, 4, 'F');
+      
+      // Inner lighter box for depth
+      doc.setFillColor(166, 138, 107); // brown-400
+      doc.roundedRect(boxX + 1, boxStartY + 1, boxWidth - 2, boxHeight - 2, 3, 3, 'F');
+      
+      // Totale label
+      doc.setFont('times', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(253, 252, 251); // cream-50
+      doc.text('Totale:', boxX + 6, boxStartY + 12);
+      
+      // Totale amount
+      doc.setFontSize(14);
+      doc.text(`CHF ${totalAmount.toFixed(2)}`, boxX + boxWidth - 6, boxStartY + 12, { align: 'right' });
+      
+      // Footer with logo
+      const footerY = 270;
+      
+      // Decorative line above footer
+      doc.setDrawColor(237, 215, 184); // cream-300
+      doc.setLineWidth(0.5);
+      doc.line(15, footerY - 5, 195, footerY - 5);
+      
+      // Thank you message
+      doc.setFontSize(11);
+      doc.setFont('times', 'italic');
+      doc.setTextColor(139, 107, 71); // brown-500
+      doc.text('Grazie per la vostra fiducia!', 105, footerY + 3, { align: 'center' });
+      
+      // Add small logo at bottom center
+      const logoWidth = 20;
+      const logoHeight = 20;
+      const logoX = (210 - logoWidth) / 2; // Center on A4 page (210mm width)
+      
+      try {
+        doc.addImage(logoImg, 'PNG', logoX, footerY + 8, logoWidth, logoHeight);
+      } catch (error) {
+        console.error('Could not add footer logo:', error);
+      }
+      
+      // Footer text below logo
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(107, 107, 107); // charcoal-500
+      doc.text('Bake My Cake - Pasticceria Artigianale', 105, footerY + 32, { align: 'center' });
+      
+      // Save PDF
+
+  return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-cream-50 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}

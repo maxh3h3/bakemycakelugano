@@ -38,13 +38,17 @@ export async function generateStaticParams() {
 // Enable dynamic rendering for product slugs not in static params
 export const dynamicParams = true;
 
+// Force dynamic rendering to avoid next-intl static rendering issues
+export const dynamic = 'force-dynamic';
+
 export default async function ProductPage({ params }: ProductPageProps) {
+  // Unwrap params first
+  const { locale, slug } = await params;
+  
+  // Enable static rendering for next-intl - MUST be called before any next-intl hooks
+  setRequestLocale(locale);
+  
   try {
-    const { locale, slug } = await params;
-    
-    // Enable static rendering for next-intl
-    setRequestLocale(locale);
-    
     console.log(`📦 Fetching product with slug: ${slug} for locale: ${locale}`);
     const product = await getProductBySlug(slug, locale as 'en' | 'it');
 
