@@ -117,12 +117,22 @@ export default function EditOrderItemModal({
   };
 
   const handleFlavourChange = (flavourId: string) => {
-    const flavour = flavours.find(f => f._id === flavourId);
-    setFormData({
-      ...formData,
-      selected_flavour: flavourId,
-      flavour_name: flavour?.name || '',
-    });
+    if (flavourId === 'custom') {
+      // Custom flavour selected - keep the ID but clear the name for manual entry
+      setFormData({
+        ...formData,
+        selected_flavour: 'custom',
+        flavour_name: '',
+      });
+    } else {
+      // Standard flavour selected from list
+      const flavour = flavours.find(f => f._id === flavourId);
+      setFormData({
+        ...formData,
+        selected_flavour: flavourId,
+        flavour_name: flavour?.name || '',
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -198,7 +208,11 @@ export default function EditOrderItemModal({
     }
   };
 
-  const isFormValid = formData.quantity && formData.unit_price;
+  const isFormValid = 
+    formData.quantity && 
+    formData.unit_price &&
+    // If custom flavour is selected, ensure flavour name is entered
+    (formData.selected_flavour !== 'custom' || formData.flavour_name.trim());
 
   return (
     <div
@@ -296,7 +310,7 @@ export default function EditOrderItemModal({
             </div>
 
             {/* Flavour */}
-            <div>
+            <div className={formData.selected_flavour === 'custom' ? 'col-span-2' : ''}>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">
                 Вкус
               </label>
@@ -316,12 +330,29 @@ export default function EditOrderItemModal({
                       {flavour.name}
                     </option>
                   ))}
+                  <option value="custom">Свой вкус (указать вручную)</option>
                 </select>
               )}
             </div>
 
-            {/* Empty cell for layout balance */}
-            <div></div>
+            {/* Custom Flavour Input - appears when "custom" is selected */}
+            {formData.selected_flavour === 'custom' && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-charcoal-700 mb-1">
+                  Название вкуса *
+                </label>
+                <input
+                  type="text"
+                  value={formData.flavour_name}
+                  onChange={(e) => setFormData({ ...formData, flavour_name: e.target.value })}
+                  placeholder="напр., Малина-фисташка"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                />
+              </div>
+            )}
+
+            {/* Empty cell for layout balance - only shown when not custom */}
+            {formData.selected_flavour !== 'custom' && <div></div>}
 
             {/* Weight */}
             <div>

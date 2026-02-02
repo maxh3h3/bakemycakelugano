@@ -20,6 +20,7 @@ interface NewItemFormData {
   quantity: string;
   unit_price: string;
   selected_flavour: string;
+  flavour_name: string;
   writing_on_cake: string;
   internal_decoration_notes: string;
   staff_notes: string;
@@ -40,6 +41,7 @@ export default function AddOrderItemModal({
     quantity: '1',
     unit_price: '',
     selected_flavour: '',
+    flavour_name: '',
     writing_on_cake: '',
     internal_decoration_notes: '',
     staff_notes: '',
@@ -96,8 +98,15 @@ export default function AddOrderItemModal({
       const subtotal = quantity * unitPrice;
 
       // Find flavour name if flavour is selected
-      const selectedFlavour = flavours.find(f => f._id === formData.selected_flavour);
-      const flavourName = selectedFlavour ? selectedFlavour.name : null;
+      let flavourName: string | null = null;
+      if (formData.selected_flavour === 'custom') {
+        // Use the custom flavour name entered by user
+        flavourName = formData.flavour_name || null;
+      } else if (formData.selected_flavour) {
+        // Look up standard flavour name from Sanity
+        const selectedFlavour = flavours.find(f => f._id === formData.selected_flavour);
+        flavourName = selectedFlavour ? selectedFlavour.name : null;
+      }
 
       const weightValue = formData.weight_kg.trim();
 
@@ -135,7 +144,12 @@ export default function AddOrderItemModal({
     }
   };
 
-  const isFormValid = formData.product_name.trim() && formData.quantity && formData.unit_price;
+  const isFormValid = 
+    formData.product_name.trim() && 
+    formData.quantity && 
+    formData.unit_price &&
+    // If custom flavour is selected, ensure flavour name is entered
+    (formData.selected_flavour !== 'custom' || formData.flavour_name.trim());
 
   return (
     <div
@@ -229,7 +243,14 @@ export default function AddOrderItemModal({
               ) : (
                 <select
                   value={formData.selected_flavour}
-                  onChange={(e) => setFormData({ ...formData, selected_flavour: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ 
+                      ...formData, 
+                      selected_flavour: value,
+                      flavour_name: value === 'custom' ? '' : formData.flavour_name
+                    });
+                  }}
                   className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                 >
                   <option value="">No flavour</option>
@@ -238,9 +259,26 @@ export default function AddOrderItemModal({
                       {flavour.name}
                     </option>
                   ))}
+                  <option value="custom">Custom flavour (enter manually)</option>
                 </select>
               )}
             </div>
+
+            {/* Custom Flavour Input - appears when "custom" is selected */}
+            {formData.selected_flavour === 'custom' && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-charcoal-700 mb-1">
+                  Custom Flavour Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.flavour_name}
+                  onChange={(e) => setFormData({ ...formData, flavour_name: e.target.value })}
+                  placeholder="e.g., Raspberry-Pistachio"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                />
+              </div>
+            )}
 
             {/* Weight */}
             <div>

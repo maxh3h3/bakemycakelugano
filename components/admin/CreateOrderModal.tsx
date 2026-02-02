@@ -184,12 +184,22 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
       
       // If flavour changes, update flavour_name
       if (field === 'selected_flavour') {
-        const flavour = flavours.find(f => f._id === value);
-        return {
-          ...item,
-          selected_flavour: value,
-          flavour_name: flavour?.name || null,
-        };
+        if (value === 'custom') {
+          // Custom flavour selected - keep the ID but clear the name for manual entry
+          return {
+            ...item,
+            selected_flavour: 'custom',
+            flavour_name: null,
+          };
+        } else {
+          // Standard flavour selected from list
+          const flavour = flavours.find(f => f._id === value);
+          return {
+            ...item,
+            selected_flavour: value,
+            flavour_name: flavour?.name || null,
+          };
+        }
       }
       
       return { ...item, [field]: value };
@@ -846,8 +856,25 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
                                 {flavour.name}
                               </option>
                             ))}
+                            <option value="custom">Свой вкус (указать вручную)</option>
                           </select>
                         </div>
+
+                        {/* Custom Flavour Input - appears when "custom" is selected */}
+                        {item.selected_flavour === 'custom' && (
+                          <div className="md:col-span-3">
+                            <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                              Название вкуса <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={item.flavour_name || ''}
+                              onChange={(e) => updateOrderItem(index, 'flavour_name', e.target.value || null)}
+                              placeholder="напр., Малина-фисташка"
+                              className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                            />
+                          </div>
+                        )}
 
                         {/* Weight */}
                         <div>

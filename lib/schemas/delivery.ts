@@ -3,11 +3,12 @@ import { z } from 'zod';
 /**
  * Delivery Address Schema
  * Validates the structured address for delivery orders
+ * Note: city and postalCode are optional as address can be stored as a single field in street
  */
 export const DeliveryAddressSchema = z.object({
   street: z.string().min(3, 'Street address must be at least 3 characters'),
-  city: z.string().min(2, 'City must be at least 2 characters'),
-  postalCode: z.string().min(4, 'Postal code must be at least 4 characters'),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
   country: z.string().default('Switzerland'),
 });
 

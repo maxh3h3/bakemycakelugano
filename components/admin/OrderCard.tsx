@@ -10,7 +10,7 @@ import EditOrderItemModal from '@/components/admin/EditOrderItemModal';
 import AddOrderItemModal from '@/components/admin/AddOrderItemModal';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import t from '@/lib/admin-translations-extended';
-import { Edit, ChevronDown, Check, Trash2, Pencil, Paintbrush, FileText, Plus } from 'lucide-react';
+import { Edit, ChevronDown, Check, Trash2, Pencil, Paintbrush, FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -65,6 +65,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [showPaymentSelector, setShowPaymentSelector] = useState(false);
   const paymentSelectorRef = useRef<HTMLDivElement>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   // Sync local state when prop changes (e.g., from router.refresh())
   useEffect(() => {
@@ -85,11 +86,49 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
     }
   }, [showPaymentSelector]);
 
+
   const formatCurrency = (amount: number, currency: string = 'CHF') => {
     return new Intl.NumberFormat('de-CH', {
       style: 'currency',
       currency: currency,
     }).format(amount);
+  };
+
+  // Build flat array of all photos from all items
+  const getAllPhotos = () => {
+    const photos: Array<{ url: string; itemName: string; itemIndex: number }> = [];
+    order.order_items.forEach((item, itemIndex) => {
+      if (item.product_image_urls && item.product_image_urls.length > 0) {
+        item.product_image_urls.forEach(url => {
+          photos.push({
+            url,
+            itemName: item.product_name,
+            itemIndex,
+          });
+        });
+      }
+    });
+    return photos;
+  };
+
+  // Navigate to previous photo
+  const goToPreviousPhoto = () => {
+    const allPhotos = getAllPhotos();
+    if (allPhotos.length === 0) return;
+    
+    setCurrentPhotoIndex(prev => 
+      prev === 0 ? allPhotos.length - 1 : prev - 1
+    );
+  };
+
+  // Navigate to next photo
+  const goToNextPhoto = () => {
+    const allPhotos = getAllPhotos();
+    if (allPhotos.length === 0) return;
+    
+    setCurrentPhotoIndex(prev => 
+      (prev + 1) % allPhotos.length
+    );
   };
 
   const toggleExpansion = async () => {
@@ -266,11 +305,11 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
         {/* Order Header */}
         <div className="relative p-6">
           <div className="flex items-stretch gap-4">
-            {/* Order Number & Date */}
-            <div className="bg-brown-50 rounded-xl p-4 border-2 border-brown-200 flex-1 min-h-[100px] flex flex-col justify-between">
+            {/* Order Number & Date - Narrower */}
+            <div className="bg-brown-50 rounded-xl p-4 border-2 border-brown-200 min-w-[140px] min-h-[100px] flex flex-col justify-between">
               <p className="text-xs font-semibold text-brown-600 uppercase mb-1">Order #</p>
               <div>
-                <p className="font-mono text-lg font-bold text-brown-500">
+                <p className="font-mono text-base font-bold text-brown-500">
                   {order.order_number || order.id.slice(0, 8) + '...'}
                 </p>
                 <p className="text-xs text-charcoal-500 mt-1">
@@ -278,6 +317,79 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                 </p>
               </div>
             </div>
+
+            {/* Order Items Preview */}
+            {!isExpanded && order.order_items.length > 0 && (() => {
+              const allPhotos = getAllPhotos();
+              
+              // If no photos, show first item with placeholder
+              if (allPhotos.length === 0) {
+                const firstItem = order.order_items[0];
+                return (
+                  <div className="relative bg-orange-50 rounded-xl border-2 border-orange-200 w-[140px] h-[140px] flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-full rounded-lg border-2 border-dashed border-orange-300 bg-orange-100 flex flex-col items-center justify-center p-4">
+                      <svg className="w-12 h-12 text-orange-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-xs font-semibold text-center text-charcoal-900 line-clamp-2 leading-tight">
+                        {firstItem.product_name}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              
+              const currentPhoto = allPhotos[currentPhotoIndex];
+              const hasMultiplePhotos = allPhotos.length > 1;
+              
+              return (
+                <div className="relative rounded-xl border-2 border-orange-200 w-[140px] h-[140px] overflow-hidden flex items-center justify-center flex-shrink-0">
+                  {/* Previous Photo Button */}
+                  {hasMultiplePhotos && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToPreviousPhoto();
+                      }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-lg transition-all flex-shrink-0"
+                      title="Previous photo"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  
+                  {/* Image with Name Overlay */}
+                  <div className="relative w-full h-full">
+                    <img
+                      src={currentPhoto.url}
+                      alt={currentPhoto.itemName}
+                      className="w-full h-full object-cover"
+                    />
+                    
+                    {/* Item Name Overlay at Bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/75 backdrop-blur-sm px-3 py-2">
+                      <p className="text-xs font-semibold text-white text-center line-clamp-1 leading-tight">
+                        {currentPhoto.itemName}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Next Photo Button */}
+                  {hasMultiplePhotos && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToNextPhoto();
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-lg transition-all flex-shrink-0"
+                      title="Next photo"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Customer */}
             <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 flex-1 min-h-[100px] flex flex-col justify-between">
@@ -502,96 +614,26 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         <label className="block text-sm font-medium text-charcoal-700 mb-2">
                           {t.deliveryAddress}
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="col-span-2">
-                            <input
-                              type="text"
-                              value={editFormData.delivery_address?.street || ''}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  delivery_address: {
-                                    ...(editFormData.delivery_address || {
-                                      street: '',
-                                      city: '',
-                                      postalCode: '',
-                                      country: '',
-                                    }),
-                                    street: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder="Адрес улицы"
-                              className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                            />
-                          </div>
-                          <div>
-                            <input
-                              type="text"
-                              value={editFormData.delivery_address?.city || ''}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  delivery_address: {
-                                    ...(editFormData.delivery_address || {
-                                      street: '',
-                                      city: '',
-                                      postalCode: '',
-                                      country: '',
-                                    }),
-                                    city: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder={t.city}
-                              className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                            />
-                          </div>
-                          <div>
-                            <input
-                              type="text"
-                              value={editFormData.delivery_address?.postalCode || ''}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  delivery_address: {
-                                    ...(editFormData.delivery_address || {
-                                      street: '',
-                                      city: '',
-                                      postalCode: '',
-                                      country: '',
-                                    }),
-                                    postalCode: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder="Индекс"
-                              className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <input
-                              type="text"
-                              value={editFormData.delivery_address?.country || ''}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  delivery_address: {
-                                    ...(editFormData.delivery_address || {
-                                      street: '',
-                                      city: '',
-                                      postalCode: '',
-                                      country: '',
-                                    }),
-                                    country: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder={t.country}
-                              className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                            />
-                          </div>
-                        </div>
+                        <input
+                          type="text"
+                          value={editFormData.delivery_address?.street || ''}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              delivery_address: {
+                                street: e.target.value,
+                                city: '',
+                                postalCode: '',
+                                country: 'Switzerland',
+                              },
+                            })
+                          }
+                          placeholder="напр., ул. Bahnhofstrasse 10, Цюрих 8001"
+                          className="w-full px-3 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                        />
+                        <p className="text-xs text-charcoal-500 mt-1">
+                          Введите полный адрес: улица, город, индекс
+                        </p>
                       </div>
                     )}
 

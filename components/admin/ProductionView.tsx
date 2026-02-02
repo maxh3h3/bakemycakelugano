@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import type { Database } from '@/lib/supabase/types';
 import OrderItemsModal from './OrderItemsModal';
 import ProductionSummaryModal from './ProductionSummaryModal';
+import ProductionPrintingModal from './ProductionPrintingModal';
 import Toast from '@/components/ui/Toast';
 import { useProductionSSE } from '@/lib/hooks/useProductionSSE';
 import type { ProductionEvent } from '@/lib/events/production-events';
+import { Printer } from 'lucide-react';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -30,6 +32,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<OrderGroup | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -208,6 +211,17 @@ export default function ProductionView({ items }: ProductionViewProps) {
       )}
 
       <div className="space-y-6">
+        {/* Print Production Schedule Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowPrintModal(true)}
+            className="bg-brown-500 hover:bg-brown-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-3"
+          >
+            <Printer className="w-5 h-5" />
+            Печать графика производства
+          </button>
+        </div>
+
         {/* View Mode Tabs */}
         <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-2">
           <div className="grid grid-cols-3 gap-2">
@@ -559,6 +573,14 @@ export default function ProductionView({ items }: ProductionViewProps) {
           items={viewMode === 'today' ? todayViewItems : weekViewItems}
           viewMode={viewMode}
           onClose={() => setShowSummaryModal(false)}
+        />
+      )}
+
+      {/* Production Printing Modal */}
+      {showPrintModal && (
+        <ProductionPrintingModal
+          items={items}
+          onClose={() => setShowPrintModal(false)}
         />
       )}
     </>
