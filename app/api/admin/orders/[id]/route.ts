@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { updateClientStats } from '@/lib/clients/utils';
-import { generateOrderNumber } from '@/lib/order-number-generator';
 
 // Update an order
 export async function PATCH(
@@ -61,12 +60,12 @@ export async function PATCH(
     // Add updated_at timestamp
     updateData.updated_at = new Date().toISOString();
 
-    // Check if order exists
+    // Check if order exists and get current order_number
     const { data: existingOrder, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, client_id')
+      .select('id, client_id, order_number')
       .eq('id', id)
-      .single() as { data: { id: string; client_id: string | null } | null; error: any };
+      .single() as { data: { id: string; client_id: string | null; order_number: string | null } | null; error: any };
 
     if (fetchError || !existingOrder) {
       return NextResponse.json(
@@ -75,17 +74,32 @@ export async function PATCH(
       );
     }
 
-    // If delivery_date is being updated, regenerate order number
+    // If delivery_date is being updated, update order number date part while preserving counter
     let newOrderNumber: string | null = null;
-    if (updateData.delivery_date) {
+    if (updateData.delivery_date && existingOrder.order_number) {
       try {
-        newOrderNumber = await generateOrderNumber(updateData.delivery_date);
-        updateData.order_number = newOrderNumber;
-        console.log(`Generated new order number: ${newOrderNumber} for delivery date: ${updateData.delivery_date}`);
+        // Extract the sequential counter from the existing order number
+        // Format: DD-MM-XXX
+        const orderNumberParts = existingOrder.order_number.split('-');
+        
+        if (orderNumberParts.length === 3) {
+          const sequentialCounter = orderNumberParts[2]; // Keep the XXX part
+          
+          // Extract day and month from new delivery date (YYYY-MM-DD)
+          const [year, month, day] = updateData.delivery_date.split('-');
+          
+          // Build new order number with new date but same counter
+          newOrderNumber = `${day}-${month}-${sequentialCounter}`;
+          updateData.order_number = newOrderNumber;
+          
+          console.log(`Updated order number: ${existingOrder.order_number} → ${newOrderNumber} (preserved counter: ${sequentialCounter})`);
+        } else {
+          console.warn(`Invalid order number format: ${existingOrder.order_number}. Skipping order number update.`);
+        }
       } catch (orderNumberError) {
-        console.error('Error generating order number:', orderNumberError);
+        console.error('Error updating order number:', orderNumberError);
         return NextResponse.json(
-          { success: false, error: 'Failed to generate new order number' },
+          { success: false, error: 'Failed to update order number' },
           { status: 500 }
         );
       }
