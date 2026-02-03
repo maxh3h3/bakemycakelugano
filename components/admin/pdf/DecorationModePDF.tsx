@@ -7,7 +7,9 @@
 import { Document, Page, Text, View, Image, StyleSheet, Font } from '@react-pdf/renderer';
 import type { Database } from '@/lib/supabase/types';
 
-type OrderItem = Database['public']['Tables']['order_items']['Row'];
+type OrderItem = Database['public']['Tables']['order_items']['Row'] & {
+  delivery_time?: string | null; // Extended type for denormalized field (migration pending)
+};
 
 interface DecorationModePDFProps {
   items: OrderItem[];

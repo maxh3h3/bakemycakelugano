@@ -89,12 +89,12 @@ export async function POST(
       );
     }
 
-    // Fetch order to get order_number, delivery_date, and delivery_type
+    // Fetch order to get order_number, delivery_date, delivery_type, and delivery_time
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('order_number, delivery_date, delivery_type')
+      .select('order_number, delivery_date, delivery_type, delivery_time')
       .eq('id', orderId)
-      .single() as { data: { order_number: string | null; delivery_date: string | null; delivery_type: string | null } | null; error: any };
+      .single() as { data: { order_number: string | null; delivery_date: string | null; delivery_type: string | null; delivery_time: string | null } | null; error: any };
 
     if (orderError || !order) {
       return NextResponse.json(
