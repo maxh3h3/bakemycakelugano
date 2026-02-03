@@ -29,7 +29,7 @@ interface OrderGroup {
 
 export default function ProductionView({ items }: ProductionViewProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>('today');
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<OrderGroup | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);

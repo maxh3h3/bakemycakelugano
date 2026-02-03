@@ -121,12 +121,26 @@ export async function PATCH(
       );
     }
 
-    // If delivery_date was updated, also update all related order_items
-    if (updateData.delivery_date) {
+    // If delivery_date, delivery_type, or delivery_time was updated, also update all related order_items
+    if (updateData.delivery_date || updateData.delivery_type || updateData.delivery_time) {
       const orderItemsUpdate: any = {
-        delivery_date: updateData.delivery_date,
         updated_at: new Date().toISOString(),
       };
+      
+      // Update delivery_date if changed (denormalized for production view filtering)
+      if (updateData.delivery_date) {
+        orderItemsUpdate.delivery_date = updateData.delivery_date;
+      }
+      
+      // Update delivery_type if changed (denormalized for filtering immediate sales)
+      if (updateData.delivery_type) {
+        orderItemsUpdate.delivery_type = updateData.delivery_type;
+      }
+      
+      // Update delivery_time if changed (denormalized for decoration view)
+      if (updateData.delivery_time !== undefined) {
+        orderItemsUpdate.delivery_time = updateData.delivery_time;
+      }
       
       // Also update order_number in order_items if it was regenerated
       if (newOrderNumber) {
@@ -144,7 +158,12 @@ export async function PATCH(
         // The order was updated successfully, items can be fixed manually if needed
         console.warn('Order updated successfully but failed to update related order items');
       } else {
-        console.log(`Updated delivery_date${newOrderNumber ? ' and order_number' : ''} for all order items in order ${id}`);
+        const updatedFields = [];
+        if (updateData.delivery_date) updatedFields.push('delivery_date');
+        if (updateData.delivery_type) updatedFields.push('delivery_type');
+        if (updateData.delivery_time !== undefined) updatedFields.push('delivery_time');
+        if (newOrderNumber) updatedFields.push('order_number');
+        console.log(`Updated ${updatedFields.join(', ')} for all order items in order ${id}`);
       }
     }
 

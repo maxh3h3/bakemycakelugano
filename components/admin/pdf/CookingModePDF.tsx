@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
   },
-  colDelivery: {
+  colFlavor: {
     width: '15%',
     fontSize: 11,
     textAlign: 'center',
@@ -196,7 +196,7 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
             <Text style={styles.colQty}>Кол-во</Text>
             <Text style={styles.colSize}>Размер</Text>
             <Text style={styles.colWeight}>Вес</Text>
-            <Text style={styles.colDelivery}>Доставка</Text>
+            <Text style={styles.colFlavor}>Вкус</Text>
           </View>
 
           {/* Table Rows */}
@@ -224,8 +224,8 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
               <Text style={styles.colWeight}>
                 {item.weight_kg ? `${item.weight_kg}` : '—'}
               </Text>
-              <Text style={styles.colDelivery}>
-                {item.delivery_date ? new Date(item.delivery_date).toLocaleDateString('ru-RU') : '—'}
+              <Text style={styles.colFlavor}>
+                {item.flavour_name || '—'}
               </Text>
             </View>
           ))}

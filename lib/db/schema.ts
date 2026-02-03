@@ -112,6 +112,7 @@ export const orderItems = pgTable('order_items', {
   
   // Production tracking
   deliveryDate: date('delivery_date'),
+  deliveryTime: text('delivery_time'), // Denormalized from orders for decoration view
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),

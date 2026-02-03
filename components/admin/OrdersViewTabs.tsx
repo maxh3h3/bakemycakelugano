@@ -27,10 +27,10 @@ const VITRINA_CLIENT_ID = '06efda69-8386-4365-a2f7-3bcf5bdc483e';
 const RAMENNAYA_CLIENT_ID = '9323a8bb-6ec4-481c-b040-aa762dc626bd';
 
 export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
-  const [activeTab, setActiveTab] = useState<ViewTab>('today');
+  const [activeTab, setActiveTab] = useState<ViewTab>('week');
   const [showVitrina, setShowVitrina] = useState(true);
   const [showRamennaya, setShowRamennaya] = useState(true);
-  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('asc');
 
   // Filter orders based on active tab and walk-in client toggles
   const getFilteredOrders = (): OrderWithItems[] => {
@@ -54,7 +54,10 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
       
       case 'week': {
         const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+        // Start week with Monday instead of Sunday
+        const dayOfWeek = now.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        weekStart.setDate(now.getDate() - daysFromMonday);
         weekStart.setHours(0, 0, 0, 0);
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 7);
@@ -120,7 +123,10 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         });
       case 'week': {
         const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - now.getDay());
+        // Start week with Monday instead of Sunday
+        const dayOfWeek = now.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        weekStart.setDate(now.getDate() - daysFromMonday);
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         return `${weekStart.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' })}`;

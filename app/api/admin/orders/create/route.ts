@@ -173,6 +173,8 @@ export async function POST(request: NextRequest) {
       order_id: (order as any).id,
       order_number: order_number, // Denormalized for production view
       delivery_type: delivery_type, // Denormalized for filtering immediate sales
+      delivery_date: delivery_date, // Denormalized for production view
+      delivery_time: delivery_time || null, // Denormalized for decoration view
       product_id: item.product_id || null, // Nullable for custom manual orders
       product_name: item.product_name,
       product_image_urls: item.product_image_urls?.length ? item.product_image_urls : null,
@@ -186,7 +188,6 @@ export async function POST(request: NextRequest) {
       writing_on_cake: item.writing_on_cake || null,
       internal_decoration_notes: item.internal_decoration_notes || null,
       staff_notes: item.staff_notes || null,
-      delivery_date: delivery_date, // Denormalized for production view
       production_status: is_immediate ? 'delivered' : 'new', // Immediate sales are already delivered
       completed_at: is_immediate ? new Date().toISOString() : null, // Mark completion time
     }));

@@ -196,6 +196,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const orderItemsData = orderItems.map((item: any) => ({
       order_id: (order as any).id,
       order_number: orderNumber, // Denormalized for production view
+      delivery_type: metadata.deliveryType || null, // Denormalized for filtering immediate sales
+      delivery_date: metadata.deliveryDate || null, // Denormalized for production view
+      delivery_time: metadata.deliveryTime || null, // Denormalized for decoration view
       product_id: item.productId,
       product_name: item.productName,
       product_image_urls: null, // Not stored in metadata to save space
@@ -206,7 +209,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       flavour_name: item.flavourName || null,
       weight_kg: item.weight_kg ?? item.weightKg ?? null,
       writing_on_cake: item.writingOnCake || null,
-      delivery_date: metadata.deliveryDate || null, // Denormalized for production view
       production_status: 'new',
     }));
 

@@ -110,6 +110,8 @@ export async function POST(
         order_id: orderId,
         order_number: order.order_number, // Denormalized for production view
         delivery_type: order.delivery_type, // Denormalized for filtering immediate sales
+        delivery_date: delivery_date || order.delivery_date, // Use provided or inherit from order
+        delivery_time: order.delivery_time, // Denormalized for decoration view
         product_id: null, // Manual items don't have product_id
         product_name,
         product_image_urls: product_image_urls?.length ? product_image_urls : null,
@@ -123,7 +125,6 @@ export async function POST(
         staff_notes,
         weight_kg,
         diameter_cm,
-        delivery_date: delivery_date || order.delivery_date, // Use provided or inherit from order
         production_status: 'new',
       } as any)
       .select()

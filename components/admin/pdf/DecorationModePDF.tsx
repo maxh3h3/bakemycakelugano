@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     borderBottom: '1 solid #F5E6D3',
-    minHeight: 60,
+    minHeight: 170,
   },
   tableRowAlt: {
     backgroundColor: '#F9F6F1', // cream-100
@@ -139,38 +139,38 @@ const styles = StyleSheet.create({
   },
   // Header text
   headerText: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   // Cell text
   cellOrderNum: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#8B6B47',
   },
   cellProduct: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#2C2C2C',
   },
   cellDelivery: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#2C2C2C',
   },
   cellNotes: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#2C2C2C',
     lineHeight: 1.4,
   },
   notesLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#8B6B47',
     marginTop: 4,
     marginBottom: 2,
   },
   writingText: {
-    fontSize: 10,
+    fontSize: 12,
     fontStyle: 'italic',
     color: '#2C2C2C',
     marginBottom: 4,
@@ -179,11 +179,11 @@ const styles = StyleSheet.create({
   imagesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   tableImage: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     objectFit: 'cover',
     border: '2 solid #8B6B47',
   },
@@ -264,7 +264,7 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
               <Text style={styles.headerText}>Продукт</Text>
             </View>
             <View style={styles.colDelivery}>
-              <Text style={styles.headerText}>Доставка</Text>
+              <Text style={styles.headerText}>Время</Text>
             </View>
             <View style={styles.colNotes}>
               <Text style={styles.headerText}>Надписи и Заметки</Text>
@@ -296,10 +296,10 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
                     <Text style={styles.cellProduct}>{item.product_name}</Text>
                   </View>
 
-                  {/* Delivery Column */}
+                  {/* Delivery Time Column */}
                   <View style={styles.colDelivery}>
                     <Text style={styles.cellDelivery}>
-                      {item.delivery_date ? new Date(item.delivery_date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                      {item.delivery_time || '—'}
                     </Text>
                   </View>
 
