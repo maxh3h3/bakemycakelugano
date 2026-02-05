@@ -150,6 +150,8 @@
     "deliveryTime": "Delivery/Pickup Time",
     "pickup": "Store Pickup",
     "delivery": "Home Delivery",
+    "sundayPickupNotAvailable": "Store pickup is not available on Sundays",
+    "sundayPickupNotice": "We're closed on Sundays, but we'd be happy to deliver your order to your door! Please select home delivery below.",
     "address": "Address",
     "addressPlaceholder": "123 Main Street",
     "addressRequired": "Address is required",

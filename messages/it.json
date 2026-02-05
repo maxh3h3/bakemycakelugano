@@ -150,6 +150,8 @@
     "deliveryTime": "Orario di Consegna/Ritiro",
     "pickup": "Ritiro in negozio",
     "delivery": "Consegna a domicilio",
+    "sundayPickupNotAvailable": "Il ritiro in negozio non è disponibile di domenica",
+    "sundayPickupNotice": "Siamo chiusi la domenica, ma saremo felici di consegnare il tuo ordine a casa! Seleziona la consegna a domicilio qui sotto.",
     "address": "Indirizzo",
     "addressPlaceholder": "Via Roma 123",
     "addressRequired": "L'indirizzo è obbligatorio",
