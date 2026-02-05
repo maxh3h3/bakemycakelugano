@@ -51,101 +51,130 @@ Font.register({
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#FDFCFB', // cream-50
-    padding: 30,
+    padding: 20,
     fontFamily: 'Roboto',
-    orientation: 'landscape',
+    orientation: 'portrait',
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 15,
     borderBottom: '2 solid #EDD7B8', // cream-300
-    paddingBottom: 15,
+    paddingBottom: 10,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   logo: {
-    width: 50,
-    height: 50,
-    marginRight: 15,
+    width: 40,
+    height: 40,
+    marginRight: 12,
   },
   brandingContainer: {
     flexDirection: 'column',
   },
   companyName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#8B6B47', // brown-500
     marginBottom: 2,
   },
   tagline: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#533D29', // brown-700
     fontStyle: 'italic',
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#8B6B47', // brown-500
     textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: 8,
+    marginBottom: 4,
   },
   dateRange: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#2C2C2C', // charcoal-900
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
   },
+  // Day section styles
+  daySection: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  dayHeader: {
+    backgroundColor: '#8B6B47', // brown-500
+    padding: 10,
+    marginBottom: 8,
+    borderRadius: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dayTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  dayDate: {
+    fontSize: 11,
+    color: '#F5E6D3', // cream-200
+  },
+  dayCount: {
+    fontSize: 11,
+    color: '#F5E6D3', // cream-200
+    fontWeight: 'bold',
+  },
+  // Table styles
   table: {
-    marginTop: 10,
+    marginTop: 4,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#8B6B47', // brown-500
-    padding: 10,
+    backgroundColor: '#C9A871', // brown-400 (lighter for sub-header)
+    padding: 8,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottom: '1 solid #F5E6D3', // cream-200
-    padding: 8,
-    minHeight: 35,
+    padding: 6,
+    minHeight: 30,
   },
   tableRowAlt: {
     backgroundColor: '#F9F6F1', // cream-100
   },
   colOrderNum: {
-    width: '15%',
-    fontSize: 13,
+    width: '12%',
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#8B6B47',
   },
   colProduct: {
-    width: '30%',
-    fontSize: 11,
+    width: '28%',
+    fontSize: 10,
   },
   colQty: {
-    width: '10%',
-    fontSize: 11,
+    width: '8%',
+    fontSize: 10,
     textAlign: 'center',
   },
   colSize: {
-    width: '15%',
-    fontSize: 11,
+    width: '14%',
+    fontSize: 10,
     textAlign: 'center',
   },
   colWeight: {
-    width: '15%',
-    fontSize: 11,
+    width: '18%',
+    fontSize: 10,
     textAlign: 'center',
   },
   colFlavor: {
-    width: '15%',
-    fontSize: 11,
+    width: '20%',
+    fontSize: 10,
     textAlign: 'center',
   },
   footer: {
@@ -156,6 +185,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 8,
     color: '#808080',
+  },
+  emptyDay: {
+    textAlign: 'center',
+    fontSize: 11,
+    color: '#808080',
+    fontStyle: 'italic',
+    paddingVertical: 15,
   },
 });
 
@@ -168,9 +204,46 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
     minute: '2-digit',
   });
 
+  // Group items by delivery_date
+  const itemsByDay = items.reduce((acc, item) => {
+    const deliveryDate = item.delivery_date || 'Без даты';
+    if (!acc[deliveryDate]) {
+      acc[deliveryDate] = [];
+    }
+    acc[deliveryDate].push(item);
+    return acc;
+  }, {} as Record<string, OrderItem[]>);
+
+  // Sort days chronologically
+  const sortedDays = Object.keys(itemsByDay).sort((a, b) => {
+    if (a === 'Без даты') return 1;
+    if (b === 'Без даты') return -1;
+    return a.localeCompare(b);
+  });
+
+  // Format date for display (Russian)
+  const formatDayHeader = (dateStr: string): { weekday: string; date: string } => {
+    if (dateStr === 'Без даты') {
+      return { weekday: 'Без даты доставки', date: '' };
+    }
+    
+    const date = new Date(dateStr + 'T00:00:00');
+    const weekday = date.toLocaleDateString('ru-RU', { weekday: 'long' });
+    const formattedDate = date.toLocaleDateString('ru-RU', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    
+    return { 
+      weekday: weekday.charAt(0).toUpperCase() + weekday.slice(1), 
+      date: formattedDate 
+    };
+  };
+
   return (
     <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" orientation="portrait" style={styles.page}>
         {/* Header with Logo */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -187,53 +260,72 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
           <Text style={styles.dateRange}>Период: {dateRange}</Text>
         </View>
 
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={styles.colOrderNum}>Заказ №</Text>
-            <Text style={styles.colProduct}>Продукт</Text>
-            <Text style={styles.colQty}>Кол-во</Text>
-            <Text style={styles.colSize}>Размер</Text>
-            <Text style={styles.colWeight}>Вес</Text>
-            <Text style={styles.colFlavor}>Вкус</Text>
-          </View>
+        {/* Render items grouped by day */}
+        {sortedDays.map((dayStr, dayIndex) => {
+          const dayItems = itemsByDay[dayStr];
+          const { weekday, date } = formatDayHeader(dayStr);
+          
+          return (
+            <View key={dayStr} style={styles.daySection} wrap={false}>
+              {/* Day Header */}
+              <View style={styles.dayHeader}>
+                <Text style={styles.dayTitle}>{weekday}</Text>
+                {date && <Text style={styles.dayDate}>{date}</Text>}
+                <Text style={styles.dayCount}>
+                  Заказов: {dayItems.length}
+                </Text>
+              </View>
 
-          {/* Table Rows */}
-          {items.map((item, index) => (
-            <View
-              key={item.id}
-              wrap={false}
-              style={[
-                styles.tableRow,
-                index % 2 === 1 ? styles.tableRowAlt : {},
-              ]}
-            >
-              <Text style={styles.colOrderNum}>
-                {item.order_number || 'N/A'}
-              </Text>
-              <Text style={styles.colProduct}>
-                {item.product_name}
-              </Text>
-              <Text style={styles.colQty}>
-                {item.quantity}
-              </Text>
-              <Text style={styles.colSize}>
-                {item.diameter_cm ? `${item.diameter_cm} см` : '—'}
-              </Text>
-              <Text style={styles.colWeight}>
-                {item.weight_kg ? `${item.weight_kg}` : '—'}
-              </Text>
-              <Text style={styles.colFlavor}>
-                {item.flavour_name || '—'}
-              </Text>
+              {/* Table for this day */}
+              <View style={styles.table}>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={styles.colOrderNum}>Заказ №</Text>
+                  <Text style={styles.colProduct}>Продукт</Text>
+                  <Text style={styles.colQty}>Кол-во</Text>
+                  <Text style={styles.colSize}>Размер</Text>
+                  <Text style={styles.colWeight}>Вес</Text>
+                  <Text style={styles.colFlavor}>Вкус</Text>
+                </View>
+
+                {/* Table Rows */}
+                {dayItems.map((item, index) => (
+                  <View
+                    key={item.id}
+                    wrap={false}
+                    style={[
+                      styles.tableRow,
+                      index % 2 === 1 ? styles.tableRowAlt : {},
+                    ]}
+                  >
+                    <Text style={styles.colOrderNum}>
+                      {item.order_number || 'N/A'}
+                    </Text>
+                    <Text style={styles.colProduct}>
+                      {item.product_name}
+                    </Text>
+                    <Text style={styles.colQty}>
+                      {item.quantity}
+                    </Text>
+                    <Text style={styles.colSize}>
+                      {item.diameter_cm ? `${item.diameter_cm} см` : '—'}
+                    </Text>
+                    <Text style={styles.colWeight}>
+                      {item.weight_kg ? `${item.weight_kg}` : '—'}
+                    </Text>
+                    <Text style={styles.colFlavor}>
+                      {item.flavour_name || '—'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          ))}
-        </View>
+          );
+        })}
 
         {/* Footer */}
-        <Text style={styles.footer}>
-          Создано: {generatedAt} | Страница 1 из 1
+        <Text style={styles.footer} fixed>
+          Создано: {generatedAt}
         </Text>
       </Page>
     </Document>

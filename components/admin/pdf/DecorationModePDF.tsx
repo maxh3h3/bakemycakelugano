@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFCFB', // cream-50
     padding: 20,
     fontFamily: 'Roboto',
-    orientation: 'landscape',
+    orientation: 'portrait',
   },
   header: {
     marginBottom: 15,
@@ -100,94 +100,93 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
   },
-  // Table styles
-  table: {
+  // Card-based layout for portrait
+  itemsContainer: {
     marginTop: 10,
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#8B6B47', // brown-500
-    padding: 10,
-    borderBottom: '2 solid #533D29',
+  itemCard: {
+    marginBottom: 15,
+    borderRadius: 8,
+    border: '2 solid #EDD7B8',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
   },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottom: '1 solid #F5E6D3',
-    minHeight: 170,
-  },
-  tableRowAlt: {
+  itemCardAlt: {
     backgroundColor: '#F9F6F1', // cream-100
   },
-  // Column styles (widths)
-  colOrderNum: {
-    width: '12%',
+  cardHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#8B6B47',
     padding: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  colProduct: {
-    width: '15%',
-    padding: 10,
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
   },
-  colDelivery: {
-    width: '12%',
-    padding: 10,
-  },
-  colNotes: {
-    width: '28%',
-    padding: 10,
-  },
-  colImages: {
-    width: '33%',
-    padding: 10,
-  },
-  // Header text
-  headerText: {
-    fontSize: 13,
+  cardOrderNum: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  // Cell text
-  cellOrderNum: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8B6B47',
-  },
-  cellProduct: {
-    fontSize: 13,
-    color: '#2C2C2C',
-  },
-  cellDelivery: {
+  cardProduct: {
     fontSize: 12,
-    color: '#2C2C2C',
+    color: '#F5E6D3',
   },
-  cellNotes: {
+  cardDeliveryTime: {
     fontSize: 11,
-    color: '#2C2C2C',
-    lineHeight: 1.4,
+    color: '#F5E6D3',
+  },
+  cardBody: {
+    padding: 12,
+  },
+  notesSection: {
+    marginBottom: 12,
   },
   notesLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#8B6B47',
-    marginTop: 4,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   writingText: {
-    fontSize: 12,
+    fontSize: 11,
     fontStyle: 'italic',
     color: '#2C2C2C',
+    marginBottom: 6,
+    backgroundColor: '#FFF9E6',
+    padding: 6,
+    borderRadius: 4,
+  },
+  cellNotes: {
+    fontSize: 10,
+    color: '#2C2C2C',
+    lineHeight: 1.4,
     marginBottom: 4,
   },
-  // Images in table
+  imagesSection: {
+    borderTop: '1 solid #F5E6D3',
+    paddingTop: 10,
+  },
+  imagesSectionLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#8B6B47',
+    marginBottom: 8,
+  },
   imagesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   tableImage: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
     objectFit: 'cover',
     border: '2 solid #8B6B47',
+    borderRadius: 4,
   },
   footer: {
     position: 'absolute',
@@ -238,7 +237,7 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
 
   return (
     <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" orientation="portrait" style={styles.page}>
         {/* Header with Logo */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -255,96 +254,79 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
           <Text style={styles.dateRange}>Период: {dateRange}</Text>
         </View>
 
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <View style={styles.colOrderNum}>
-              <Text style={styles.headerText}>Заказ №</Text>
-            </View>
-            <View style={styles.colProduct}>
-              <Text style={styles.headerText}>Продукт</Text>
-            </View>
-            <View style={styles.colDelivery}>
-              <Text style={styles.headerText}>Время</Text>
-            </View>
-            <View style={styles.colNotes}>
-              <Text style={styles.headerText}>Надписи и Заметки</Text>
-            </View>
-            <View style={styles.colImages}>
-              <Text style={styles.headerText}>Референсные Изображения</Text>
-            </View>
-          </View>
-
-          {/* Table Rows */}
+        {/* Items as Cards */}
+        <View style={styles.itemsContainer}>
           {sortedOrders.map(([orderNumber, orderItems], orderIdx) => (
             <View key={orderNumber}>
-              {orderItems.map((item, itemIdx) => (
-                <View
-                  key={item.id}
-                  wrap={false}
-                  style={[
-                    styles.tableRow,
-                    (orderIdx + itemIdx) % 2 === 1 ? styles.tableRowAlt : {},
-                  ]}
-                >
-                  {/* Order Number Column */}
-                  <View style={styles.colOrderNum}>
-                    <Text style={styles.cellOrderNum}>{orderNumber}</Text>
-                  </View>
-
-                  {/* Product Column */}
-                  <View style={styles.colProduct}>
-                    <Text style={styles.cellProduct}>{item.product_name}</Text>
-                  </View>
-
-                  {/* Delivery Time Column */}
-                  <View style={styles.colDelivery}>
-                    <Text style={styles.cellDelivery}>
-                      {item.delivery_time || '—'}
-                    </Text>
-                  </View>
-
-                  {/* Notes Column */}
-                  <View style={styles.colNotes}>
-                    {item.writing_on_cake && (
-                      <View>
-                        <Text style={styles.notesLabel}>Надпись:</Text>
-                        <Text style={styles.writingText}>"{item.writing_on_cake}"</Text>
+              {orderItems.map((item, itemIdx) => {
+                const hasNotes = item.writing_on_cake || item.internal_decoration_notes || item.staff_notes;
+                const hasImages = item.product_image_urls && Array.isArray(item.product_image_urls) && item.product_image_urls.length > 0;
+                
+                return (
+                  <View
+                    key={item.id}
+                    wrap={false}
+                    style={[
+                      styles.itemCard,
+                      (orderIdx + itemIdx) % 2 === 1 ? styles.itemCardAlt : {},
+                    ]}
+                  >
+                    {/* Card Header */}
+                    <View style={styles.cardHeader}>
+                      <View style={styles.cardHeaderLeft}>
+                        <Text style={styles.cardOrderNum}>№ {orderNumber}</Text>
+                        <Text style={styles.cardProduct}>{item.product_name}</Text>
                       </View>
-                    )}
-                    {item.internal_decoration_notes && (
-                      <View>
-                        <Text style={styles.notesLabel}>Внутренние:</Text>
-                        <Text style={styles.cellNotes}>{item.internal_decoration_notes}</Text>
-                      </View>
-                    )}
-                    {item.staff_notes && (
-                      <View>
-                        <Text style={styles.notesLabel}>Персонал:</Text>
-                        <Text style={styles.cellNotes}>{item.staff_notes}</Text>
-                      </View>
-                    )}
-                  </View>
+                      {item.delivery_time && (
+                        <Text style={styles.cardDeliveryTime}>{item.delivery_time}</Text>
+                      )}
+                    </View>
 
-                  {/* Images Column */}
-                  <View style={styles.colImages}>
-                    {item.product_image_urls && Array.isArray(item.product_image_urls) && item.product_image_urls.length > 0 ? (
-                      <View style={styles.imagesContainer}>
-                        {item.product_image_urls.slice(0, 4).map((url, idx) => (
-                          <Image
-                            key={idx}
-                            src={url}
-                            style={styles.tableImage}
-                          />
-                        ))}
-                      </View>
-                    ) : (
-                      <Text style={styles.cellNotes}>—</Text>
-                    )}
+                    {/* Card Body */}
+                    <View style={styles.cardBody}>
+                      {/* Notes Section */}
+                      {hasNotes && (
+                        <View style={styles.notesSection}>
+                          {item.writing_on_cake && (
+                            <View style={{ marginBottom: 6 }}>
+                              <Text style={styles.notesLabel}>Надпись на торте:</Text>
+                              <Text style={styles.writingText}>"{item.writing_on_cake}"</Text>
+                            </View>
+                          )}
+                          {item.internal_decoration_notes && (
+                            <View style={{ marginBottom: 6 }}>
+                              <Text style={styles.notesLabel}>Внутренние заметки:</Text>
+                              <Text style={styles.cellNotes}>{item.internal_decoration_notes}</Text>
+                            </View>
+                          )}
+                          {item.staff_notes && (
+                            <View style={{ marginBottom: 6 }}>
+                              <Text style={styles.notesLabel}>Заметки персонала:</Text>
+                              <Text style={styles.cellNotes}>{item.staff_notes}</Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Images Section */}
+                      {hasImages && (
+                        <View style={styles.imagesSection}>
+                          <Text style={styles.imagesSectionLabel}>Референсные изображения:</Text>
+                          <View style={styles.imagesContainer}>
+                            {item.product_image_urls.slice(0, 4).map((url, idx) => (
+                              <Image
+                                key={idx}
+                                src={url}
+                                style={styles.tableImage}
+                              />
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           ))}
         </View>

@@ -116,8 +116,8 @@ export default function ProductionPrintingModal({ items, onClose }: ProductionPr
 
   // Get filename for PDF
   function getFilename(): string {
-    const mode = printMode === 'cooking' ? 'Cooking' : 'Decoration';
-    return `Production_${mode}_${dateToLocalString(new Date())}.pdf`;
+    const mode = printMode === 'cooking' ? 'Выпечка' : 'Декор';
+    return `Производство_${mode}_${dateToLocalString(new Date())}.pdf`;
   }
 
   return (
