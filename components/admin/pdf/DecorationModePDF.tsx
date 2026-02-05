@@ -313,7 +313,7 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
                         <View style={styles.imagesSection}>
                           <Text style={styles.imagesSectionLabel}>Референсные изображения:</Text>
                           <View style={styles.imagesContainer}>
-                            {item.product_image_urls.slice(0, 4).map((url, idx) => (
+                            {item.product_image_urls?.slice(0, 4).map((url, idx) => (
                               <Image
                                 key={idx}
                                 src={url}
