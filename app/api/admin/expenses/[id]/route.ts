@@ -28,7 +28,6 @@ export async function PUT(
       amount,
       currency,
       description,
-      notes,
       receipt_url,
     } = body;
 
@@ -49,7 +48,7 @@ export async function PUT(
     }
 
     // Validate category
-    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'packaging', 'delivery', 'other'];
+    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'delivery', 'other'];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
         { success: false, error: `Category must be one of: ${validCategories.join(', ')}` },
@@ -78,7 +77,6 @@ export async function PUT(
       amount: parseFloat(amount).toFixed(2),
       currency: currency || 'CHF',
       description: description.trim(),
-      notes: notes?.trim() || null,
       expense_category: category,
       receipt_url: receipt_url || null,
       updated_at: new Date().toISOString(),
@@ -107,7 +105,6 @@ export async function PUT(
       amount: transaction.amount,
       currency: transaction.currency,
       description: transaction.description,
-      notes: transaction.notes,
       receiptUrl: transaction.receipt_url,
       createdByUserId: transaction.created_by_user_id,
       createdAt: transaction.created_at,

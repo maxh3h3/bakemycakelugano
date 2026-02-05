@@ -29,13 +29,9 @@ export async function PATCH(request: NextRequest) {
     // Validate status
     const validStatuses = [
       'new',
-      'prepared',
       'baked',
       'creamed',
       'decorated',
-      'packaged',
-      'delivered',
-      'cancelled',
     ];
 
     if (!validStatuses.includes(status)) {
@@ -51,13 +47,13 @@ export async function PATCH(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Set started_at when moving to 'prepared' (first production stage)
-    if (status === 'prepared') {
+    // Set started_at when moving to 'baked' (first production stage)
+    if (status === 'baked') {
       updateData.started_at = new Date().toISOString();
     }
 
-    // Set completed_at when delivered or cancelled
-    if (status === 'delivered' || status === 'cancelled') {
+    // Set completed_at when decorated (final production stage)
+    if (status === 'decorated') {
       updateData.completed_at = new Date().toISOString();
     }
 

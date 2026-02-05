@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Calendar, Plus, Trash2, Save, X } from 'lucide-react';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
-import t from '@/lib/admin-translations-extended';
+import DatePicker from '@/components/products/DatePicker';
+import { format } from 'date-fns';
 
 interface Expense {
   id: string;
@@ -11,7 +12,6 @@ interface Expense {
   category: string;
   amount: string;
   description: string;
-  notes: string | null;
 }
 
 const CATEGORY_OPTIONS = [
@@ -19,7 +19,6 @@ const CATEGORY_OPTIONS = [
   { value: 'utilities', label: '⚡ Коммунальные услуги', emoji: '⚡' },
   { value: 'labor', label: '👨‍🍳 Зарплаты', emoji: '👨‍🍳' },
   { value: 'supplies', label: '📦 Упаковка', emoji: '📦' },
-  { value: 'packaging', label: '🎁 Упаковочные материалы', emoji: '🎁' },
   { value: 'equipment', label: '🔧 Оборудование', emoji: '🔧' },
   { value: 'delivery', label: '🚗 Доставка', emoji: '🚗' },
   { value: 'marketing', label: '📢 Маркетинг', emoji: '📢' },
@@ -40,6 +39,8 @@ export default function InlineExpensesTable() {
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [newRow, setNewRow] = useState<Partial<Expense> | null>(null);
+  const [newRowDate, setNewRowDate] = useState<Date | undefined>(new Date());
+  const [editingDate, setEditingDate] = useState<Date | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(null);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function InlineExpensesTable() {
         setExpenses(data.expenses || []);
       }
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      console.error('Ошибка загрузки расходов:', error);
     } finally {
       setIsLoading(false);
     }
@@ -88,11 +89,11 @@ export default function InlineExpensesTable() {
           prev.map((e) => (e.id === id ? { ...e, [field]: value } : e))
         );
       } else {
-        alert('Failed to update expense');
+        alert('Не удалось обновить расход');
       }
     } catch (error) {
-      console.error('Error updating expense:', error);
-      alert('Failed to update expense');
+      console.error('Ошибка обновления расхода:', error);
+      alert('Не удалось обновить расход');
     } finally {
       setSavingCells((prev) => {
         const newSet = new Set(prev);
@@ -103,6 +104,12 @@ export default function InlineExpensesTable() {
   };
 
   const handleCellClick = (id: string, field: string) => {
+    if (field === 'date') {
+      const expense = expenses.find((e) => e.id === id);
+      if (expense) {
+        setEditingDate(new Date(expense.date));
+      }
+    }
     setEditingCell({ id, field });
   };
 
@@ -112,6 +119,15 @@ export default function InlineExpensesTable() {
       updateExpense(id, field, value);
     }
     setEditingCell(null);
+  };
+
+  const handleDateChange = (id: string, date: Date | undefined) => {
+    if (date) {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      updateExpense(id, 'date', formattedDate);
+    }
+    setEditingCell(null);
+    setEditingDate(undefined);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, id: string, field: string, value: string) => {
@@ -136,30 +152,30 @@ export default function InlineExpensesTable() {
         setExpenses((prev) => prev.filter((e) => e.id !== deletingExpense.id));
         setDeletingExpense(null);
       } else {
-        alert('Failed to delete expense');
+        alert('Не удалось удалить расход');
       }
     } catch (error) {
-      console.error('Error deleting expense:', error);
-      alert('Failed to delete expense');
+      console.error('Ошибка удаления расхода:', error);
+      alert('Не удалось удалить расход');
     } finally {
       setIsDeleting(false);
     }
   };
 
   const startNewRow = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    setNewRowDate(today);
     setNewRow({
-      date: today,
+      date: format(today, 'yyyy-MM-dd'),
       category: 'ingredients',
       amount: '',
       description: '',
-      notes: null,
     });
   };
 
   const saveNewRow = async () => {
     if (!newRow || !newRow.amount || !newRow.description) {
-      alert('Amount and description are required');
+      alert('Сумма и описание обязательны');
       return;
     }
 
@@ -174,28 +190,30 @@ export default function InlineExpensesTable() {
         const data = await response.json();
         setExpenses((prev) => [data.expense, ...prev]);
         setNewRow(null);
+        setNewRowDate(undefined);
       } else {
-        alert('Failed to create expense');
+        alert('Не удалось создать расход');
       }
     } catch (error) {
-      console.error('Error creating expense:', error);
-      alert('Failed to create expense');
+      console.error('Ошибка создания расхода:', error);
+      alert('Не удалось создать расход');
     }
   };
 
   const cancelNewRow = () => {
     setNewRow(null);
+    setNewRowDate(undefined);
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('de-CH', {
+    return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'CHF',
     }).format(parseFloat(amount));
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString('ru-RU', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -203,6 +221,10 @@ export default function InlineExpensesTable() {
   };
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+
+  // Allow any past date for expenses (no minimum)
+  const minDate = new Date('2000-01-01');
+  const maxDate = new Date();
 
   if (isLoading) {
     return (
@@ -218,12 +240,12 @@ export default function InlineExpensesTable() {
       <div className="bg-gradient-to-r from-brown-50 to-cream-50 rounded-xl shadow-md p-6 border border-brown-100">
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-sm font-medium text-charcoal-600 mb-1">Total Expenses</p>
+            <p className="text-sm font-medium text-charcoal-600 mb-1">Общая сумма расходов</p>
             <p className="text-4xl font-bold text-brown-700">
               {formatCurrency(totalExpenses.toString())}
             </p>
             <p className="text-sm text-charcoal-500 mt-1">
-              {expenses.length} {expenses.length === 1 ? 'expense' : 'expenses'}
+              {expenses.length} {expenses.length === 1 ? 'расход' : expenses.length < 5 ? 'расхода' : 'расходов'}
             </p>
           </div>
           <button
@@ -231,7 +253,7 @@ export default function InlineExpensesTable() {
             className="flex items-center gap-2 px-6 py-3 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors font-medium shadow-lg hover:shadow-xl"
           >
             <Plus className="w-5 h-5" />
-            Add Expense
+            Добавить расход
           </button>
         </div>
       </div>
@@ -242,23 +264,20 @@ export default function InlineExpensesTable() {
           <table className="w-full">
             <thead className="bg-cream-50 border-b-2 border-cream-200">
               <tr>
-                <th className="text-left py-4 px-4 text-sm font-semibold text-charcoal-700 w-32">
-                  Date
-                </th>
                 <th className="text-left py-4 px-4 text-sm font-semibold text-charcoal-700 w-40">
-                  Category
+                  Дата
+                </th>
+                <th className="text-left py-4 px-4 text-sm font-semibold text-charcoal-700 w-48">
+                  Категория
                 </th>
                 <th className="text-left py-4 px-4 text-sm font-semibold text-charcoal-700 w-32">
-                  Amount
+                  Сумма
                 </th>
                 <th className="text-left py-4 px-4 text-sm font-semibold text-charcoal-700">
-                  Description
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-semibold text-charcoal-700">
-                  Notes
+                  Описание
                 </th>
                 <th className="text-center py-4 px-4 text-sm font-semibold text-charcoal-700 w-20">
-                  Actions
+                  Действия
                 </th>
               </tr>
             </thead>
@@ -267,12 +286,22 @@ export default function InlineExpensesTable() {
               {newRow && (
                 <tr className="bg-green-50 border-b border-green-200 animate-fade-in">
                   <td className="py-2 px-4">
-                    <input
-                      type="date"
-                      value={newRow.date || ''}
-                      onChange={(e) => setNewRow({ ...newRow, date: e.target.value })}
-                      className="w-full px-2 py-1 border border-green-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                    />
+                    <div className="w-full">
+                      <DatePicker
+                        selectedDate={newRowDate}
+                        onDateChange={(date) => {
+                          setNewRowDate(date);
+                          if (date) {
+                            setNewRow({ ...newRow, date: format(date, 'yyyy-MM-dd') });
+                          }
+                        }}
+                        locale="ru"
+                        minDate={minDate}
+                        label=""
+                        placeholder="Выберите дату"
+                        showHelperText={false}
+                      />
+                    </div>
                   </td>
                   <td className="py-2 px-4">
                     <select
@@ -308,27 +337,18 @@ export default function InlineExpensesTable() {
                     />
                   </td>
                   <td className="py-2 px-4">
-                    <input
-                      type="text"
-                      value={newRow.notes || ''}
-                      onChange={(e) => setNewRow({ ...newRow, notes: e.target.value })}
-                      placeholder="Дополнительные заметки..."
-                      className="w-full px-2 py-1 border border-green-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm text-charcoal-500"
-                    />
-                  </td>
-                  <td className="py-2 px-4">
                     <div className="flex justify-center gap-1">
                       <button
                         onClick={saveNewRow}
                         className="p-1.5 text-green-700 hover:bg-green-100 rounded transition-colors"
-                        title="Save"
+                        title="Сохранить"
                       >
                         <Save className="w-4 h-4" />
                       </button>
                       <button
                         onClick={cancelNewRow}
                         className="p-1.5 text-red-700 hover:bg-red-100 rounded transition-colors"
-                        title="Cancel"
+                        title="Отмена"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -340,11 +360,11 @@ export default function InlineExpensesTable() {
               {/* Existing Expenses */}
               {expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12">
+                  <td colSpan={5} className="text-center py-12">
                     <div className="flex flex-col items-center gap-3">
                       <div className="text-5xl">📊</div>
-                      <p className="text-xl font-semibold text-charcoal-700">No expenses yet</p>
-                      <p className="text-charcoal-500">Click "Add Expense" to create your first entry</p>
+                      <p className="text-xl font-semibold text-charcoal-700">Расходов пока нет</p>
+                      <p className="text-charcoal-500">Нажмите "Добавить расход" чтобы создать первую запись</p>
                     </div>
                   </td>
                 </tr>
@@ -363,21 +383,24 @@ export default function InlineExpensesTable() {
                       {/* Date */}
                       <td className="py-3 px-4">
                         {editingCell?.id === expense.id && editingCell?.field === 'date' ? (
-                          <input
-                            ref={inputRef as React.RefObject<HTMLInputElement>}
-                            type="date"
-                            defaultValue={expense.date}
-                            onBlur={(e) => handleCellBlur(expense.id, 'date', e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(e, expense.id, 'date', e.currentTarget.value)}
-                            className="w-full px-2 py-1 border border-brown-300 rounded focus:ring-2 focus:ring-brown-500 focus:border-transparent text-sm"
-                          />
+                          <div className="w-full">
+                            <DatePicker
+                              selectedDate={editingDate}
+                              onDateChange={(date) => handleDateChange(expense.id, date)}
+                              locale="ru"
+                              minDate={minDate}
+                              label=""
+                              placeholder="Выберите дату"
+                              showHelperText={false}
+                            />
+                          </div>
                         ) : (
                           <div
                             onClick={() => handleCellClick(expense.id, 'date')}
                             className="px-2 py-1 rounded hover:bg-brown-50 cursor-pointer text-sm"
                           >
                             {isSaving('date') ? (
-                              <span className="text-charcoal-400">Saving...</span>
+                              <span className="text-charcoal-400">Сохранение...</span>
                             ) : (
                               formatDate(expense.date)
                             )}
@@ -407,7 +430,7 @@ export default function InlineExpensesTable() {
                             className="px-2 py-1 rounded hover:bg-brown-50 cursor-pointer"
                           >
                             {isSaving('category') ? (
-                              <span className="text-charcoal-400 text-sm">Saving...</span>
+                              <span className="text-charcoal-400 text-sm">Сохранение...</span>
                             ) : (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-brown-100 text-brown-800">
                                 {CATEGORY_LABELS[expense.category] || expense.category}
@@ -436,7 +459,7 @@ export default function InlineExpensesTable() {
                             className="px-2 py-1 rounded hover:bg-brown-50 cursor-pointer text-sm font-bold text-red-600"
                           >
                             {isSaving('amount') ? (
-                              <span className="text-charcoal-400">Saving...</span>
+                              <span className="text-charcoal-400">Сохранение...</span>
                             ) : (
                               formatCurrency(expense.amount)
                             )}
@@ -461,35 +484,9 @@ export default function InlineExpensesTable() {
                             className="px-2 py-1 rounded hover:bg-brown-50 cursor-pointer text-sm font-medium text-charcoal-900"
                           >
                             {isSaving('description') ? (
-                              <span className="text-charcoal-400">Saving...</span>
+                              <span className="text-charcoal-400">Сохранение...</span>
                             ) : (
                               expense.description
-                            )}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Notes */}
-                      <td className="py-3 px-4">
-                        {editingCell?.id === expense.id && editingCell?.field === 'notes' ? (
-                          <input
-                            ref={inputRef as React.RefObject<HTMLInputElement>}
-                            type="text"
-                            defaultValue={expense.notes || ''}
-                            onBlur={(e) => handleCellBlur(expense.id, 'notes', e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(e, expense.id, 'notes', e.currentTarget.value)}
-                            placeholder="Добавить заметки..."
-                            className="w-full px-2 py-1 border border-brown-300 rounded focus:ring-2 focus:ring-brown-500 focus:border-transparent text-sm"
-                          />
-                        ) : (
-                          <div
-                            onClick={() => handleCellClick(expense.id, 'notes')}
-                            className="px-2 py-1 rounded hover:bg-brown-50 cursor-pointer text-sm text-charcoal-500 min-h-[28px]"
-                          >
-                            {isSaving('notes') ? (
-                              <span className="text-charcoal-400">Saving...</span>
-                            ) : (
-                              expense.notes || <span className="text-charcoal-300">Add notes...</span>
                             )}
                           </div>
                         )}
@@ -501,7 +498,7 @@ export default function InlineExpensesTable() {
                           <button
                             onClick={() => setDeletingExpense(expense)}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                            title="Delete expense"
+                            title="Удалить расход"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

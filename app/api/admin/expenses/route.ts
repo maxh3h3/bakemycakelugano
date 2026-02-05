@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import type { NewExpense } from '@/lib/db/schema';
 
 /**
  * GET /api/admin/expenses
@@ -73,7 +72,6 @@ export async function GET(request: NextRequest) {
       amount: t.amount,
       currency: t.currency,
       description: t.description,
-      notes: t.notes,
       receiptUrl: t.receipt_url,
       createdByUserId: t.created_by_user_id,
       createdAt: t.created_at,
@@ -121,7 +119,6 @@ export async function POST(request: NextRequest) {
       amount,
       currency,
       description,
-      notes,
       receipt_url,
       created_by_user_id,
     } = body;
@@ -143,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate category
-    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'packaging', 'delivery', 'other'];
+    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'delivery', 'other'];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
         { success: false, error: `Category must be one of: ${validCategories.join(', ')}` },
@@ -158,7 +155,6 @@ export async function POST(request: NextRequest) {
       amount: parseFloat(amount).toFixed(2),
       currency: currency || 'CHF',
       description: description.trim(),
-      notes: notes?.trim() || null,
       source_type: 'manual',
       source_id: null,
       client_id: null,
@@ -191,7 +187,6 @@ export async function POST(request: NextRequest) {
       amount: transaction.amount,
       currency: transaction.currency,
       description: transaction.description,
-      notes: transaction.notes,
       receiptUrl: transaction.receipt_url,
       createdByUserId: transaction.created_by_user_id,
       createdAt: transaction.created_at,

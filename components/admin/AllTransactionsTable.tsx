@@ -17,7 +17,6 @@ interface Transaction {
   channel: string | null;
   expense_category: string | null;
   receipt_url: string | null;
-  notes: string | null;
   created_at: string;
 }
 
@@ -26,7 +25,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   utilities: '⚡ Коммунальные услуги',
   labor: '👨‍🍳 Зарплаты',
   supplies: '📦 Упаковка',
-  packaging: '🎁 Упаковочные материалы',
   equipment: '🔧 Оборудование',
   delivery: '🚗 Доставка',
   marketing: '📢 Маркетинг',
@@ -50,7 +48,7 @@ export default function AllTransactionsTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'revenue' | 'expense'>('all');
-  const [dateFilter, setDateFilter] = useState<'all' | 'month' | 'year'>('month');
+  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
     fetchTransactions();
@@ -84,24 +82,42 @@ export default function AllTransactionsTable() {
     });
   };
 
+  // Helper function to get Monday of current week
+  const getMondayOfCurrentWeek = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const diff = day === 0 ? -6 : 1 - day; // Adjust if Sunday
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  };
+
   // Filter transactions
   const filteredTransactions = transactions.filter((transaction) => {
-    const matchesSearch =
-      transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (transaction.notes && transaction.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
 
     let matchesDate = true;
-    if (dateFilter === 'month') {
+    if (dateFilter !== 'all') {
       const transactionDate = new Date(transaction.date);
       const now = new Date();
-      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-      matchesDate = transactionDate >= oneMonthAgo;
-    } else if (dateFilter === 'year') {
-      const transactionDate = new Date(transaction.date);
-      const currentYear = new Date().getFullYear();
-      matchesDate = transactionDate.getFullYear() === currentYear;
+      
+      if (dateFilter === 'week') {
+        // Week to Date (from Monday to today)
+        const monday = getMondayOfCurrentWeek();
+        matchesDate = transactionDate >= monday && transactionDate <= now;
+      } else if (dateFilter === 'month') {
+        // Month to Date (from 1st of current month to today)
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        firstOfMonth.setHours(0, 0, 0, 0);
+        matchesDate = transactionDate >= firstOfMonth && transactionDate <= now;
+      } else if (dateFilter === 'year') {
+        // Current year (effectively YTD since future dates don't exist)
+        const currentYear = now.getFullYear();
+        matchesDate = transactionDate.getFullYear() === currentYear;
+      }
     }
 
     return matchesSearch && matchesType && matchesDate;
@@ -155,7 +171,7 @@ export default function AllTransactionsTable() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Поиск по описанию или заметкам..."
+                placeholder="Поиск по описанию..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border-2 border-cream-300 rounded-lg focus:border-brown-500 focus:outline-none"
@@ -200,14 +216,14 @@ export default function AllTransactionsTable() {
           {/* Date Filter */}
           <div className="flex gap-2">
             <button
-              onClick={() => setDateFilter('all')}
+              onClick={() => setDateFilter('week')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                dateFilter === 'all'
+                dateFilter === 'week'
                   ? 'bg-brown-500 text-white'
                   : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
               }`}
             >
-              Все время
+              Неделя
             </button>
             <button
               onClick={() => setDateFilter('month')}
@@ -228,6 +244,16 @@ export default function AllTransactionsTable() {
               }`}
             >
               Год
+            </button>
+            <button
+              onClick={() => setDateFilter('all')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'all'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Все
             </button>
           </div>
         </div>
@@ -291,9 +317,6 @@ export default function AllTransactionsTable() {
                       <div className="text-sm font-semibold text-charcoal-900">
                         {transaction.description}
                       </div>
-                      {transaction.notes && (
-                        <div className="text-xs text-charcoal-500 mt-1">{transaction.notes}</div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-charcoal-700">

@@ -14,7 +14,6 @@ interface Revenue {
   client_id: string | null;
   payment_method: string | null;
   channel: string | null;
-  notes: string | null;
   created_at: string;
 }
 
@@ -40,7 +39,7 @@ export default function RevenuesTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<'all' | 'month' | 'year'>('month');
+  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
     fetchRevenues();
@@ -74,24 +73,42 @@ export default function RevenuesTable() {
     });
   };
 
+  // Helper function to get Monday of current week
+  const getMondayOfCurrentWeek = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const diff = day === 0 ? -6 : 1 - day; // Adjust if Sunday
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  };
+
   // Filter revenues
   const filteredRevenues = revenues.filter((revenue) => {
-    const matchesSearch =
-      revenue.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (revenue.notes && revenue.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = revenue.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesChannel = channelFilter === 'all' || revenue.channel === channelFilter;
 
     let matchesDate = true;
-    if (dateFilter === 'month') {
+    if (dateFilter !== 'all') {
       const revenueDate = new Date(revenue.date);
       const now = new Date();
-      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-      matchesDate = revenueDate >= oneMonthAgo;
-    } else if (dateFilter === 'year') {
-      const revenueDate = new Date(revenue.date);
-      const currentYear = new Date().getFullYear();
-      matchesDate = revenueDate.getFullYear() === currentYear;
+      
+      if (dateFilter === 'week') {
+        // Week to Date (from Monday to today)
+        const monday = getMondayOfCurrentWeek();
+        matchesDate = revenueDate >= monday && revenueDate <= now;
+      } else if (dateFilter === 'month') {
+        // Month to Date (from 1st of current month to today)
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        firstOfMonth.setHours(0, 0, 0, 0);
+        matchesDate = revenueDate >= firstOfMonth && revenueDate <= now;
+      } else if (dateFilter === 'year') {
+        // Current year (effectively YTD since future dates don't exist)
+        const currentYear = now.getFullYear();
+        matchesDate = revenueDate.getFullYear() === currentYear;
+      }
     }
 
     return matchesSearch && matchesChannel && matchesDate;
@@ -165,14 +182,14 @@ export default function RevenuesTable() {
           {/* Date Filter */}
           <div className="flex gap-2">
             <button
-              onClick={() => setDateFilter('all')}
+              onClick={() => setDateFilter('week')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                dateFilter === 'all'
+                dateFilter === 'week'
                   ? 'bg-brown-500 text-white'
                   : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
               }`}
             >
-              Все время
+              Неделя
             </button>
             <button
               onClick={() => setDateFilter('month')}
@@ -193,6 +210,16 @@ export default function RevenuesTable() {
               }`}
             >
               Год
+            </button>
+            <button
+              onClick={() => setDateFilter('all')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'all'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Все
             </button>
           </div>
         </div>
@@ -246,9 +273,6 @@ export default function RevenuesTable() {
                       <div className="text-sm font-semibold text-charcoal-900">
                         {revenue.description}
                       </div>
-                      {revenue.notes && (
-                        <div className="text-xs text-charcoal-500 mt-1">{revenue.notes}</div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-charcoal-700">

@@ -26,7 +26,6 @@ interface CreateManualRevenueParams {
   clientId?: string | null;
   paymentMethod?: string | null;
   channel?: string;
-  notes?: string | null;
   createdByUserId?: string | null;
 }
 
@@ -35,7 +34,6 @@ interface CreateExpenseParams {
   amount: number;
   category: string;
   description: string;
-  notes?: string | null;
   receiptUrl?: string | null;
   createdByUserId?: string | null;
 }
@@ -86,7 +84,6 @@ export async function createRevenueFromOrder(params: CreateRevenueFromOrderParam
     channel: channel || 'website',
     expense_category: null,
     receipt_url: null,
-    notes: null,
   };
 
   const { data, error } = await supabaseAdmin
@@ -116,7 +113,6 @@ export async function createManualRevenue(params: CreateManualRevenueParams) {
     clientId = null,
     paymentMethod = null,
     channel = 'other',
-    notes = null,
     createdByUserId = null,
   } = params;
 
@@ -133,7 +129,6 @@ export async function createManualRevenue(params: CreateManualRevenueParams) {
     channel,
     expense_category: null,
     receipt_url: null,
-    notes: notes?.trim() || null,
     created_by_user_id: createdByUserId,
   };
 
@@ -162,7 +157,6 @@ export async function createExpense(params: CreateExpenseParams) {
     amount,
     category,
     description,
-    notes = null,
     receiptUrl = null,
     createdByUserId = null,
   } = params;
@@ -180,7 +174,6 @@ export async function createExpense(params: CreateExpenseParams) {
     channel: null,
     expense_category: category,
     receipt_url: receiptUrl,
-    notes: notes?.trim() || null,
     created_by_user_id: createdByUserId,
   };
 

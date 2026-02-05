@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       client_id,
       payment_method,
       channel,
-      notes,
       created_by_user_id,
     } = body;
 
@@ -54,7 +53,6 @@ export async function POST(request: NextRequest) {
       clientId: client_id || null,
       paymentMethod: payment_method || null,
       channel: channel || 'other',
-      notes: notes?.trim() || null,
       createdByUserId: created_by_user_id || null,
     });
 

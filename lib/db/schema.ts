@@ -146,29 +146,6 @@ export const checkoutAttempts = pgTable('checkout_attempts', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Expenses table for accounting (legacy - being phased out in favor of financial_transactions)
-export const expenses = pgTable('expenses', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  
-  // Expense details
-  date: date('date').notNull(),
-  category: text('category').notNull(), // ingredients, utilities, labor, supplies, marketing, rent, other
-  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
-  currency: text('currency').default('CHF').notNull(),
-  
-  // Description and documentation
-  description: text('description').notNull(),
-  notes: text('notes'),
-  receiptUrl: text('receipt_url'), // URL to receipt image in storage
-  
-  // Tracking
-  createdByUserId: uuid('created_by_user_id'), // Admin who logged the expense
-  
-  // Timestamps
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
-
 // Financial Transactions table - Unified ledger for all revenues and expenses
 export const financialTransactions = pgTable('financial_transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -179,9 +156,8 @@ export const financialTransactions = pgTable('financial_transactions', {
   amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
   currency: text('currency').default('CHF').notNull(),
   
-  // Description and notes
+  // Description
   description: text('description').notNull(),
-  notes: text('notes'),
   
   // Source tracking
   sourceType: text('source_type').notNull(), // 'order', 'manual', 'recurring'
@@ -206,6 +182,22 @@ export const financialTransactions = pgTable('financial_transactions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Meetings table
+export const meetings = pgTable('meetings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  
+  // Meeting details
+  meetingDate: date('meeting_date').notNull(),
+  meetingTime: text('meeting_time').notNull(),
+  
+  // Client reference
+  clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
+  
+  // Timestamps
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Export types
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
@@ -215,8 +207,8 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
 export type CheckoutAttempt = typeof checkoutAttempts.$inferSelect;
 export type NewCheckoutAttempt = typeof checkoutAttempts.$inferInsert;
-export type Expense = typeof expenses.$inferSelect;
-export type NewExpense = typeof expenses.$inferInsert;
 export type FinancialTransaction = typeof financialTransactions.$inferSelect;
 export type NewFinancialTransaction = typeof financialTransactions.$inferInsert;
+export type Meeting = typeof meetings.$inferSelect;
+export type NewMeeting = typeof meetings.$inferInsert;
 

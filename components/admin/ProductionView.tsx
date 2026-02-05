@@ -9,7 +9,7 @@ import ProductionPrintingModal from './ProductionPrintingModal';
 import Toast from '@/components/ui/Toast';
 import { useProductionSSE } from '@/lib/hooks/useProductionSSE';
 import type { ProductionEvent } from '@/lib/events/production-events';
-import { Printer } from 'lucide-react';
+import { Printer, Cake, Weight, Circle } from 'lucide-react';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -181,6 +181,11 @@ export default function ProductionView({ items }: ProductionViewProps) {
   const todayItems = items.filter(item => item.delivery_date === todayStr);
   const todayOrderGroups = groupItemsByOrder(todayItems);
 
+  // Helper function to check if order has any new items
+  function hasNewItems(orderGroup: OrderGroup): boolean {
+    return orderGroup.items.some(item => item.production_status === 'new');
+  }
+
   // Get items for today view
   const todayViewItems = todayItems;
   
@@ -344,17 +349,23 @@ export default function ProductionView({ items }: ProductionViewProps) {
                 <p className="text-lg text-charcoal-500">No orders for today</p>
               </div>
             ) : (
-              todayOrderGroups.map((orderGroup) => (
+              todayOrderGroups.map((orderGroup) => {
+                const isNew = hasNewItems(orderGroup);
+                return (
                 <button
                   key={orderGroup.order_id}
                   onClick={() => setSelectedOrderGroup(orderGroup)}
-                  className="w-full bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6 hover:shadow-lg hover:border-brown-300 transition-all text-left"
+                  className={`w-full bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all text-left ${
+                    isNew 
+                      ? 'border-2 border-blue-400 shadow-blue-200 shadow-lg ring-2 ring-blue-300 ring-opacity-50' 
+                      : 'border-2 border-cream-200 hover:border-brown-300'
+                  }`}
                 >
                   <div className="flex items-start gap-4">
                     {/* Order Number */}
                     <div className="flex-shrink-0">
                       <p className="text-xs text-charcoal-500 mb-1">Order #</p>
-                      <p className="text-xl font-mono font-bold text-brown-500">
+                      <p className="text-base font-mono font-bold text-brown-500">
                         {orderGroup.order_number}
                       </p>
                     </div>
@@ -366,20 +377,23 @@ export default function ProductionView({ items }: ProductionViewProps) {
                           <p className="font-semibold text-charcoal-900 mb-1">
                             {item.quantity}x {item.product_name}
                           </p>
-                          <div className="flex flex-wrap gap-2 text-xs">
+                          <div className="flex flex-wrap gap-2 text-sm">
                             {item.flavour_name && (
-                              <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                🍰 {item.flavour_name}
+                              <span className="bg-white px-3 py-1.5 rounded border border-cream-300 font-medium flex items-center gap-1.5">
+                                <Cake className="w-4 h-4 text-purple-600" />
+                                {item.flavour_name}
                               </span>
                             )}
                             {item.weight_kg && (
-                              <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                ⚖️ {item.weight_kg}
+                              <span className="bg-white px-3 py-1.5 rounded border border-cream-300 font-medium flex items-center gap-1.5">
+                                <Weight className="w-4 h-4 text-orange-600" />
+                                {item.weight_kg}
                               </span>
                             )}
                             {item.diameter_cm && (
-                              <span className="bg-white px-2 py-1 rounded border border-cream-300">
-                                ⭕ {item.diameter_cm}cm
+                              <span className="bg-white px-3 py-1.5 rounded border border-cream-300 font-medium flex items-center gap-1.5">
+                                <Circle className="w-4 h-4 text-blue-600" />
+                                {item.diameter_cm}cm
                               </span>
                             )}
                           </div>
@@ -393,7 +407,8 @@ export default function ProductionView({ items }: ProductionViewProps) {
                     </div>
                   </div>
                 </button>
-              ))
+              );
+              })
             )}
           </div>
         )}
@@ -419,16 +434,16 @@ export default function ProductionView({ items }: ProductionViewProps) {
                   <div className="mb-4">
                     <div className="flex items-center justify-between">
                       <p className="text-lg font-heading font-bold text-charcoal-900">
-                        {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                        {day.toLocaleDateString('ru-RU', { weekday: 'short' })}
                       </p>
                       {isToday && (
                         <span className="px-2 py-1 rounded-full text-xs font-bold bg-brown-500 text-white">
-                          Today
+                          Сегодня
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-charcoal-500">
-                      {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {day.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' })}
                     </p>
                     <p className="text-2xl font-mono font-bold text-brown-500 mt-2">
                       {dayOrderGroups.length}
@@ -437,14 +452,20 @@ export default function ProductionView({ items }: ProductionViewProps) {
 
                   {/* Orders for this day */}
                   <div className="space-y-2">
-                    {dayOrderGroups.map((orderGroup) => (
+                    {dayOrderGroups.map((orderGroup) => {
+                      const isNew = hasNewItems(orderGroup);
+                      return (
                         <button
                           key={orderGroup.order_id}
                           onClick={() => setSelectedOrderGroup(orderGroup)}
-                          className="w-full p-6 rounded-xl border-2 border-cream-300 hover:border-brown-400 hover:bg-cream-50 transition-all text-left"
+                          className={`w-full p-6 rounded-xl transition-all text-left ${
+                            isNew 
+                              ? 'border-2 border-blue-400 shadow-lg shadow-blue-200 ring-2 ring-blue-300 ring-opacity-50 bg-blue-50/30' 
+                              : 'border-2 border-cream-300 hover:border-brown-400 hover:bg-cream-50'
+                          }`}
                         >
                           <div className="mb-4">
-                            <span className="text-2xl font-mono font-bold text-charcoal-600">
+                            <span className="text-lg font-mono font-bold text-charcoal-600">
                               {orderGroup.order_number}
                             </span>
                           </div>
@@ -454,22 +475,32 @@ export default function ProductionView({ items }: ProductionViewProps) {
                                 <p className="text-xl font-bold text-charcoal-900 mb-2">
                                   {item.quantity}x {item.product_name}
                                 </p>
-                                <div className="flex flex-wrap gap-2 text-base">
+                                <div className="flex flex-wrap gap-3 text-lg">
                                   {item.flavour_name && (
-                                    <span className="text-charcoal-600">🍰 {item.flavour_name}</span>
+                                    <span className="text-charcoal-700 font-medium flex items-center gap-1.5">
+                                      <Cake className="w-5 h-5 text-purple-600" />
+                                      {item.flavour_name}
+                                    </span>
                                   )}
                                   {item.weight_kg && (
-                                    <span className="text-charcoal-600">⚖️ {item.weight_kg}</span>
+                                    <span className="text-charcoal-700 font-medium flex items-center gap-1.5">
+                                      <Weight className="w-5 h-5 text-orange-600" />
+                                      {item.weight_kg}
+                                    </span>
                                   )}
                                   {item.diameter_cm && (
-                                    <span className="text-charcoal-600">⭕ {item.diameter_cm}cm</span>
+                                    <span className="text-charcoal-700 font-medium flex items-center gap-1.5">
+                                      <Circle className="w-5 h-5 text-blue-600" />
+                                      {item.diameter_cm}cm
+                                    </span>
                                   )}
                                 </div>
                               </div>
                             ))}
                           </div>
                         </button>
-                      ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -504,11 +535,11 @@ export default function ProductionView({ items }: ProductionViewProps) {
                   <div className="mb-2">
                     <div className="flex items-center justify-between">
                       <p className={`text-sm font-bold ${isToday ? 'text-brown-700' : 'text-charcoal-700'}`}>
-                        {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                        {day.toLocaleDateString('ru-RU', { weekday: 'short' })}
                       </p>
                       {isToday && (
                         <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-brown-500 text-white">
-                          Today
+                          Сегодня
                         </span>
                       )}
                     </div>
@@ -524,14 +555,20 @@ export default function ProductionView({ items }: ProductionViewProps) {
 
                   {/* Orders for this day */}
                   <div className="space-y-1.5">
-                    {dayOrderGroups.map((orderGroup) => (
+                    {dayOrderGroups.map((orderGroup) => {
+                      const isNew = hasNewItems(orderGroup);
+                      return (
                         <button
                           key={orderGroup.order_id}
                           onClick={() => setSelectedOrderGroup(orderGroup)}
-                          className="w-full p-2 rounded-lg border border-cream-300 hover:border-brown-400 hover:bg-cream-50 transition-all text-left"
+                          className={`w-full p-2 rounded-lg transition-all text-left ${
+                            isNew 
+                              ? 'border-2 border-blue-400 shadow-md shadow-blue-200 ring-1 ring-blue-300 ring-opacity-50 bg-blue-50/30' 
+                              : 'border border-cream-300 hover:border-brown-400 hover:bg-cream-50'
+                          }`}
                         >
                           <div className="mb-1">
-                            <span className="text-xs font-mono font-semibold text-charcoal-500">
+                            <span className="text-[10px] font-mono font-semibold text-charcoal-500">
                               {orderGroup.order_number}
                             </span>
                           </div>
@@ -541,16 +578,32 @@ export default function ProductionView({ items }: ProductionViewProps) {
                                 <p className="font-semibold text-charcoal-900 truncate text-[10px]">
                                   {item.quantity}x {item.product_name}
                                 </p>
-                                <div className="text-[9px] text-charcoal-600 space-x-1">
-                                  {item.flavour_name && <span>🍰{item.flavour_name}</span>}
-                                  {item.weight_kg && <span>⚖️{item.weight_kg}</span>}
-                                  {item.diameter_cm && <span>⭕{item.diameter_cm}cm</span>}
+                                <div className="text-[10px] text-charcoal-700 flex flex-wrap gap-1 font-medium">
+                                  {item.flavour_name && (
+                                    <span className="flex items-center gap-0.5">
+                                      <Cake className="w-2.5 h-2.5 text-purple-600" />
+                                      {item.flavour_name}
+                                    </span>
+                                  )}
+                                  {item.weight_kg && (
+                                    <span className="flex items-center gap-0.5">
+                                      <Weight className="w-2.5 h-2.5 text-orange-600" />
+                                      {item.weight_kg}
+                                    </span>
+                                  )}
+                                  {item.diameter_cm && (
+                                    <span className="flex items-center gap-0.5">
+                                      <Circle className="w-2.5 h-2.5 text-blue-600" />
+                                      {item.diameter_cm}cm
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             ))}
                           </div>
                         </button>
-                      ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

@@ -10,7 +10,7 @@
 // - Shows critical production info: weight, diameter, flavour (for recipe/assembly)
 // - Highlights customer requests: writing on cake (exact text to write)
 // - Shows decoration notes and staff notes for production guidance
-// - Production status workflow: new → prepared → baked → creamed → decorated → packaged → delivered
+// - Production status workflow: new → baked → creamed → decorated
 // - Status updates are optimistic (instant UI feedback) with background persistence
 //
 // Data Relationships: order_items (grouped by order_number from orders table)
@@ -26,6 +26,7 @@ import OrderItemImageCarousel from '@/components/admin/OrderItemImageCarousel';
 import type { Database } from '@/lib/supabase/types';
 import { parseDateFromDB } from '@/lib/utils';
 import t from '@/lib/admin-translations-extended';
+import { Cake, Weight, Circle } from 'lucide-react';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -41,16 +42,13 @@ interface OrderItemsModalProps {
   onClose: () => void;
 }
 
-type ProductionStatus = 'new' | 'prepared' | 'baked' | 'creamed' | 'decorated' | 'packaged' | 'delivered';
+type ProductionStatus = 'new' | 'baked' | 'creamed' | 'decorated';
 
 const statusOptions: { value: ProductionStatus; label: string; color: string }[] = [
   { value: 'new', label: 'Новый', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  { value: 'prepared', label: 'Подготовлен', color: 'bg-purple-100 text-purple-700 border-purple-300' },
   { value: 'baked', label: 'Испечен', color: 'bg-orange-100 text-orange-700 border-orange-300' },
   { value: 'creamed', label: 'Покрыт кремом', color: 'bg-pink-100 text-pink-700 border-pink-300' },
-  { value: 'decorated', label: 'Украшен', color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
-  { value: 'packaged', label: 'Упакован', color: 'bg-green-100 text-green-700 border-green-300' },
-  { value: 'delivered', label: 'Доставлен', color: 'bg-gray-100 text-gray-700 border-gray-300' },
+  { value: 'decorated', label: 'Украшен', color: 'bg-green-100 text-green-700 border-green-300' },
 ];
 
 export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModalProps) {
@@ -173,19 +171,28 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {item.weight_kg && (
                             <div className="bg-orange-50 rounded-xl px-4 py-3 border-2 border-orange-300">
-                              <p className="text-sm font-semibold text-orange-600 uppercase mb-1">Вес</p>
+                              <p className="text-sm font-semibold text-orange-600 uppercase mb-1 flex items-center gap-1.5">
+                                <Weight className="w-4 h-4" />
+                                Вес
+                              </p>
                               <p className="text-2xl font-bold text-orange-900">{item.weight_kg}</p>
                             </div>
                           )}
                           {item.diameter_cm && (
                             <div className="bg-blue-50 rounded-xl px-4 py-3 border-2 border-blue-300">
-                              <p className="text-sm font-semibold text-blue-600 uppercase mb-1">Диаметр</p>
+                              <p className="text-sm font-semibold text-blue-600 uppercase mb-1 flex items-center gap-1.5">
+                                <Circle className="w-4 h-4" />
+                                Диаметр
+                              </p>
                               <p className="text-2xl font-bold text-blue-900">{item.diameter_cm}см</p>
                             </div>
                           )}
                           {item.flavour_name && (
                             <div className="bg-purple-50 rounded-xl px-4 py-3 border-2 border-purple-300">
-                              <p className="text-sm font-semibold text-purple-600 uppercase mb-1">{t.flavour}</p>
+                              <p className="text-sm font-semibold text-purple-600 uppercase mb-1 flex items-center gap-1.5">
+                                <Cake className="w-4 h-4" />
+                                {t.flavour}
+                              </p>
                               <p className="text-2xl font-bold text-purple-900">{item.flavour_name}</p>
                             </div>
                           )}
@@ -233,7 +240,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                       <label className="block text-sm font-semibold text-charcoal-700 mb-2">
                         Статус производства
                       </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {statusOptions.map((status) => {
                           const isActive = item.production_status === status.value;
                           return (
