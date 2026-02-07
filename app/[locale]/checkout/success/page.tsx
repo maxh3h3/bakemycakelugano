@@ -164,7 +164,7 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
                     {order.delivery_date && (
                       <p className="font-medium">
                         📅 {parseDateFromDB(order.delivery_date).toLocaleDateString()}
-                        {order.delivery_time && ` at ${order.delivery_time}`}
+                        {order.delivery_time && ` ${t('timeAt', { time: order.delivery_time })}`}
                       </p>
                     )}
                   </div>

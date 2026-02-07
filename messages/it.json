@@ -146,12 +146,18 @@
     "phonePlaceholder": "+41 79 123 4567",
     "phoneRequired": "Il telefono è obbligatorio",
     "deliveryType": "Tipo di Consegna",
+    "deliveryDate": "Data di Consegna",
+    "selectDate": "Seleziona una data",
     "deliveryDateRequired": "La data di consegna è obbligatoria",
     "deliveryTime": "Orario di Consegna/Ritiro",
+    "deliveryTimePlaceholder": "es: 14:30, pomeriggio",
+    "deliveryTimeHelp": "Orario preferito per la consegna/ritiro",
+    "optional": "facoltativo",
     "pickup": "Ritiro in negozio",
     "delivery": "Consegna a domicilio",
     "sundayPickupNotAvailable": "Il ritiro in negozio non è disponibile di domenica",
     "sundayPickupNotice": "Siamo chiusi la domenica, ma saremo felici di consegnare il tuo ordine a casa! Seleziona la consegna a domicilio qui sotto.",
+    "notAvailable": "Non disponibile",
     "address": "Indirizzo",
     "addressPlaceholder": "Via Roma 123",
     "addressRequired": "L'indirizzo è obbligatorio",
@@ -176,7 +182,10 @@
     "paymentSecure": "Pagamento sicuro tramite Stripe",
     "weight": "Peso",
     "emptyCart": "Il carrello è vuoto",
-    "goToCart": "Vai al Carrello"
+    "goToCart": "Vai al Carrello",
+    "datePickerHelp": "Gli ordini richiedono almeno 2 giorni di preavviso. Disponibile fino a 3 mesi in anticipo.",
+    "leadTime": "Richiesto preavviso minimo di 2 giorni",
+    "checkoutError": "Si è verificato un errore durante il checkout. Riprova."
   },
   "checkoutSuccess": {
     "title": "Ordine Confermato!",
@@ -187,11 +196,15 @@
     "continueShopping": "Continua lo Shopping",
     "orderReceived": "Abbiamo ricevuto il tuo ordine e inizieremo a prepararlo a breve.",
     "processing": "Elaborazione del tuo ordine...",
-    "processingNote": "I dettagli del tuo ordine appariranno qui a breve. Aggiorna la pagina tra qualche istante."
+    "processingNote": "I dettagli del tuo ordine appariranno qui a breve. Aggiorna la pagina tra qualche istante.",
+    "timeAt": "alle {time}"
   },
   "checkoutCancel": {
     "title": "Pagamento Annullato",
     "message": "Il pagamento è stato annullato. Nessun addebito è stato effettuato.",
+    "infoPreserved": "Gli articoli del tuo carrello sono stati preservati",
+    "infoNoCharges": "Nessun addebito è stato effettuato sul tuo account",
+    "infoTryAgain": "Puoi riprovare quando sei pronto/a",
     "returnToCart": "Torna al Carrello",
     "tryAgain": "Riprova"
   },

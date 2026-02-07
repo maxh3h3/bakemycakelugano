@@ -152,6 +152,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
         flavourName: item.selectedFlavour
           ? item.product.availableFlavours?.find(f => f._id === item.selectedFlavour)?.name || null
           : null,
+        writingOnCake: item.writingOnCake || null,
       }));
 
       // Call API to create checkout session
@@ -195,7 +196,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
       window.location.href = sessionUrl;
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('An error occurred during checkout. Please try again.');
+      alert(t('checkoutError'));
       setIsProcessing(false);
     }
   };
@@ -314,6 +315,10 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                     }
                   }}
                   locale={locale}
+                  label={t('deliveryDate')}
+                  placeholder={t('selectDate')}
+                  helpText={t('datePickerHelp')}
+                  leadTimeText={t('leadTime')}
                   required
                 />
                 {errors.deliveryDate && (
@@ -384,7 +389,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                     <div className="font-medium">{t('pickup')}</div>
                     {isSunday && (
                       <div className="text-xs mt-1 text-gray-500">
-                        {locale === 'it' ? 'Non disponibile' : 'Not available'}
+                        {t('notAvailable')}
                       </div>
                     )}
                   </motion.button>
@@ -408,7 +413,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
               {/* Delivery/Pickup Time (optional) */}
               <div>
                 <label htmlFor="deliveryTime" className="block text-sm font-medium text-charcoal-900 mb-1">
-                  {t('deliveryTime')} <span className="text-charcoal-900/60">(optional)</span>
+                  {t('deliveryTime')} <span className="text-charcoal-900/60">({t('optional')})</span>
                 </label>
                 <input
                   type="text"
@@ -416,11 +421,11 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                   name="deliveryTime"
                   value={formData.deliveryTime}
                   onChange={handleInputChange}
-                  placeholder={locale === 'it' ? "es: 14:30, pomeriggio" : "e.g. 14:30, afternoon"}
+                  placeholder={t('deliveryTimePlaceholder')}
                   className="w-full px-4 py-3 rounded-lg border-2 border-cream-200 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 transition-colors"
                 />
                 <p className="text-xs text-charcoal-900/60 mt-1">
-                  {locale === 'it' ? 'Orario preferito per la consegna/ritiro' : 'Preferred time for delivery/pickup'}
+                  {t('deliveryTimeHelp')}
                 </p>
               </div>
 

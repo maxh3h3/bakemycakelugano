@@ -14,6 +14,8 @@ interface DatePickerProps {
   minDate?: Date;
   label?: string;
   placeholder?: string;
+  helpText?: string;
+  leadTimeText?: string;
   showHelperText?: boolean;
 }
 
@@ -31,22 +33,46 @@ export default function DatePicker({
   minDate: customMinDate,
   label,
   placeholder,
+  helpText,
+  leadTimeText,
   showHelperText = true,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Use custom labels if provided (for admin), otherwise get from translations
-  const getLabel = (key: string) => {
-    if (label && key === 'deliveryDate') return label;
-    if (placeholder && key === 'selectDate') return placeholder;
-    
-    const defaults: Record<string, string> = {
+  const defaultCopyByLocale: Record<
+    string,
+    Record<'deliveryDate' | 'selectDate' | 'datePickerHelp' | 'leadTime', string>
+  > = {
+    en: {
+      deliveryDate: 'Delivery date',
+      selectDate: 'Select a date',
+      datePickerHelp: 'Minimum lead time — 2 days',
+      leadTime: 'To ensure quality, we require at least 2 days notice',
+    },
+    it: {
+      deliveryDate: 'Data di consegna',
+      selectDate: 'Seleziona una data',
+      datePickerHelp: 'Preavviso minimo — 2 giorni',
+      leadTime: 'Per garantire la qualità, richiediamo almeno 2 giorni di preavviso',
+    },
+    // Admin-only fallback (no next-intl provider on /admin routes)
+    ru: {
       deliveryDate: 'Дата доставки',
       selectDate: 'Выберите дату',
       datePickerHelp: 'Минимальный срок — 2 дня',
       leadTime: 'Для обеспечения качества требуется минимум 2 дня',
-    };
-    return defaults[key];
+    },
+  };
+
+  // Use custom strings if provided (e.g. admin pages), otherwise use a locale-based fallback.
+  const getLabel = (key: string) => {
+    if (label && key === 'deliveryDate') return label;
+    if (placeholder && key === 'selectDate') return placeholder;
+    if (helpText && key === 'datePickerHelp') return helpText;
+    if (leadTimeText && key === 'leadTime') return leadTimeText;
+    
+    const defaults = defaultCopyByLocale[locale] || defaultCopyByLocale.en;
+    return (defaults as Record<string, string>)[key] || '';
   };
 
   // Calculate minimum date (2 days from now by default - no same-day or next-day orders for customers)

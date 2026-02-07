@@ -47,15 +47,15 @@ export default async function CancelPage({ params }: CancelPageProps) {
               <div className="space-y-3 text-left text-charcoal-900/70">
                 <p className="flex items-start gap-3">
                   <span className="text-green-600 mt-1">✓</span>
-                  <span>Your cart items have been preserved</span>
+                  <span>{t('infoPreserved')}</span>
                 </p>
                 <p className="flex items-start gap-3">
                   <span className="text-green-600 mt-1">✓</span>
-                  <span>No charges have been made to your account</span>
+                  <span>{t('infoNoCharges')}</span>
                 </p>
                 <p className="flex items-start gap-3">
                   <span className="text-green-600 mt-1">✓</span>
-                  <span>You can try again whenever you&apos;re ready</span>
+                  <span>{t('infoTryAgain')}</span>
                 </p>
               </div>
             </div>

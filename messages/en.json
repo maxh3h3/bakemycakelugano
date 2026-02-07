@@ -146,12 +146,18 @@
     "phonePlaceholder": "+41 79 123 4567",
     "phoneRequired": "Phone is required",
     "deliveryType": "Delivery Type",
+    "deliveryDate": "Delivery Date",
+    "selectDate": "Select a date",
     "deliveryDateRequired": "Delivery date is required",
     "deliveryTime": "Delivery/Pickup Time",
+    "deliveryTimePlaceholder": "e.g. 14:30, afternoon",
+    "deliveryTimeHelp": "Preferred time for delivery/pickup",
+    "optional": "optional",
     "pickup": "Store Pickup",
     "delivery": "Home Delivery",
     "sundayPickupNotAvailable": "Store pickup is not available on Sundays",
     "sundayPickupNotice": "We're closed on Sundays, but we'd be happy to deliver your order to your door! Please select home delivery below.",
+    "notAvailable": "Not available",
     "address": "Address",
     "addressPlaceholder": "123 Main Street",
     "addressRequired": "Address is required",
@@ -176,7 +182,10 @@
     "paymentSecure": "Secure payment via Stripe",
     "weight": "Weight",
     "emptyCart": "Your cart is empty",
-    "goToCart": "Go to Cart"
+    "goToCart": "Go to Cart",
+    "datePickerHelp": "Orders require at least 2 days advance notice. Available up to 3 months in advance.",
+    "leadTime": "Minimum 2 days advance notice required",
+    "checkoutError": "An error occurred during checkout. Please try again."
   },
   "checkoutSuccess": {
     "title": "Order Confirmed!",
@@ -187,11 +196,15 @@
     "continueShopping": "Continue Shopping",
     "orderReceived": "We've received your order and will start preparing it shortly.",
     "processing": "Processing your order...",
-    "processingNote": "Your order details will appear here shortly. Please refresh the page in a few moments."
+    "processingNote": "Your order details will appear here shortly. Please refresh the page in a few moments.",
+    "timeAt": "at {time}"
   },
   "checkoutCancel": {
     "title": "Payment Cancelled",
     "message": "Your payment was cancelled. No charges have been made.",
+    "infoPreserved": "Your cart items have been preserved",
+    "infoNoCharges": "No charges have been made to your account",
+    "infoTryAgain": "You can try again whenever you're ready",
     "returnToCart": "Return to Cart",
     "tryAgain": "Try Again"
   },
