@@ -147,6 +147,23 @@ Consider implementing in the future:
 
 1. **Created:** `app/api/admin/orders/[id]/mark-unpaid/route.ts` (107 lines)
 2. **Modified:** `components/admin/OrderCard.tsx` (changed `handlePaymentStatusChange` function)
+3. **Modified:** `app/api/admin/orders/[id]/mark-paid/route.ts` (changed transaction date to use payment date instead of order creation date)
+
+## Transaction Date Logic Update
+
+As part of this fix, we also corrected the transaction date logic for manual payments:
+
+**Before:**
+- Transaction date = Order creation date (`order.created_at`)
+- Problem: Revenue recorded when order created, not when payment received
+
+**After:**
+- Transaction date = Payment received date (`new Date()`)
+- Benefit: Follows cash accounting principles, accurate for tax reporting
+
+**Note:** Stripe payments still use order creation date (correct since payment is immediate).
+
+See `TRANSACTION_DATE_LOGIC.md` for detailed explanation.
 
 ## No Breaking Changes
 

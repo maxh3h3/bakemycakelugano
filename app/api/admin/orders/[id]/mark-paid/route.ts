@@ -83,7 +83,7 @@ export async function POST(
         clientId: order.client_id,
         paymentMethod: payment_method || order.payment_method || 'cash',
         channel: order.channel || 'phone',
-        createdAt: order.created_at,
+        createdAt: new Date().toISOString(), // Use payment date (today), not order creation date
       });
 
       if (!result.success) {

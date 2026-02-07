@@ -110,6 +110,19 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
     return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
   });
 
+  // Calculate total sum of orders in the current period (regardless of paid/unpaid status)
+  const totalSum = filteredOrders.reduce((sum, order) => {
+    return sum + parseFloat(order.total_amount || '0');
+  }, 0);
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('de-CH', {
+      style: 'currency',
+      currency: 'CHF',
+    }).format(amount);
+  };
+
   // Get date range text
   const getDateRangeText = (): string => {
     const now = new Date();
@@ -170,13 +183,46 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
 
       {/* Date Range & Count with Walk-in Filters */}
       <div className="flex items-center justify-between px-2">
-        <div>
-          <h3 className="text-lg font-heading font-bold text-charcoal-900">
-            {getDateRangeText()}
-          </h3>
-          <p className="text-sm text-charcoal-500">
-            {t.showing} {filteredOrders.length} {filteredOrders.length === 1 ? 'заказ' : 'заказов'}
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h3 className="text-lg font-heading font-bold text-charcoal-900">
+              {getDateRangeText()}
+            </h3>
+            <p className="text-sm text-charcoal-500">
+              {t.showing} {filteredOrders.length} {filteredOrders.length === 1 ? 'заказ' : 'заказов'}
+            </p>
+          </div>
+
+          {/* Total Sum Counter - Only shown for non-"all" tabs */}
+          {activeTab !== 'all' && (
+            <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-2xl px-6 py-3 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-500 rounded-full p-2">
+                  <svg 
+                    className="w-5 h-5 text-white" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2.5} 
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                    Общая сумма
+                  </p>
+                  <p className="text-xl font-bold text-green-600">
+                    {formatCurrency(totalSum)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Walk-in Client Filter Buttons */}
