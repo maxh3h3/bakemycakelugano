@@ -112,7 +112,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
 
   // Calculate total sum of orders in the current period (regardless of paid/unpaid status)
   const totalSum = filteredOrders.reduce((sum, order) => {
-    return sum + parseFloat(order.total_amount || '0');
+    return sum + (Number(order.total_amount) || 0);
   }, 0);
 
   // Format currency
