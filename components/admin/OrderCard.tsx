@@ -244,8 +244,8 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
     
     const isPaid = newPaidStatus === 'paid';
     
-    // If marking as unpaid, we'll just update the order
-    // If marking as paid, we'll call the mark-paid endpoint which creates revenue transaction
+    // If marking as paid, call mark-paid endpoint (creates revenue transaction)
+    // If marking as unpaid, call mark-unpaid endpoint (deletes revenue transaction)
     
     setIsMarkingPaid(true);
     setShowPaymentSelector(false);
@@ -271,15 +271,15 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
           payment_method: 'cash',
         }));
       } else {
-        // Mark as unpaid (just update order, don't create revenue transaction)
-        const response = await fetch(`/api/admin/orders/${order.id}`, {
-          method: 'PATCH',
+        // Call mark-unpaid endpoint (deletes revenue transaction)
+        const response = await fetch(`/api/admin/orders/${order.id}/mark-unpaid`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paid: false }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update payment status');
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to mark order as unpaid');
         }
 
         // Update local state optimistically
