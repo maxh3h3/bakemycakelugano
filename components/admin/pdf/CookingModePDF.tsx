@@ -47,6 +47,45 @@ Font.register({
   ],
 });
 
+// Flavour color mapping - Standard flavours from Sanity
+const FLAVOUR_COLORS: Record<string, { bg: string; text: string }> = {
+  // Banana-caramel - Warm golden yellow
+  '3dad1f6b-aa1b-410a-b77b-0472cc8eb3d1': {
+    bg: '#FFE5B4',
+    text: '#8B6914',
+  },
+  // Medovik (Honey Cake) - Honey amber
+  '64421a16-d714-4b7f-83c4-5fa4494d3b93': {
+    bg: '#FFBF6B',
+    text: '#7D4E00',
+  },
+  // Vanilla - Light cream
+  'db1b386a-799e-4483-b1b7-514e745bb86a': {
+    bg: '#FFF8E7',
+    text: '#8B7355',
+  },
+  // Double Chocolate - Rich brown
+  'bc69466b-7b2d-412a-b5b3-7e952ab1dd93': {
+    bg: '#D2691E',
+    text: '#FFFFFF',
+  },
+  // Red Velvet - Deep red
+  '1bdb031e-8b99-48d0-b1f0-7bd63375c92b': {
+    bg: '#DC143C',
+    text: '#FFFFFF',
+  },
+  // Merry Berry - Purple berry
+  'deea7e22-8770-40a1-81ae-1d5c8a55bf64': {
+    bg: '#9370DB',
+    text: '#FFFFFF',
+  },
+  // Carrot Cake with Cinnamon - Warm orange
+  '36966350-df0e-4337-abb0-364505971a25': {
+    bg: '#FF8C42',
+    text: '#5C2E00',
+  },
+};
+
 // Create styles - similar to CSS with flexbox
 const styles = StyleSheet.create({
   page: {
@@ -98,31 +137,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  // Day section styles
+  // Day section styles - Slimmer design
   daySection: {
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 8,
   },
   dayHeader: {
-    backgroundColor: '#8B6B47', // brown-500
-    padding: 10,
-    marginBottom: 8,
-    borderRadius: 4,
+    backgroundColor: '#C9A871', // brown-400 (lighter, less attention)
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginBottom: 6,
+    borderRadius: 3,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   dayTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   dayDate: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#F5E6D3', // cream-200
   },
   dayCount: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#F5E6D3', // cream-200
     fontWeight: 'bold',
   },
@@ -132,17 +172,19 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#C9A871', // brown-400 (lighter for sub-header)
+    backgroundColor: '#8B6B47', // brown-500 (main header)
     padding: 8,
     fontWeight: 'bold',
     color: '#FFFFFF',
     fontSize: 11,
+    marginBottom: 4,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottom: '1 solid #F5E6D3', // cream-200
     padding: 6,
     minHeight: 30,
+    alignItems: 'center',
   },
   tableRowAlt: {
     backgroundColor: '#F9F6F1', // cream-100
@@ -175,7 +217,36 @@ const styles = StyleSheet.create({
   colFlavor: {
     width: '20%',
     fontSize: 10,
+    paddingHorizontal: 4,
+  },
+  // Flavour badge styles
+  flavourBadge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    alignSelf: 'center',
     textAlign: 'center',
+  },
+  flavourText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  customFlavourBadge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    alignSelf: 'center',
+    textAlign: 'center',
+    backgroundColor: '#E5E7EB', // gray-200
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#9CA3AF', // gray-400
+  },
+  customFlavourText: {
+    fontSize: 9,
+    fontWeight: 'normal',
+    fontStyle: 'italic',
+    color: '#4B5563', // gray-600
   },
   footer: {
     position: 'absolute',
@@ -241,11 +312,47 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
     };
   };
 
+  // Render flavour badge with appropriate styling
+  const renderFlavourBadge = (item: OrderItem) => {
+    if (!item.flavour_name) {
+      return <Text style={styles.colFlavor}>—</Text>;
+    }
+
+    // Check if it's a custom flavour
+    const isCustom = item.selected_flavour === 'custom' || !item.selected_flavour;
+    
+    // Check if it's a standard flavour with color mapping
+    const hasColorMapping = item.selected_flavour && FLAVOUR_COLORS[item.selected_flavour];
+
+    if (isCustom || !hasColorMapping) {
+      // Custom flavour - dashed border, gray style
+      return (
+        <View style={styles.colFlavor}>
+          <View style={styles.customFlavourBadge}>
+            <Text style={styles.customFlavourText}>{item.flavour_name}</Text>
+          </View>
+        </View>
+      );
+    }
+
+    // Standard flavour - colored bubble
+    const colors = FLAVOUR_COLORS[item.selected_flavour!];
+    return (
+      <View style={styles.colFlavor}>
+        <View style={[styles.flavourBadge, { backgroundColor: colors.bg }]}>
+          <Text style={[styles.flavourText, { color: colors.text }]}>
+            {item.flavour_name}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <Document>
       <Page size="A4" orientation="portrait" style={styles.page}>
         {/* Header with Logo */}
-        <View style={styles.header}>
+        <View style={styles.header} fixed>
           <View style={styles.logoContainer}>
             <Image
               src="/images/icons/logo_white_back.png"
@@ -260,35 +367,34 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
           <Text style={styles.dateRange}>Период: {dateRange}</Text>
         </View>
 
+        {/* Table Header - Fixed on every page */}
+        <View style={styles.tableHeader} fixed>
+          <Text style={styles.colOrderNum}>Заказ №</Text>
+          <Text style={styles.colProduct}>Продукт</Text>
+          <Text style={styles.colQty}>Кол-во</Text>
+          <Text style={styles.colSize}>Размер</Text>
+          <Text style={styles.colWeight}>Вес</Text>
+          <Text style={styles.colFlavor}>Вкус</Text>
+        </View>
+
         {/* Render items grouped by day */}
         {sortedDays.map((dayStr, dayIndex) => {
           const dayItems = itemsByDay[dayStr];
           const { weekday, date } = formatDayHeader(dayStr);
           
           return (
-            <View key={dayStr} style={styles.daySection} wrap={false}>
-              {/* Day Header */}
-              <View style={styles.dayHeader}>
+            <View key={dayStr} style={styles.daySection}>
+              {/* Slimmer Day Header */}
+              <View style={styles.dayHeader} wrap={false}>
                 <Text style={styles.dayTitle}>{weekday}</Text>
                 {date && <Text style={styles.dayDate}>{date}</Text>}
                 <Text style={styles.dayCount}>
-                  Заказов: {dayItems.length}
+                  {dayItems.length} зак.
                 </Text>
               </View>
 
-              {/* Table for this day */}
+              {/* Table Rows for this day */}
               <View style={styles.table}>
-                {/* Table Header */}
-                <View style={styles.tableHeader}>
-                  <Text style={styles.colOrderNum}>Заказ №</Text>
-                  <Text style={styles.colProduct}>Продукт</Text>
-                  <Text style={styles.colQty}>Кол-во</Text>
-                  <Text style={styles.colSize}>Размер</Text>
-                  <Text style={styles.colWeight}>Вес</Text>
-                  <Text style={styles.colFlavor}>Вкус</Text>
-                </View>
-
-                {/* Table Rows */}
                 {dayItems.map((item, index) => (
                   <View
                     key={item.id}
@@ -313,9 +419,7 @@ export default function CookingModePDF({ items, dateRange }: CookingModePDFProps
                     <Text style={styles.colWeight}>
                       {item.weight_kg ? `${item.weight_kg}` : '—'}
                     </Text>
-                    <Text style={styles.colFlavor}>
-                      {item.flavour_name || '—'}
-                    </Text>
+                    {renderFlavourBadge(item)}
                   </View>
                 ))}
               </View>
