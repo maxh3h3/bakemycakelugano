@@ -137,7 +137,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
     startOfWeek.setDate(today.getDate() - daysFromMonday);
     
     const days = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       const day = new Date(startOfWeek);
       day.setDate(startOfWeek.getDate() + i);
       days.push(day);

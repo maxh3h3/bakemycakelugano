@@ -60,7 +60,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         weekStart.setDate(now.getDate() - daysFromMonday);
         weekStart.setHours(0, 0, 0, 0);
         const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 7);
+        weekEnd.setDate(weekStart.getDate() + 8);
         
         filtered = orders.filter(o => {
           if (!o.delivery_date) return false;
@@ -141,7 +141,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         weekStart.setDate(now.getDate() - daysFromMonday);
         const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setDate(weekStart.getDate() + 7);
         return `${weekStart.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' })}`;
       }
       case 'month':
