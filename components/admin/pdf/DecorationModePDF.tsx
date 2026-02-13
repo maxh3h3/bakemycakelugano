@@ -53,61 +53,61 @@ Font.register({
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#FDFCFB', // cream-50
-    padding: 20,
+    padding: 16,
     fontFamily: 'Roboto',
     orientation: 'portrait',
   },
   header: {
-    marginBottom: 15,
+    marginBottom: 12,
     borderBottom: '2 solid #EDD7B8', // cream-300
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   logo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
+    width: 32,
+    height: 32,
+    marginRight: 10,
   },
   brandingContainer: {
     flexDirection: 'column',
   },
   companyName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#8B6B47', // brown-500
     marginBottom: 2,
   },
   tagline: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#533D29', // brown-700
     fontStyle: 'italic',
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#8B6B47', // brown-500
     textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 6,
+    marginBottom: 3,
   },
   dateRange: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#2C2C2C', // charcoal-900
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   // Card-based layout for portrait
   itemsContainer: {
-    marginTop: 10,
+    marginTop: 8,
   },
   itemCard: {
-    marginBottom: 15,
-    borderRadius: 8,
-    border: '2 solid #EDD7B8',
+    marginBottom: 10,
+    borderRadius: 6,
+    border: '1.5 solid #EDD7B8',
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
   },
@@ -117,84 +117,94 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     backgroundColor: '#8B6B47',
-    padding: 10,
+    padding: 7,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   cardHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,
+    gap: 12,
   },
   cardOrderNum: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   cardProduct: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#F5E6D3',
   },
   cardDeliveryTime: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#F5E6D3',
   },
   cardBody: {
-    padding: 12,
+    padding: 10,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  contentLeft: {
+    flex: 1,
+    paddingRight: 8,
   },
   notesSection: {
-    marginBottom: 12,
+    marginBottom: 0,
   },
   notesLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
     color: '#8B6B47',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   writingText: {
-    fontSize: 11,
+    fontSize: 10,
     fontStyle: 'italic',
     color: '#2C2C2C',
-    marginBottom: 6,
+    marginBottom: 5,
     backgroundColor: '#FFF9E6',
-    padding: 6,
-    borderRadius: 4,
+    padding: 5,
+    borderRadius: 3,
   },
   cellNotes: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#2C2C2C',
-    lineHeight: 1.4,
-    marginBottom: 4,
+    lineHeight: 1.3,
+    marginBottom: 5,
+  },
+  contentRight: {
+    width: 170,
+    flexShrink: 0,
   },
   imagesSection: {
-    borderTop: '1 solid #F5E6D3',
-    paddingTop: 10,
+    borderLeft: '1 solid #F5E6D3',
+    paddingLeft: 10,
   },
   imagesSectionLabel: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#8B6B47',
-    marginBottom: 8,
+    marginBottom: 6,
+    textAlign: 'center',
   },
   imagesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 6,
   },
   tableImage: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     objectFit: 'cover',
-    border: '2 solid #8B6B47',
-    borderRadius: 4,
+    border: '1.5 solid #8B6B47',
+    borderRadius: 3,
   },
   footer: {
     position: 'absolute',
-    bottom: 20,
-    left: 30,
-    right: 30,
+    bottom: 16,
+    left: 24,
+    right: 24,
     textAlign: 'center',
-    fontSize: 8,
+    fontSize: 7,
     color: '#808080',
   },
 });
@@ -282,44 +292,48 @@ export default function DecorationModePDF({ items, dateRange }: DecorationModePD
                       )}
                     </View>
 
-                    {/* Card Body */}
+                    {/* Card Body - Two Column Layout */}
                     <View style={styles.cardBody}>
-                      {/* Notes Section */}
-                      {hasNotes && (
-                        <View style={styles.notesSection}>
-                          {item.writing_on_cake && (
-                            <View style={{ marginBottom: 6 }}>
-                              <Text style={styles.notesLabel}>Надпись на торте:</Text>
-                              <Text style={styles.writingText}>"{item.writing_on_cake}"</Text>
-                            </View>
-                          )}
-                          {item.internal_decoration_notes && (
-                            <View style={{ marginBottom: 6 }}>
-                              <Text style={styles.notesLabel}>Внутренние заметки:</Text>
-                              <Text style={styles.cellNotes}>{item.internal_decoration_notes}</Text>
-                            </View>
-                          )}
-                          {item.staff_notes && (
-                            <View style={{ marginBottom: 6 }}>
-                              <Text style={styles.notesLabel}>Заметки персонала:</Text>
-                              <Text style={styles.cellNotes}>{item.staff_notes}</Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
+                      {/* Left Column: Text Content */}
+                      <View style={styles.contentLeft}>
+                        {hasNotes && (
+                          <View style={styles.notesSection}>
+                            {item.writing_on_cake && (
+                              <View style={{ marginBottom: 5 }}>
+                                <Text style={styles.notesLabel}>Надпись на торте:</Text>
+                                <Text style={styles.writingText}>"{item.writing_on_cake}"</Text>
+                              </View>
+                            )}
+                            {item.internal_decoration_notes && (
+                              <View style={{ marginBottom: 5 }}>
+                                <Text style={styles.notesLabel}>Внутренние заметки:</Text>
+                                <Text style={styles.cellNotes}>{item.internal_decoration_notes}</Text>
+                              </View>
+                            )}
+                            {item.staff_notes && (
+                              <View style={{ marginBottom: 5 }}>
+                                <Text style={styles.notesLabel}>Заметки персонала:</Text>
+                                <Text style={styles.cellNotes}>{item.staff_notes}</Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
 
-                      {/* Images Section */}
+                      {/* Right Column: Images */}
                       {hasImages && (
-                        <View style={styles.imagesSection}>
-                          <Text style={styles.imagesSectionLabel}>Референсные изображения:</Text>
-                          <View style={styles.imagesContainer}>
-                            {item.product_image_urls?.slice(0, 4).map((url, idx) => (
-                              <Image
-                                key={idx}
-                                src={url}
-                                style={styles.tableImage}
-                              />
-                            ))}
+                        <View style={styles.contentRight}>
+                          <View style={styles.imagesSection}>
+                            <Text style={styles.imagesSectionLabel}>РЕФЕРЕНС</Text>
+                            <View style={styles.imagesContainer}>
+                              {item.product_image_urls?.slice(0, 4).map((url, idx) => (
+                                <Image
+                                  key={idx}
+                                  src={url}
+                                  style={styles.tableImage}
+                                />
+                              ))}
+                            </View>
                           </View>
                         </View>
                       )}

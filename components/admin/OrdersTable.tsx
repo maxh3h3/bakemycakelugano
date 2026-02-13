@@ -60,11 +60,11 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-6">
+      <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-4 sm:p-6">
         <div className="space-y-4">
           {/* Search */}
           <div>
-            <label htmlFor="search" className="block text-sm font-medium text-charcoal-900 mb-2">
+            <label htmlFor="search" className="block text-xs sm:text-sm font-medium text-charcoal-900 mb-2">
               {t.searchOrders}
             </label>
             <input
@@ -73,45 +73,45 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Поиск по имени, email или ID заказа..."
-              className="w-full px-4 py-2 rounded-full border-2 border-cream-300 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 bg-cream-50/50"
+              className="w-full px-3 sm:px-4 py-2 rounded-full border-2 border-cream-300 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 bg-cream-50/50 text-sm sm:text-base"
             />
           </div>
 
           {/* Payment Status Filter */}
           <div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 flex-wrap">
               <button
                 onClick={() => setPaymentFilter('all')}
-                className={`px-6 py-2.5 rounded-full font-semibold transition-all ${
+                className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-base transition-all flex-1 sm:flex-initial ${
                   paymentFilter === 'all'
                     ? 'bg-brown-500 text-white shadow-md'
                     : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
                 }`}
               >
                 {t.allOrders}
-                <span className="ml-2 text-sm opacity-75">({orders.length})</span>
+                <span className="ml-1 sm:ml-2 text-xs sm:text-sm opacity-75">({orders.length})</span>
               </button>
               <button
                 onClick={() => setPaymentFilter('paid')}
-                className={`px-6 py-2.5 rounded-full font-semibold transition-all ${
+                className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-base transition-all flex-1 sm:flex-initial ${
                   paymentFilter === 'paid'
                     ? 'bg-green-500 text-white shadow-md'
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
               >
                 {t.paid}
-                <span className="ml-2 text-sm opacity-75">({paidCount})</span>
+                <span className="ml-1 sm:ml-2 text-xs sm:text-sm opacity-75">({paidCount})</span>
               </button>
               <button
                 onClick={() => setPaymentFilter('unpaid')}
-                className={`px-6 py-2.5 rounded-full font-semibold transition-all ${
+                className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-base transition-all flex-1 sm:flex-initial ${
                   paymentFilter === 'unpaid'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                 }`}
               >
                 {t.unpaid}
-                <span className="ml-2 text-sm opacity-75">({unpaidCount})</span>
+                <span className="ml-1 sm:ml-2 text-xs sm:text-sm opacity-75">({unpaidCount})</span>
               </button>
             </div>
           </div>

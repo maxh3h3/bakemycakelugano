@@ -91,18 +91,20 @@ export default async function AdminOrdersPage() {
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-heading font-bold text-brown-500 mb-2">
-                Панель заказов
-              </h1>
-              <p className="text-charcoal-600">
-                Управление всеми заказами, отслеживание платежей и просмотр детальной информации
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <QuickSaleButton />
-              <CreateOrderButton />
+          <div className="mb-6 md:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-brown-500 mb-2">
+                  Панель заказов
+                </h1>
+                <p className="text-sm sm:text-base text-charcoal-600">
+                  Управление всеми заказами, отслеживание платежей и просмотр детальной информации
+                </p>
+              </div>
+              <div className="flex gap-2 sm:gap-3 flex-shrink-0">
+                <QuickSaleButton />
+                <CreateOrderButton />
+              </div>
             </div>
           </div>
 

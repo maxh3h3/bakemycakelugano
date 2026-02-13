@@ -58,3 +58,44 @@ export function parseDateFromDB(dateString: string): Date {
   return new Date(year, month - 1, day); // month is 0-indexed in Date constructor
 }
 
+/**
+ * Extracts numeric time value from delivery time strings for sorting purposes.
+ * Handles various formats: "12", "15", "17", "12:30", "12.30", "17:00", etc.
+ * Ignores non-numeric text like "afternoon".
+ * 
+ * @param timeString - Delivery time string from the database
+ * @returns Numeric time value (e.g., 12.5 for "12:30", 17 for "17:00") or null if no number found
+ * 
+ * @example
+ * extractTimeForSorting("12");      // Returns 12
+ * extractTimeForSorting("15");      // Returns 15
+ * extractTimeForSorting("12:30");   // Returns 12.5
+ * extractTimeForSorting("12.30");   // Returns 12.5
+ * extractTimeForSorting("17:00");   // Returns 17
+ * extractTimeForSorting("afternoon"); // Returns null
+ */
+export function extractTimeForSorting(timeString: string | null): number | null {
+  if (!timeString) return null;
+  
+  // Try to find a time pattern like "12:30" or "12.30"
+  const timePattern = /(\d{1,2})[:.](\d{2})/;
+  const match = timeString.match(timePattern);
+  
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    return hours + minutes / 60; // Convert to decimal (e.g., 12:30 becomes 12.5)
+  }
+  
+  // Try to find just a number (like "12" or "15")
+  const numberPattern = /\b(\d{1,2})\b/;
+  const numberMatch = timeString.match(numberPattern);
+  
+  if (numberMatch) {
+    return parseInt(numberMatch[1], 10);
+  }
+  
+  // No numeric time found
+  return null;
+}
+
