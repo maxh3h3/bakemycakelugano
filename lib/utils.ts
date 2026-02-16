@@ -98,4 +98,3 @@ export function extractTimeForSorting(timeString: string | null): number | null 
   // No numeric time found
   return null;
 }
-

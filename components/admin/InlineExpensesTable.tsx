@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, Plus, Trash2, Save, X } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, X, Search, Filter } from 'lucide-react';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import DatePicker from '@/components/products/DatePicker';
 import { format } from 'date-fns';
@@ -42,6 +42,11 @@ export default function InlineExpensesTable() {
   const [newRowDate, setNewRowDate] = useState<Date | undefined>(new Date());
   const [editingDate, setEditingDate] = useState<Date | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(null);
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
     fetchExpenses();
@@ -220,7 +225,48 @@ export default function InlineExpensesTable() {
     });
   };
 
-  const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+  // Helper function to get Monday of current week
+  const getMondayOfCurrentWeek = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const diff = day === 0 ? -6 : 1 - day; // Adjust if Sunday
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  };
+
+  // Filter expenses
+  const filteredExpenses = expenses.filter((expense) => {
+    const matchesSearch = expense.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
+
+    let matchesDate = true;
+    if (dateFilter !== 'all') {
+      const expenseDate = new Date(expense.date);
+      const now = new Date();
+      
+      if (dateFilter === 'week') {
+        // Week to Date (from Monday to today)
+        const monday = getMondayOfCurrentWeek();
+        matchesDate = expenseDate >= monday && expenseDate <= now;
+      } else if (dateFilter === 'month') {
+        // Month to Date (from 1st of current month to today)
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        firstOfMonth.setHours(0, 0, 0, 0);
+        matchesDate = expenseDate >= firstOfMonth && expenseDate <= now;
+      } else if (dateFilter === 'year') {
+        // Current year (effectively YTD since future dates don't exist)
+        const currentYear = now.getFullYear();
+        matchesDate = expenseDate.getFullYear() === currentYear;
+      }
+    }
+
+    return matchesSearch && matchesCategory && matchesDate;
+  });
+
+  const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 
   // Allow any past date for expenses (no minimum)
   const minDate = new Date('2000-01-01');
@@ -245,7 +291,7 @@ export default function InlineExpensesTable() {
               {formatCurrency(totalExpenses.toString())}
             </p>
             <p className="text-sm text-charcoal-500 mt-1">
-              {expenses.length} {expenses.length === 1 ? 'расход' : expenses.length < 5 ? 'расхода' : 'расходов'}
+              {filteredExpenses.length} из {expenses.length} {expenses.length === 1 ? 'расход' : expenses.length < 5 ? 'расхода' : 'расходов'}
             </p>
           </div>
           <button
@@ -255,6 +301,85 @@ export default function InlineExpensesTable() {
             <Plus className="w-5 h-5" />
             Добавить расход
           </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-md p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Поиск по описанию..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border-2 border-cream-300 rounded-lg focus:border-brown-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Category Filter */}
+          <div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-4 py-2 border-2 border-cream-300 rounded-lg focus:border-brown-500 focus:outline-none font-semibold text-sm"
+            >
+              <option value="all">Все категории</option>
+              {CATEGORY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date Filter */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setDateFilter('week')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'week'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Неделя
+            </button>
+            <button
+              onClick={() => setDateFilter('month')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'month'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Месяц
+            </button>
+            <button
+              onClick={() => setDateFilter('year')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'year'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Год
+            </button>
+            <button
+              onClick={() => setDateFilter('all')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'all'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Все
+            </button>
+          </div>
         </div>
       </div>
 
@@ -358,18 +483,25 @@ export default function InlineExpensesTable() {
               )}
 
               {/* Existing Expenses */}
-              {expenses.length === 0 ? (
+              {filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12">
                     <div className="flex flex-col items-center gap-3">
                       <div className="text-5xl">📊</div>
-                      <p className="text-xl font-semibold text-charcoal-700">Расходов пока нет</p>
-                      <p className="text-charcoal-500">Нажмите "Добавить расход" чтобы создать первую запись</p>
+                      <p className="text-xl font-semibold text-charcoal-700">
+                        {expenses.length === 0 ? 'Расходов пока нет' : 'Расходы не найдены'}
+                      </p>
+                      <p className="text-charcoal-500">
+                        {expenses.length === 0 
+                          ? 'Нажмите "Добавить расход" чтобы создать первую запись'
+                          : 'Попробуйте изменить фильтры'
+                        }
+                      </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                expenses.map((expense, index) => {
+                filteredExpenses.map((expense, index) => {
                   const cellKey = (field: string) => `${expense.id}-${field}`;
                   const isSaving = (field: string) => savingCells.has(cellKey(field));
 
