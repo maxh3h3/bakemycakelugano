@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth/session';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { NewClient } from '@/lib/db/schema';
 
@@ -9,14 +9,8 @@ import type { NewClient } from '@/lib/db/schema';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -104,14 +98,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
     const {

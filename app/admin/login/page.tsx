@@ -6,8 +6,11 @@ import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import { adminTranslations as t } from '@/lib/admin-translations';
 
+type LoginRole = 'owner' | 'cook';
+
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [role, setRole] = useState<LoginRole>('owner');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -24,14 +27,14 @@ export default function AdminLoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password, rememberMe }),
+        body: JSON.stringify({ role, password, rememberMe }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Redirect to admin dashboard (no locale needed)
-        router.push('/admin/orders');
+        const redirectTo = data.role === 'cook' ? '/admin/production' : '/admin/orders';
+        router.push(redirectTo);
         router.refresh();
       } else {
         setError(data.error || t.invalidPassword);
@@ -68,6 +71,26 @@ export default function AdminLoginPage() {
         {/* Login Form */}
         <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-cream-200">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role */}
+            <div>
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-charcoal-900 mb-2"
+              >
+                {t.loginRole}
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as LoginRole)}
+                className="w-full px-4 py-3 rounded-full border-2 border-cream-300 focus:border-brown-500 focus:outline-none focus:ring-2 focus:ring-brown-500/20 transition-all bg-cream-50/50"
+                disabled={isLoading}
+              >
+                <option value="owner">{t.loginRoleOwner}</option>
+                <option value="cook">{t.loginRoleCook}</option>
+              </select>
+            </div>
+
             {/* Password Field */}
             <div>
               <label

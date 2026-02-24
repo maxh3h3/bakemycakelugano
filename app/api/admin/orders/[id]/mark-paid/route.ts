@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth/session';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { createClient } from '@supabase/supabase-js';
 import { createRevenueFromOrder } from '@/lib/accounting/transactions';
 
@@ -15,14 +15,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check authentication
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Не авторизован' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
     const body = await request.json();

@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth/session';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { findOrCreateClient } from '@/lib/clients/utils';
 
 // GET all meetings
 export async function GET(request: NextRequest) {
   try {
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
 
     // Fetch meetings with client details
     const { data: meetings, error } = await supabaseAdmin
@@ -55,13 +50,8 @@ export async function GET(request: NextRequest) {
 // POST create new meeting
 export async function POST(request: NextRequest) {
   try {
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
     const {

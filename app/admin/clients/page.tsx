@@ -7,14 +7,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function ClientsPage() {
-  // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
     redirect('/admin/login');
   }
 
-  // Get user role
   const role = await getUserRole();
+  if (role !== 'owner') {
+    redirect('/admin/production');
+  }
 
   return (
     <>

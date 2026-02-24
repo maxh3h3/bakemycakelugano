@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth/session';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import { emitStatusUpdateEvent } from '@/lib/events/production-events';
 
 export async function PATCH(request: NextRequest) {
   try {
-    // Check authentication
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner', 'cook']);
+    if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
     const { itemId, status } = body;

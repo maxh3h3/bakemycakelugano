@@ -22,14 +22,15 @@ interface CheckoutAttempt {
 }
 
 export default async function AdminAnalyticsPage() {
-  // Check authentication
   const isAuthenticated = await validateSession();
   if (!isAuthenticated) {
     redirect('/admin/login');
   }
 
-  // Get user role
   const role = await getUserRole();
+  if (role !== 'owner') {
+    redirect('/admin/production');
+  }
 
   // Fetch all checkout attempts
   const { data: attempts, error } = await (supabaseAdmin

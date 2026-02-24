@@ -11,8 +11,8 @@
  * - Clean disconnection handling
  */
 
-import { NextRequest } from 'next/server';
-import { validateSession } from '@/lib/auth/session';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { getProductionEventsManager } from '@/lib/events/production-events';
 import type { ProductionEvent } from '@/lib/events/production-events';
 
@@ -20,12 +20,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  // Validate authentication
-  const isAuthenticated = await validateSession();
-  
-  if (!isAuthenticated) {
-    return new Response('Unauthorized', { status: 401 });
-  }
+  const auth = await requireAdminRole(['owner', 'cook']);
+  if (auth instanceof NextResponse) return auth;
 
   // Generate unique client ID
   const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

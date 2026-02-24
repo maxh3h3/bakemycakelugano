@@ -16,7 +16,10 @@ export const adminTranslations = {
   
   // Login Page
   loginTitle: 'Вход в админ-панель',
-  loginWelcome: 'Добро пожаловать! Введите пароль для продолжения.',
+  loginWelcome: 'Добро пожаловать! Выберите роль и введите пароль.',
+  loginRole: 'Роль',
+  loginRoleOwner: 'Владелец',
+  loginRoleCook: 'Повар',
   password: 'Пароль',
   passwordPlaceholder: 'Введите пароль администратора',
   rememberMe: 'Запомнить меня на 7 дней',

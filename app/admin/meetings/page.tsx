@@ -13,10 +13,9 @@ export default async function AdminMeetingsPage() {
     redirect('/admin/login');
   }
 
-  // Check role (only owner can manage meetings)
   const role = await getUserRole();
   if (role !== 'owner') {
-    redirect('/admin/orders');
+    redirect('/admin/production');
   }
 
   return (

@@ -1,5 +1,6 @@
 import { getIronSession, IronSession } from 'iron-session';
 import { cookies } from 'next/headers';
+import { createHash, timingSafeEqual } from 'crypto';
 
 export type UserRole = 'owner' | 'cook' | 'delivery';
 
@@ -9,11 +10,6 @@ export interface SessionData {
   rememberMe: boolean;
   createdAt: number;
   expiresAt: number;
-}
-
-// Legacy support
-export interface LegacySessionData extends SessionData {
-  isAdmin?: boolean; // For backward compatibility
 }
 
 // Validate SESSION_SECRET on startup
@@ -45,9 +41,9 @@ const sessionOptions = {
 };
 
 // Get session from cookies
-export async function getSession(): Promise<IronSession<LegacySessionData>> {
+export async function getSession(): Promise<IronSession<SessionData>> {
   const cookieStore = await cookies();
-  return getIronSession<LegacySessionData>(cookieStore, sessionOptions);
+  return getIronSession<SessionData>(cookieStore, sessionOptions);
 }
 
 // Create a new session with role
@@ -62,9 +58,6 @@ export async function createSession(role: UserRole, rememberMe: boolean = true):
   session.rememberMe = rememberMe;
   session.createdAt = now;
   session.expiresAt = expiresAt;
-  
-  // Legacy support
-  session.isAdmin = true;
 
   await session.save();
 }
@@ -73,7 +66,7 @@ export async function createSession(role: UserRole, rememberMe: boolean = true):
 export async function validateSession(): Promise<boolean> {
   const session = await getSession();
 
-  if (!session.isLoggedIn && !session.isAdmin) {
+  if (!session.isLoggedIn) {
     return false;
   }
 
@@ -89,13 +82,7 @@ export async function validateSession(): Promise<boolean> {
 // Get current user role
 export async function getUserRole(): Promise<UserRole | null> {
   const session = await getSession();
-  
-  // Legacy support: if isAdmin but no role, assume owner
-  if (session.isAdmin && !session.role) {
-    return 'owner';
-  }
-  
-  return session.role || null;
+  return session.role ?? null;
 }
 
 // Check if user has specific role
@@ -140,17 +127,9 @@ export function verifyPassword(password: string, role: UserRole): boolean {
     );
   }
 
-  return password === correctPassword;
-}
-
-// Legacy support: verify admin password (maps to owner)
-export function verifyAdminPassword(password: string): boolean {
-  const adminPassword = process.env.ADMIN_PASSWORD || process.env.OWNER_PASSWORD;
-  
-  if (!adminPassword) {
-    return false;
-  }
-
-  return password === adminPassword;
+  // Constant-time comparison to prevent timing attacks
+  const a = createHash('sha256').update(password).digest();
+  const b = createHash('sha256').update(correctPassword).digest();
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 

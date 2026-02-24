@@ -16,9 +16,8 @@ export default async function AccountingPage() {
   // Get user role
   const role = await getUserRole();
 
-  // Only owner can access accounting
   if (role !== 'owner') {
-    redirect('/admin/orders');
+    redirect('/admin/production');
   }
 
   return (

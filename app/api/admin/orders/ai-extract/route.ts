@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth/session';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { openai } from '@/lib/openai/client';
 import type { AIOrderProcessingRequest, AIOrderProcessingResponse, AIExtractedOrderData } from '@/types/ai-order';
 
@@ -75,14 +75,8 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Check authentication
-    const isAuthenticated = await validateSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' } as AIOrderProcessingResponse,
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
 
     const body: AIOrderProcessingRequest = await request.json();
     const { text, images, context } = body;
