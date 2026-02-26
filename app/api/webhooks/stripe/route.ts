@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { client as sanityClient } from '@/lib/sanity/client';
+import { urlFor } from '@/lib/sanity/image-url';
 import { resend, emailConfig } from '@/lib/resend/client';
 import { generateCustomerConfirmationEmail } from '@/lib/resend/templates/customer-confirmation';
 import { generateOwnerNotificationEmail } from '@/lib/resend/templates/owner-notification';
@@ -12,6 +14,38 @@ import { generateOrderNumber } from '@/lib/order-number-generator';
 import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
 import { emitNewOrderEvent } from '@/lib/events/production-events';
 import { createRevenueFromOrder } from '@/lib/accounting/transactions';
+
+/**
+ * Batch-fetches product images from Sanity for a list of product IDs.
+ * Returns a map of productId → array of resolved image URL strings.
+ */
+async function fetchProductImageUrls(productIds: string[]): Promise<Map<string, string[]>> {
+  const uniqueIds = [...new Set(productIds.filter(Boolean))];
+  if (uniqueIds.length === 0) return new Map();
+
+  try {
+    const products = await sanityClient.fetch<{ _id: string; images: any[] }[]>(
+      `*[_type == "product" && _id in $ids]{ _id, images }`,
+      { ids: uniqueIds }
+    );
+
+    const imageMap = new Map<string, string[]>();
+    for (const product of products) {
+      if (product.images?.length) {
+        const urls = product.images
+          .map((img: any) => {
+            try { return urlFor(img).width(800).height(800).url(); } catch { return null; }
+          })
+          .filter((url): url is string => Boolean(url));
+        if (urls.length) imageMap.set(product._id, urls);
+      }
+    }
+    return imageMap;
+  } catch (err) {
+    console.error('Failed to fetch product images from Sanity:', err);
+    return new Map();
+  }
+}
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
@@ -190,18 +224,22 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }
     }
 
+    // Fetch product images from Sanity for all catalog items
+    const catalogProductIds = orderItems
+      .map((item: any) => item.productId)
+      .filter(Boolean) as string[];
+    const productImageMap = await fetchProductImageUrls(catalogProductIds);
+
     // Create order items
-    // Note: product_image_urls is null since we don't store images in Stripe metadata
-    // Images can be fetched from Sanity using product_id if needed for display
     const orderItemsData = orderItems.map((item: any) => ({
       order_id: (order as any).id,
-      order_number: orderNumber, // Denormalized for production view
-      delivery_type: metadata.deliveryType || null, // Denormalized for filtering immediate sales
-      delivery_date: metadata.deliveryDate || null, // Denormalized for production view
-      delivery_time: metadata.deliveryTime || null, // Denormalized for decoration view
+      order_number: orderNumber,
+      delivery_type: metadata.deliveryType || null,
+      delivery_date: metadata.deliveryDate || null,
+      delivery_time: metadata.deliveryTime || null,
       product_id: item.productId,
       product_name: item.productName,
-      product_image_urls: null, // Not stored in metadata to save space
+      product_image_urls: item.productId ? (productImageMap.get(item.productId) ?? null) : null,
       quantity: item.quantity,
       unit_price: item.unitPrice,
       subtotal: item.unitPrice * item.quantity,
