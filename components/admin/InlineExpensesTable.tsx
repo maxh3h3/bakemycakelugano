@@ -46,7 +46,14 @@ export default function InlineExpensesTable() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('month');
+  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year' | 'custom'>('month');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>(() => new Date());
 
   useEffect(() => {
     fetchExpenses();
@@ -225,15 +232,24 @@ export default function InlineExpensesTable() {
     });
   };
 
-  // Helper function to get Monday of current week
-  const getMondayOfCurrentWeek = () => {
+  // Helper: Monday 00:00:00 of current week
+  const getWeekStart = () => {
     const now = new Date();
-    const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const diff = day === 0 ? -6 : 1 - day; // Adjust if Sunday
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
     const monday = new Date(now);
     monday.setDate(now.getDate() + diff);
     monday.setHours(0, 0, 0, 0);
     return monday;
+  };
+
+  // Helper: Sunday 23:59:59.999 of current week (end of full week)
+  const getWeekEnd = () => {
+    const start = getWeekStart();
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return end;
   };
 
   // Filter expenses
@@ -246,20 +262,30 @@ export default function InlineExpensesTable() {
     if (dateFilter !== 'all') {
       const expenseDate = new Date(expense.date);
       const now = new Date();
-      
+
       if (dateFilter === 'week') {
-        // Week to Date (from Monday to today)
-        const monday = getMondayOfCurrentWeek();
-        matchesDate = expenseDate >= monday && expenseDate <= now;
+        // Full week: Monday through Sunday of current week
+        const weekStart = getWeekStart();
+        const weekEnd = getWeekEnd();
+        expenseDate.setHours(0, 0, 0, 0);
+        matchesDate = expenseDate >= weekStart && expenseDate <= weekEnd;
       } else if (dateFilter === 'month') {
-        // Month to Date (from 1st of current month to today)
+        // Full month: 1st through last day of current month
         const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         firstOfMonth.setHours(0, 0, 0, 0);
-        matchesDate = expenseDate >= firstOfMonth && expenseDate <= now;
+        const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        lastOfMonth.setHours(23, 59, 59, 999);
+        matchesDate = expenseDate >= firstOfMonth && expenseDate <= lastOfMonth;
       } else if (dateFilter === 'year') {
-        // Current year (effectively YTD since future dates don't exist)
         const currentYear = now.getFullYear();
         matchesDate = expenseDate.getFullYear() === currentYear;
+      } else if (dateFilter === 'custom' && customDateFrom && customDateTo) {
+        const rangeStart = new Date(customDateFrom);
+        rangeStart.setHours(0, 0, 0, 0);
+        const rangeEnd = new Date(customDateTo);
+        rangeEnd.setHours(23, 59, 59, 999);
+        expenseDate.setHours(0, 0, 0, 0);
+        matchesDate = expenseDate >= rangeStart && expenseDate <= rangeEnd;
       }
     }
 
@@ -338,7 +364,7 @@ export default function InlineExpensesTable() {
           </div>
 
           {/* Date Filter */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setDateFilter('week')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
@@ -370,6 +396,16 @@ export default function InlineExpensesTable() {
               Год
             </button>
             <button
+              onClick={() => setDateFilter('custom')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'custom'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Период
+            </button>
+            <button
               onClick={() => setDateFilter('all')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
                 dateFilter === 'all'
@@ -379,6 +415,32 @@ export default function InlineExpensesTable() {
             >
               Все
             </button>
+            {dateFilter === 'custom' && (
+              <div className="flex flex-wrap items-end gap-3 ml-2">
+                <div className="w-44">
+                  <DatePicker
+                    selectedDate={customDateFrom}
+                    onDateChange={setCustomDateFrom}
+                    locale="ru"
+                    minDate={minDate}
+                    label="С"
+                    placeholder="С даты"
+                    showHelperText={false}
+                  />
+                </div>
+                <div className="w-44">
+                  <DatePicker
+                    selectedDate={customDateTo}
+                    onDateChange={setCustomDateTo}
+                    locale="ru"
+                    minDate={customDateFrom ?? minDate}
+                    label="По"
+                    placeholder="По дату"
+                    showHelperText={false}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

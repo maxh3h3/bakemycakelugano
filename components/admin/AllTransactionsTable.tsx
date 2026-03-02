@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Search, Filter, Calendar } from 'lucide-react';
+import DatePicker from '@/components/products/DatePicker';
 
 interface Transaction {
   id: string;
@@ -48,7 +49,14 @@ export default function AllTransactionsTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'revenue' | 'expense'>('all');
-  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('month');
+  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year' | 'custom'>('month');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>(() => new Date());
 
   useEffect(() => {
     fetchTransactions();
@@ -82,15 +90,22 @@ export default function AllTransactionsTable() {
     });
   };
 
-  // Helper function to get Monday of current week
-  const getMondayOfCurrentWeek = () => {
+  // Full week: Monday 00:00 through Sunday 23:59:59 of current week
+  const getWeekStart = () => {
     const now = new Date();
-    const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const diff = day === 0 ? -6 : 1 - day; // Adjust if Sunday
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
     const monday = new Date(now);
     monday.setDate(now.getDate() + diff);
     monday.setHours(0, 0, 0, 0);
     return monday;
+  };
+  const getWeekEnd = () => {
+    const start = getWeekStart();
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return end;
   };
 
   // Filter transactions
@@ -103,25 +118,35 @@ export default function AllTransactionsTable() {
     if (dateFilter !== 'all') {
       const transactionDate = new Date(transaction.date);
       const now = new Date();
-      
+
       if (dateFilter === 'week') {
-        // Week to Date (from Monday to today)
-        const monday = getMondayOfCurrentWeek();
-        matchesDate = transactionDate >= monday && transactionDate <= now;
+        const weekStart = getWeekStart();
+        const weekEnd = getWeekEnd();
+        transactionDate.setHours(0, 0, 0, 0);
+        matchesDate = transactionDate >= weekStart && transactionDate <= weekEnd;
       } else if (dateFilter === 'month') {
-        // Month to Date (from 1st of current month to today)
         const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         firstOfMonth.setHours(0, 0, 0, 0);
-        matchesDate = transactionDate >= firstOfMonth && transactionDate <= now;
+        const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        lastOfMonth.setHours(23, 59, 59, 999);
+        matchesDate = transactionDate >= firstOfMonth && transactionDate <= lastOfMonth;
       } else if (dateFilter === 'year') {
-        // Current year (effectively YTD since future dates don't exist)
         const currentYear = now.getFullYear();
         matchesDate = transactionDate.getFullYear() === currentYear;
+      } else if (dateFilter === 'custom' && customDateFrom && customDateTo) {
+        const rangeStart = new Date(customDateFrom);
+        rangeStart.setHours(0, 0, 0, 0);
+        const rangeEnd = new Date(customDateTo);
+        rangeEnd.setHours(23, 59, 59, 999);
+        transactionDate.setHours(0, 0, 0, 0);
+        matchesDate = transactionDate >= rangeStart && transactionDate <= rangeEnd;
       }
     }
 
     return matchesSearch && matchesType && matchesDate;
   });
+
+  const customRangeMinDate = new Date('2000-01-01');
 
   // Calculate totals
   const totalRevenue = filteredTransactions
@@ -214,7 +239,7 @@ export default function AllTransactionsTable() {
           </div>
 
           {/* Date Filter */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setDateFilter('week')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
@@ -246,6 +271,16 @@ export default function AllTransactionsTable() {
               Год
             </button>
             <button
+              onClick={() => setDateFilter('custom')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                dateFilter === 'custom'
+                  ? 'bg-brown-500 text-white'
+                  : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+              }`}
+            >
+              Период
+            </button>
+            <button
               onClick={() => setDateFilter('all')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
                 dateFilter === 'all'
@@ -255,6 +290,32 @@ export default function AllTransactionsTable() {
             >
               Все
             </button>
+            {dateFilter === 'custom' && (
+              <div className="flex flex-wrap items-end gap-3 ml-2">
+                <div className="w-44">
+                  <DatePicker
+                    selectedDate={customDateFrom}
+                    onDateChange={setCustomDateFrom}
+                    locale="ru"
+                    minDate={customRangeMinDate}
+                    label="С"
+                    placeholder="С даты"
+                    showHelperText={false}
+                  />
+                </div>
+                <div className="w-44">
+                  <DatePicker
+                    selectedDate={customDateTo}
+                    onDateChange={setCustomDateTo}
+                    locale="ru"
+                    minDate={customDateFrom ?? customRangeMinDate}
+                    label="По"
+                    placeholder="По дату"
+                    showHelperText={false}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
