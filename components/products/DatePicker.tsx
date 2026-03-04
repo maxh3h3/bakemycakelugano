@@ -117,7 +117,7 @@ export default function DatePicker({
             }
           `}
         >
-          <span className="font-medium">
+          <span className="font-medium whitespace-nowrap">
             {selectedDate ? format(selectedDate, 'PPP', { locale: dateLocale }) : getLabel('selectDate')}
           </span>
           <svg

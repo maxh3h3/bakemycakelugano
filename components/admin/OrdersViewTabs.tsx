@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import type { Database } from '@/lib/supabase/types';
 import OrdersTable from './OrdersTable';
+import DatePicker from '@/components/products/DatePicker';
 import { parseDateFromDB, extractTimeForSorting } from '@/lib/utils';
+import { VITRINA_CLIENT_ID, RAMENNAYA_CLIENT_ID } from '@/lib/constants/quick-sale-clients';
 import t from '@/lib/admin-translations-extended';
 import { ArrowDown, ArrowUp, User, Soup } from 'lucide-react';
 
@@ -20,17 +22,31 @@ interface OrdersViewTabsProps {
   orders: OrderWithItems[];
 }
 
-type ViewTab = 'today' | 'week' | 'month' | 'all';
+type ViewTab = 'week' | 'month' | 'custom';
 
-// Quick sale client IDs
-const VITRINA_CLIENT_ID = '06efda69-8386-4365-a2f7-3bcf5bdc483e';
-const RAMENNAYA_CLIENT_ID = '9323a8bb-6ec4-481c-b040-aa762dc626bd';
+const CUSTOM_RANGE_MIN_DATE = new Date('2000-01-01');
+
+function getDefaultCustomFrom(): Date {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('week');
   const [showVitrina, setShowVitrina] = useState(true);
   const [showRamennaya, setShowRamennaya] = useState(true);
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('asc');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(getDefaultCustomFrom);
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>(() => new Date());
+
+  // When switching to custom tab, ensure we have default dates if none set
+  const handleTabChange = (tab: ViewTab) => {
+    if (tab === 'custom' && !customDateFrom) setCustomDateFrom(getDefaultCustomFrom());
+    if (tab === 'custom' && !customDateTo) setCustomDateTo(new Date());
+    setActiveTab(tab);
+  };
 
   // Filter orders based on active tab and walk-in client toggles
   const getFilteredOrders = (): OrderWithItems[] => {
@@ -38,20 +54,6 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
     let filtered: OrderWithItems[] = [];
     
     switch (activeTab) {
-      case 'today': {
-        const today = new Date(now);
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        
-        filtered = orders.filter(o => {
-          if (!o.delivery_date) return false;
-          const orderDate = parseDateFromDB(o.delivery_date);
-          return orderDate.getTime() >= today.getTime() && orderDate.getTime() < tomorrow.getTime();
-        });
-        break;
-      }
-      
       case 'week': {
         const weekStart = new Date(now);
         // Start week with Monday instead of Sunday
@@ -83,9 +85,24 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
         break;
       }
       
-      case 'all':
-      default:
-        filtered = orders;
+      case 'custom': {
+        if (customDateFrom && customDateTo) {
+          const rangeStart = new Date(customDateFrom);
+          rangeStart.setHours(0, 0, 0, 0);
+          const rangeEnd = new Date(customDateTo);
+          rangeEnd.setHours(23, 59, 59, 999);
+          
+          filtered = orders.filter(o => {
+            if (!o.delivery_date) return false;
+            const orderDate = parseDateFromDB(o.delivery_date);
+            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+            return orderDateOnly >= rangeStart && orderDateOnly <= rangeEnd;
+          });
+        } else {
+          filtered = [];
+        }
+        break;
+      }
     }
 
     // Apply walk-in client filters
@@ -149,13 +166,6 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
   const getDateRangeText = (): string => {
     const now = new Date();
     switch (activeTab) {
-      case 'today':
-        return now.toLocaleDateString('ru-RU', { 
-          weekday: 'long', 
-          month: 'long', 
-          day: 'numeric', 
-          year: 'numeric' 
-        });
       case 'week': {
         const weekStart = new Date(now);
         // Start week with Monday instead of Sunday
@@ -168,27 +178,29 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
       }
       case 'month':
         return now.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-      case 'all':
-        return 'За все время';
+      case 'custom':
+        if (customDateFrom && customDateTo) {
+          return `${customDateFrom.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' })} — ${customDateTo.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        }
+        return 'Произвольный период';
     }
   };
 
   const tabs = [
-    { id: 'today' as ViewTab, label: 'Сегодня' },
     { id: 'week' as ViewTab, label: 'Эта неделя' },
     { id: 'month' as ViewTab, label: 'Этот месяц' },
-    { id: 'all' as ViewTab, label: t.allOrders },
+    { id: 'custom' as ViewTab, label: 'Период' },
   ];
 
   return (
     <div className="space-y-6">
       {/* Tabs */}
       <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-2">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={              `
                 px-4 py-3 rounded-xl font-medium transition-all duration-200
                 ${activeTab === tab.id
@@ -216,8 +228,8 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
             </p>
           </div>
 
-          {/* Total Sum Counter - Only shown for non-"all" tabs */}
-          {activeTab !== 'all' && (
+          {/* Total Sum Counter - Shown for week, month, and custom (when dates selected) */}
+          {(activeTab !== 'custom' || (customDateFrom && customDateTo)) && (
             <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-2xl px-4 sm:px-6 py-2 sm:py-3 shadow-md self-start sm:self-auto">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="bg-green-500 rounded-full p-1.5 sm:p-2">
@@ -247,6 +259,34 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
             </div>
           )}
         </div>
+
+        {/* Custom Date Range Pickers - shown when Custom tab is active */}
+        {activeTab === 'custom' && (
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-52 min-w-[10rem]">
+              <DatePicker
+                selectedDate={customDateFrom}
+                onDateChange={setCustomDateFrom}
+                locale="ru"
+                minDate={CUSTOM_RANGE_MIN_DATE}
+                label="С"
+                placeholder="С даты"
+                showHelperText={false}
+              />
+            </div>
+            <div className="w-52 min-w-[10rem]">
+              <DatePicker
+                selectedDate={customDateTo}
+                onDateChange={setCustomDateTo}
+                locale="ru"
+                minDate={customDateFrom ?? CUSTOM_RANGE_MIN_DATE}
+                label="По"
+                placeholder="По дату"
+                showHelperText={false}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Bottom Row: Filter Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -315,10 +355,14 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
             </svg>
           </div>
           <h3 className="text-xl font-heading font-bold text-charcoal-900 mb-2">
-            Нет заказов за этот период
+            {activeTab === 'custom' && !(customDateFrom && customDateTo)
+              ? 'Выберите период'
+              : 'Нет заказов за этот период'}
           </h3>
           <p className="text-charcoal-600">
-            Попробуйте выбрать другой временной диапазон
+            {activeTab === 'custom' && !(customDateFrom && customDateTo)
+              ? 'Укажите даты доставки «С» и «По» для просмотра заказов'
+              : 'Попробуйте выбрать другой временной диапазон'}
           </p>
         </div>
       )}

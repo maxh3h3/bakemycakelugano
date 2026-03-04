@@ -1,7 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PieChart, Calendar, Minus } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  CreditCard,
+  PieChart,
+  Calendar,
+  Minus,
+} from 'lucide-react';
+import DatePicker from '@/components/products/DatePicker';
+
+type BreakdownFilter = 'month' | 'year' | 'last_year' | 'period';
+
+interface RevenueByMixedChannels {
+  total: number;
+  website: number;
+  websitePercent: number;
+  ramen: number;
+  divoraa: number;
+  vitrina: number;
+  directContact: number;
+  breakdownStart: string;
+  breakdownEnd: string;
+  breakdownFilter: string;
+}
 
 interface FinancialData {
   currentYear: {
@@ -42,8 +66,17 @@ interface FinancialData {
   };
   breakdown: {
     expensesByCategory: Array<{ category: string; amount: number }>;
-    revenueByChannel: Array<{ channel: string; amount: number }>;
+    revenueByMixedChannels: RevenueByMixedChannels;
   };
+}
+
+const CUSTOM_RANGE_MIN_DATE = new Date('2000-01-01');
+
+function getDefaultBreakdownFrom(): Date {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -58,29 +91,28 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: '📌 Другое',
 };
 
-const CHANNEL_LABELS: Record<string, string> = {
-  website: '🌐 Сайт',
-  whatsapp: '💬 WhatsApp',
-  phone: '📞 Телефон',
-  walk_in: '🏪 В магазине',
-  instagram: '📸 Instagram',
-  email: '📧 Email',
-  other: '📌 Другое',
-};
-
 export default function FinancialDashboard() {
   const [data, setData] = useState<FinancialData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'6months' | '4weeks'>('6months');
+  const [breakdownFilter, setBreakdownFilter] = useState<BreakdownFilter>('month');
+  const [breakdownDateFrom, setBreakdownDateFrom] = useState<Date | undefined>(getDefaultBreakdownFrom);
+  const [breakdownDateTo, setBreakdownDateTo] = useState<Date | undefined>(() => new Date());
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [breakdownFilter, breakdownDateFrom, breakdownDateTo]);
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/analytics/financial');
+      const params = new URLSearchParams();
+      params.set('breakdownFilter', breakdownFilter);
+      if (breakdownFilter === 'period' && breakdownDateFrom && breakdownDateTo) {
+        params.set('breakdownDateFrom', breakdownDateFrom.toISOString().split('T')[0]);
+        params.set('breakdownDateTo', breakdownDateTo.toISOString().split('T')[0]);
+      }
+      const response = await fetch(`/api/admin/analytics/financial?${params.toString()}`);
       if (response.ok) {
         const analyticsData = await response.json();
         setData(analyticsData);
@@ -298,76 +330,200 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Breakdown Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Expenses by Category */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h3 className="text-lg font-heading font-bold text-charcoal-900 mb-4">
-            Расходы по категориям ({data.currentYear.year})
-          </h3>
-          <div className="space-y-3">
-            {data.breakdown.expensesByCategory
-              .sort((a, b) => b.amount - a.amount)
-              .map((item) => {
-                const total = data.breakdown.expensesByCategory.reduce((sum, i) => sum + i.amount, 0);
-                const percentage = total > 0 ? (item.amount / total) * 100 : 0;
-                return (
-                  <div key={item.category} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-charcoal-700">
-                        {CATEGORY_LABELS[item.category] || item.category}
-                      </span>
-                      <span className="text-sm font-bold text-charcoal-900">
-                        {formatCurrency(item.amount)}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-cream-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-red-500 transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
+      <div className="space-y-4">
+        {/* Shared filter for both breakdown cards */}
+        <div className="bg-white rounded-2xl shadow-md p-4 border-2 border-cream-200">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-charcoal-700">Период:</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setBreakdownFilter('month')}
+                className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors ${
+                  breakdownFilter === 'month'
+                    ? 'bg-brown-500 text-white'
+                    : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+                }`}
+              >
+                Этот месяц
+              </button>
+              <button
+                onClick={() => setBreakdownFilter('year')}
+                className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors ${
+                  breakdownFilter === 'year'
+                    ? 'bg-brown-500 text-white'
+                    : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+                }`}
+              >
+                Этот год
+              </button>
+              <button
+                onClick={() => setBreakdownFilter('last_year')}
+                className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors ${
+                  breakdownFilter === 'last_year'
+                    ? 'bg-brown-500 text-white'
+                    : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+                }`}
+              >
+                Прошлый год
+              </button>
+              <button
+                onClick={() => {
+                  setBreakdownFilter('period');
+                  if (!breakdownDateFrom) setBreakdownDateFrom(getDefaultBreakdownFrom());
+                  if (!breakdownDateTo) setBreakdownDateTo(new Date());
+                }}
+                className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors ${
+                  breakdownFilter === 'period'
+                    ? 'bg-brown-500 text-white'
+                    : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+                }`}
+              >
+                Период
+              </button>
+              {breakdownFilter === 'period' && (
+                <div className="flex flex-wrap items-end gap-2 ml-2">
+                  <div className="w-44">
+                    <DatePicker
+                      selectedDate={breakdownDateFrom}
+                      onDateChange={setBreakdownDateFrom}
+                      locale="ru"
+                      minDate={CUSTOM_RANGE_MIN_DATE}
+                      label="С"
+                      placeholder="С даты"
+                      showHelperText={false}
+                    />
                   </div>
-                );
-              })}
-            {data.breakdown.expensesByCategory.length === 0 && (
-              <p className="text-sm text-charcoal-500 text-center py-4">Нет данных о расходах</p>
-            )}
+                  <div className="w-44">
+                    <DatePicker
+                      selectedDate={breakdownDateTo}
+                      onDateChange={setBreakdownDateTo}
+                      locale="ru"
+                      minDate={breakdownDateFrom ?? CUSTOM_RANGE_MIN_DATE}
+                      label="По"
+                      placeholder="По дату"
+                      showHelperText={false}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Revenue by Channel */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h3 className="text-lg font-heading font-bold text-charcoal-900 mb-4">
-            Выручка по каналам ({data.currentYear.year})
-          </h3>
-          <div className="space-y-3">
-            {data.breakdown.revenueByChannel
-              .sort((a, b) => b.amount - a.amount)
-              .map((item) => {
-                const total = data.breakdown.revenueByChannel.reduce((sum, i) => sum + i.amount, 0);
-                const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Expenses by Category */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h3 className="text-lg font-heading font-bold text-charcoal-900 mb-4">
+              Расходы по категориям
+            </h3>
+            <div className="space-y-3">
+              {data.breakdown.expensesByCategory
+                .sort((a, b) => b.amount - a.amount)
+                .map((item) => {
+                  const total = data.breakdown.expensesByCategory.reduce((sum, i) => sum + i.amount, 0);
+                  const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+                  return (
+                    <div key={item.category} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-charcoal-700">
+                          {CATEGORY_LABELS[item.category] || item.category}
+                        </span>
+                        <span className="text-sm font-bold text-charcoal-900">
+                          {formatCurrency(item.amount)}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-cream-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-red-500 transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              {data.breakdown.expensesByCategory.length === 0 && (
+                <p className="text-sm text-charcoal-500 text-center py-4">Нет данных о расходах</p>
+              )}
+            </div>
+          </div>
+
+          {/* Revenue by Mixed Channels */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h3 className="text-lg font-heading font-bold text-charcoal-900 mb-4">
+              Выручка по источникам
+            </h3>
+            {(() => {
+              const r = data.breakdown.revenueByMixedChannels;
+              const total = r.total;
+              const items = [
+                {
+                  label: '🌐 Сайт',
+                  amount: r.website,
+                  sublabel: total > 0 ? `${r.websitePercent}%` : null,
+                },
+                {
+                  label: '🍜 Раменная',
+                  amount: r.ramen,
+                  sublabel: null,
+                },
+                {
+                  label: '📱 Дивора',
+                  amount: r.divoraa,
+                  sublabel: null,
+                },
+                {
+                  label: '🏪 Витрина',
+                  amount: r.vitrina,
+                  sublabel: null,
+                },
+                {
+                  label: '📞 Прямой контакт',
+                  amount: r.directContact,
+                  sublabel: null,
+                },
+              ].filter((i) => i.amount > 0);
+
+              if (items.length === 0) {
                 return (
-                  <div key={item.channel} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-charcoal-700">
-                        {CHANNEL_LABELS[item.channel] || item.channel}
-                      </span>
-                      <span className="text-sm font-bold text-charcoal-900">
-                        {formatCurrency(item.amount)}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-cream-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-green-500 transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  <p className="text-sm text-charcoal-500 text-center py-4">Нет данных о выручке</p>
                 );
-              })}
-            {data.breakdown.revenueByChannel.length === 0 && (
-              <p className="text-sm text-charcoal-500 text-center py-4">Нет данных о выручке</p>
-            )}
+              }
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-2 border-b-2 border-cream-200">
+                    <span className="text-base font-bold text-charcoal-900">Всего</span>
+                    <span className="text-lg font-bold text-green-600">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+                  {items.map((item) => {
+                    const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+                    return (
+                      <div key={item.label} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-charcoal-700 flex items-center gap-2">
+                            {item.label}
+                            {item.sublabel && (
+                              <span className="text-charcoal-500 font-normal">({item.sublabel})</span>
+                            )}
+                          </span>
+                          <span className="text-sm font-bold text-charcoal-900">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-cream-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 transition-all duration-300"
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import {
+  RAMENNAYA_CLIENT_ID,
+  DIVORAA_CLIENT_ID,
+  VITRINA_CLIENT_ID,
+} from '@/lib/constants/quick-sale-clients';
 
 interface FinancialTransaction {
   id: string;
@@ -22,15 +27,20 @@ interface FinancialTransaction {
 
 /**
  * GET /api/admin/analytics/financial
- * 
- * Returns comprehensive financial analytics:
- * - Current year vs previous year totals
- * - Last 6 months breakdown
- * - Last 4 weeks breakdown
- * - Overall metrics
+ *
+ * Returns comprehensive financial analytics.
+ * Breakdown cards (expenses by category, revenue by mixed channels) support filters via query params:
+ * - breakdownFilter: 'month' | 'year' | 'last_year' | 'period'
+ * - breakdownDateFrom, breakdownDateTo: YYYY-MM-DD (required when breakdownFilter='period')
  */
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const breakdownFilter =
+      (searchParams.get('breakdownFilter') as 'month' | 'year' | 'last_year' | 'period') || 'month';
+    const breakdownDateFrom = searchParams.get('breakdownDateFrom');
+    const breakdownDateTo = searchParams.get('breakdownDateTo');
+
     const now = new Date();
     const currentYear = now.getFullYear();
     const previousYear = currentYear - 1;
@@ -194,33 +204,92 @@ export async function GET(request: NextRequest) {
       .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0);
     const allTimeProfit = allTimeRevenue - allTimeExpenses;
 
-    // Expense breakdown by category (current year)
-    const currentYearExpenses = allTransactions.filter(
+    // Breakdown date range based on filter
+    let breakdownStart: string;
+    let breakdownEnd: string;
+    const m = now.getMonth();
+    const y = now.getFullYear();
+
+    if (breakdownFilter === 'period' && breakdownDateFrom && breakdownDateTo) {
+      breakdownStart = breakdownDateFrom;
+      breakdownEnd = breakdownDateTo;
+    } else if (breakdownFilter === 'month') {
+      breakdownStart = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+      breakdownEnd = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    } else if (breakdownFilter === 'year') {
+      breakdownStart = `${y}-01-01`;
+      breakdownEnd = `${y}-12-31`;
+    } else if (breakdownFilter === 'last_year') {
+      breakdownStart = `${y - 1}-01-01`;
+      breakdownEnd = `${y - 1}-12-31`;
+    } else {
+      // default month
+      breakdownStart = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+      breakdownEnd = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    }
+
+    // Expense breakdown by category (filtered by breakdown range)
+    const breakdownExpenses = allTransactions.filter(
       (t) =>
         t.type === 'expense' &&
-        t.date >= currentYearStart &&
-        t.date <= currentYearEnd
+        t.date >= breakdownStart &&
+        t.date <= breakdownEnd
     );
     const expensesByCategory: Record<string, number> = {};
-    currentYearExpenses.forEach((t) => {
+    breakdownExpenses.forEach((t) => {
       const category = t.expense_category || 'other';
       expensesByCategory[category] =
         (expensesByCategory[category] || 0) + parseFloat(t.amount || '0');
     });
 
-    // Revenue by channel (current year)
-    const currentYearRevenue = allTransactions.filter(
+    // Revenue by mixed channels (website, ramen, divoraa+walkins) - filtered by breakdown range
+    const breakdownRevenue = allTransactions.filter(
       (t) =>
         t.type === 'revenue' &&
-        t.date >= currentYearStart &&
-        t.date <= currentYearEnd
+        t.date >= breakdownStart &&
+        t.date <= breakdownEnd
     );
-    const revenueByChannel: Record<string, number> = {};
-    currentYearRevenue.forEach((t) => {
-      const channel = t.channel || 'other';
-      revenueByChannel[channel] =
-        (revenueByChannel[channel] || 0) + parseFloat(t.amount || '0');
+
+    let website = 0;
+    let ramen = 0;
+    let divoraa = 0;
+    let vitrina = 0;
+    let directContact = 0;
+
+    breakdownRevenue.forEach((t) => {
+      const amt = parseFloat(t.amount || '0');
+      const clientId = t.client_id;
+      const channel = (t.channel || '').toLowerCase();
+
+      if (clientId === RAMENNAYA_CLIENT_ID) {
+        ramen += amt;
+      } else if (channel === 'website') {
+        website += amt;
+      } else if (channel === 'divoraa' || clientId === DIVORAA_CLIENT_ID) {
+        divoraa += amt;
+      } else if (channel === 'walk_in' || clientId === VITRINA_CLIENT_ID) {
+        vitrina += amt;
+      } else {
+        // Phone, WhatsApp, Instagram, Email, etc.
+        directContact += amt;
+      }
     });
+
+    const revenueTotal = website + ramen + divoraa + vitrina + directContact;
+    const websitePercent = revenueTotal > 0 ? (website / revenueTotal) * 100 : 0;
+
+    const revenueByMixedChannels = {
+      total: parseFloat(revenueTotal.toFixed(2)),
+      website: parseFloat(website.toFixed(2)),
+      websitePercent: parseFloat(websitePercent.toFixed(1)),
+      ramen: parseFloat(ramen.toFixed(2)),
+      divoraa: parseFloat(divoraa.toFixed(2)),
+      vitrina: parseFloat(vitrina.toFixed(2)),
+      directContact: parseFloat(directContact.toFixed(2)),
+      breakdownStart,
+      breakdownEnd,
+      breakdownFilter,
+    };
 
     return NextResponse.json({
       currentYear: {
@@ -244,10 +313,7 @@ export async function GET(request: NextRequest) {
           category,
           amount: parseFloat(amount.toFixed(2)),
         })),
-        revenueByChannel: Object.entries(revenueByChannel).map(([channel, amount]) => ({
-          channel,
-          amount: parseFloat(amount.toFixed(2)),
-        })),
+        revenueByMixedChannels,
       },
     });
   } catch (error) {

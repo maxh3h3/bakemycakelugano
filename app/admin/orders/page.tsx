@@ -108,7 +108,7 @@ export default async function AdminOrdersPage() {
             </div>
           </div>
 
-          {/* Orders with Tabs (Today, Week, Month, All) */}
+          {/* Orders with Tabs (Week, Month, Custom with date range) */}
           {orders && orders.length > 0 ? (
             <OrdersViewTabs orders={orders} />
           ) : (

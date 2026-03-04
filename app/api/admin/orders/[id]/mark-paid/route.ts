@@ -68,6 +68,8 @@ export async function POST(
     // Create revenue transaction
     try {
       const customerName = order.clients?.name || 'Неизвестный клиент';
+      // Use order date (delivery_date or created_at) for the transaction, not when it's marked paid
+      const orderDate = order.delivery_date ?? order.created_at;
       const result = await createRevenueFromOrder({
         orderId: order.id,
         orderNumber: order.order_number,
@@ -77,7 +79,7 @@ export async function POST(
         clientId: order.client_id,
         paymentMethod: payment_method || order.payment_method || 'cash',
         channel: order.channel || 'phone',
-        createdAt: new Date().toISOString(), // Use payment date (today), not order creation date
+        createdAt: orderDate,
       });
 
       if (!result.success) {
