@@ -26,6 +26,7 @@ export async function PATCH(request: NextRequest) {
       'in_progress',
       'baked',
       'creamed',
+      'assembled',
       'decorated',
     ];
 

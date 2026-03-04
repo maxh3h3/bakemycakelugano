@@ -1075,6 +1075,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                               in_progress: 'В работе',
                               baked: 'Испечен',
                               creamed: 'Покрыт кремом',
+                              assembled: 'Собран',
                               decorated: 'Украшен',
                             }[item.production_status] ?? item.production_status}
                           </p>
