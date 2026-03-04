@@ -145,6 +145,7 @@ export const t = {
   salaries: 'Зарплаты',
   marketing: 'Маркетинг',
   equipment: 'Оборудование',
+  consumables: 'Расходные материалы',
   other: 'Другое',
   
   // ===== ACCOUNTING =====

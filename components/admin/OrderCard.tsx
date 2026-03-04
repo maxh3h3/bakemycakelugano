@@ -1069,8 +1069,14 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                           <p className="text-xs font-semibold text-indigo-600 uppercase mb-0.5 sm:mb-1">
                             {t.status}
                           </p>
-                          <p className="text-sm sm:text-base font-bold text-charcoal-900 capitalize">
-                            {item.production_status}
+                          <p className="text-sm sm:text-base font-bold text-charcoal-900">
+                            {{
+                              new: 'Новый',
+                              in_progress: 'В работе',
+                              baked: 'Испечен',
+                              creamed: 'Покрыт кремом',
+                              decorated: 'Украшен',
+                            }[item.production_status] ?? item.production_status}
                           </p>
                         </div>
                       )}

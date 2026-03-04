@@ -10,7 +10,7 @@
 // - Shows critical production info: weight, diameter, flavour (for recipe/assembly)
 // - Highlights customer requests: writing on cake (exact text to write)
 // - Shows decoration notes and staff notes for production guidance
-// - Production status workflow: new → baked → creamed → decorated
+// - Production status workflow: new → in_progress → baked → creamed → decorated
 // - Status updates are optimistic (instant UI feedback) with background persistence
 //
 // Data Relationships: order_items (grouped by order_number from orders table)
@@ -42,10 +42,11 @@ interface OrderItemsModalProps {
   onClose: () => void;
 }
 
-type ProductionStatus = 'new' | 'baked' | 'creamed' | 'decorated';
+type ProductionStatus = 'new' | 'in_progress' | 'baked' | 'creamed' | 'decorated';
 
 const statusOptions: { value: ProductionStatus; label: string; color: string }[] = [
   { value: 'new', label: 'Новый', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+  { value: 'in_progress', label: 'В работе', color: 'bg-amber-100 text-amber-700 border-amber-300' },
   { value: 'baked', label: 'Испечен', color: 'bg-orange-100 text-orange-700 border-orange-300' },
   { value: 'creamed', label: 'Покрыт кремом', color: 'bg-pink-100 text-pink-700 border-pink-300' },
   { value: 'decorated', label: 'Украшен', color: 'bg-green-100 text-green-700 border-green-300' },

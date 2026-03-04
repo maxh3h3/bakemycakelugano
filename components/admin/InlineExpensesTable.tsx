@@ -19,7 +19,7 @@ const CATEGORY_OPTIONS = [
   { value: 'utilities', label: '⚡ Коммунальные услуги', emoji: '⚡' },
   { value: 'labor', label: '👨‍🍳 Зарплаты', emoji: '👨‍🍳' },
   { value: 'supplies', label: '📦 Упаковка', emoji: '📦' },
-  { value: 'equipment', label: '🔧 Оборудование', emoji: '🔧' },
+  { value: 'consumables', label: '🧻 Расходные материалы', emoji: '🧻' },
   { value: 'delivery', label: '🚗 Доставка', emoji: '🚗' },
   { value: 'marketing', label: '📢 Маркетинг', emoji: '📢' },
   { value: 'rent', label: '🏠 Аренда', emoji: '🏠' },

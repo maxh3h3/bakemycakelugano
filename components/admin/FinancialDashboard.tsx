@@ -84,7 +84,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   utilities: '⚡ Коммунальные услуги',
   labor: '👨‍🍳 Зарплаты',
   supplies: '📦 Упаковка',
-  equipment: '🔧 Оборудование',
+  consumables: '🧻 Расходные материалы',
   delivery: '🚗 Доставка',
   marketing: '📢 Маркетинг',
   rent: '🏠 Аренда',

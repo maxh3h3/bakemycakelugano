@@ -23,6 +23,7 @@ export async function PATCH(request: NextRequest) {
     // Validate status
     const validStatuses = [
       'new',
+      'in_progress',
       'baked',
       'creamed',
       'decorated',
@@ -41,7 +42,7 @@ export async function PATCH(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Set started_at when moving to 'baked' (first production stage)
+    // Set started_at when moving to 'baked' (first active production stage)
     if (status === 'baked') {
       updateData.started_at = new Date().toISOString();
     }

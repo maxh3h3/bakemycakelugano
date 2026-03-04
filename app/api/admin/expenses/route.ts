@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate category
-    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'equipment', 'delivery', 'other'];
+    const validCategories = ['ingredients', 'utilities', 'labor', 'supplies', 'marketing', 'rent', 'consumables', 'delivery', 'other'];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
         { success: false, error: `Category must be one of: ${validCategories.join(', ')}` },
