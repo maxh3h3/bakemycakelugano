@@ -1,16 +1,18 @@
-// Lugano area zip codes - kept for reference only (replaced by Google Maps distance calculation)
-// export const LUGANO_ZIP_CODES = [
-//   '6876', '6900', '6901', '6902', '6903', '6904', '6905', '6906', '6907',
-//   '6910', '6911', '6912', '6913', '6915', '6917', '6918', '6925', '6932', '6962',
-//   '6963', '6964', '6966', '6974', '6976', '6977', '6978', '6979', '6926', '6927',
-//   '22061'
-// ];
+// Lugano area zip codes — flat CHF 20 delivery, no API call needed
+export const LUGANO_ZIP_CODES = [
+  '6876', '6900', '6901', '6902', '6903', '6904', '6905', '6906', '6907',
+  '6910', '6911', '6912', '6913', '6915', '6917', '6918', '6925', '6932', '6962',
+  '6963', '6964', '6966', '6974', '6976', '6977', '6978', '6979', '6926', '6927',
+  '22061'
+];
 
-// Delivery fee tiers by distance from bakery (Via Selva 4, Massagno 6900):
+// Delivery fee tiers for addresses outside the Lugano zip code list (via Google Maps distance):
 // 0–15 km  → CHF 20
 // 15–30 km → CHF 30
 // 30–50 km → CHF 45
 // > 50 km  → requires contact
+
+export const LUGANO_DELIVERY_FEE = 20; // CHF — flat fee for known Lugano zip codes
 
 export interface DeliveryInfo {
   isLuganoArea: boolean;
@@ -22,7 +24,7 @@ export interface DeliveryInfo {
 
 /**
  * Calculate delivery fee based on driving distance from bakery.
- * Used by /api/delivery-estimate route.
+ * Used by /api/delivery-estimate for addresses outside the Lugano zip code list.
  */
 export function calculateDeliveryFeeFromDistance(distanceKm: number): { fee: number; requiresContact: boolean } {
   if (distanceKm <= 15) return { fee: 20, requiresContact: false };

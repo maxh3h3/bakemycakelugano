@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice, formatDateForDB } from '@/lib/utils';
-import { type DeliveryInfo } from '@/lib/delivery';
+import { type DeliveryInfo, LUGANO_ZIP_CODES, LUGANO_DELIVERY_FEE } from '@/lib/delivery';
 import Button from '@/components/ui/Button';
 import OrderSummary from './OrderSummary';
 import DatePicker from '@/components/products/DatePicker';
@@ -77,7 +77,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     }
   }, [items, locale, router]);
 
-  // Calculate delivery fee via Google Maps API (debounced 600ms)
+  // Calculate delivery fee — fast path for known Lugano zip codes, Maps API for everything else
   useEffect(() => {
     if (formData.deliveryType === 'pickup') {
       setDeliveryInfo({ isLuganoArea: true, deliveryFee: 0, requiresContact: false });
@@ -85,8 +85,21 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     }
 
     const { address, city, postalCode, country } = formData;
-    if (!address.trim() || !city.trim() || !postalCode.trim()) {
+
+    if (!postalCode.trim()) {
       setDeliveryInfo({ isLuganoArea: true, deliveryFee: 0, requiresContact: false });
+      return;
+    }
+
+    // Fast path: known Lugano zip code → flat CHF 20, no API call
+    if (LUGANO_ZIP_CODES.includes(postalCode.trim())) {
+      setDeliveryInfo({ isLuganoArea: true, deliveryFee: LUGANO_DELIVERY_FEE, requiresContact: false });
+      return;
+    }
+
+    // Outside Lugano: need full address for Maps API
+    if (!address.trim() || !city.trim()) {
+      setDeliveryInfo({ isLuganoArea: false, deliveryFee: 0, requiresContact: false });
       return;
     }
 
@@ -105,7 +118,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
         if (!response.ok) throw new Error('Failed to estimate delivery');
         const data = await response.json();
         setDeliveryInfo({
-          isLuganoArea: !data.requiresContact,
+          isLuganoArea: false,
           deliveryFee: data.fee,
           requiresContact: data.requiresContact,
           distanceKm: data.distanceKm,
@@ -598,7 +611,20 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                               {t('deliveryOutsideArea')}
                             </p>
                           </div>
-                        ) : deliveryInfo.deliveryFee > 0 ? (
+                        ) : deliveryInfo.deliveryFee > 0 && deliveryInfo.isLuganoArea ? (
+                          // Lugano zip code — flat fee, no API call
+                          <div className="flex gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex-shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-green-600">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <p className="text-sm text-green-800">
+                              {t('deliveryFeeInfo', { fee: formatPrice(deliveryInfo.deliveryFee) })}
+                            </p>
+                          </div>
+                        ) : deliveryInfo.deliveryFee > 0 && deliveryInfo.distanceKm ? (
+                          // Outside Lugano — Maps API result with route map
                           <div className="space-y-3">
                             {/* Route map — keyless embed, no API key exposed */}
                             <div className="rounded-lg overflow-hidden border border-cream-200">
