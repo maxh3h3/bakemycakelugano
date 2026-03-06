@@ -105,6 +105,16 @@ export default function AdminHeader({ role = 'owner' }: AdminHeaderProps) {
                   {t.production}
                 </Link>
                 <Link
+                  href="/admin/delivery"
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/delivery')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  Доставки
+                </Link>
+                <Link
                   href="/admin/analytics"
                   className={`text-sm font-medium transition-colors ${
                     pathname.includes('/analytics')
@@ -128,12 +138,28 @@ export default function AdminHeader({ role = 'owner' }: AdminHeaderProps) {
             )}
 
             {role === 'cook' && (
-              <Link
-                href="/admin/production"
-                className="text-sm font-medium text-brown-500 font-semibold"
-              >
-                {t.productionDashboard}
-              </Link>
+              <>
+                <Link
+                  href="/admin/production"
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/production')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  {t.productionDashboard}
+                </Link>
+                <Link
+                  href="/admin/delivery"
+                  className={`text-sm font-medium transition-colors ${
+                    pathname.includes('/delivery')
+                      ? 'text-brown-500 font-semibold'
+                      : 'text-charcoal-700 hover:text-brown-500'
+                  }`}
+                >
+                  Доставки
+                </Link>
+              </>
             )}
 
             {role === 'delivery' && (

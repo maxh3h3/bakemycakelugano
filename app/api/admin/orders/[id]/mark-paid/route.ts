@@ -15,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await requireAdminRole(['owner']);
+    const auth = await requireAdminRole(['owner', 'cook']);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
