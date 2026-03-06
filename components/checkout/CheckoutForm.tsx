@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice, formatDateForDB } from '@/lib/utils';
-import { getDeliveryInfo, getDeliveryMessage, type DeliveryInfo } from '@/lib/delivery';
+import { type DeliveryInfo } from '@/lib/delivery';
 import Button from '@/components/ui/Button';
 import OrderSummary from './OrderSummary';
 import DatePicker from '@/components/products/DatePicker';
@@ -50,6 +50,8 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     deliveryFee: 0,
     requiresContact: false,
   });
+  const [isCalculatingDelivery, setIsCalculatingDelivery] = useState(false);
+  const deliveryEstimateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -75,11 +77,53 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
     }
   }, [items, locale, router]);
 
-  // Calculate delivery info when postal code or delivery type changes
+  // Calculate delivery fee via Google Maps API (debounced 600ms)
   useEffect(() => {
-    const newDeliveryInfo = getDeliveryInfo(formData.postalCode, formData.deliveryType);
-    setDeliveryInfo(newDeliveryInfo);
-  }, [formData.postalCode, formData.deliveryType]);
+    if (formData.deliveryType === 'pickup') {
+      setDeliveryInfo({ isLuganoArea: true, deliveryFee: 0, requiresContact: false });
+      return;
+    }
+
+    const { address, city, postalCode, country } = formData;
+    if (!address.trim() || !city.trim() || !postalCode.trim()) {
+      setDeliveryInfo({ isLuganoArea: true, deliveryFee: 0, requiresContact: false });
+      return;
+    }
+
+    if (deliveryEstimateTimerRef.current) {
+      clearTimeout(deliveryEstimateTimerRef.current);
+    }
+
+    deliveryEstimateTimerRef.current = setTimeout(async () => {
+      setIsCalculatingDelivery(true);
+      try {
+        const response = await fetch('/api/delivery-estimate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address, city, postalCode, country }),
+        });
+        if (!response.ok) throw new Error('Failed to estimate delivery');
+        const data = await response.json();
+        setDeliveryInfo({
+          isLuganoArea: !data.requiresContact,
+          deliveryFee: data.fee,
+          requiresContact: data.requiresContact,
+          distanceKm: data.distanceKm,
+          durationMinutes: data.durationMinutes,
+        });
+      } catch {
+        setDeliveryInfo({ isLuganoArea: false, deliveryFee: 0, requiresContact: true });
+      } finally {
+        setIsCalculatingDelivery(false);
+      }
+    }, 600);
+
+    return () => {
+      if (deliveryEstimateTimerRef.current) {
+        clearTimeout(deliveryEstimateTimerRef.current);
+      }
+    };
+  }, [formData.address, formData.city, formData.postalCode, formData.deliveryType, formData.country]);
 
   // Automatically switch to delivery if Sunday is selected and pickup was chosen
   useEffect(() => {
@@ -510,14 +554,29 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                       </div>
                     </div>
 
-                    {/* Delivery Fee Warning/Info */}
-                    {formData.postalCode && (
+                    {/* Delivery Fee — Map + Stats */}
+                    {formData.address && formData.city && formData.postalCode && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="pt-2"
+                        className="pt-2 overflow-hidden"
                       >
-                        {deliveryInfo.requiresContact ? (
+                        {isCalculatingDelivery ? (
+                          <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <svg
+                              className="animate-spin h-5 w-5 text-brown-400 flex-shrink-0"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            <p className="text-sm text-charcoal-900/60">
+                              {locale === 'it' ? 'Calcolo del costo di consegna...' : 'Calculating delivery fee...'}
+                            </p>
+                          </div>
+                        ) : deliveryInfo.requiresContact ? (
                           <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                             <div className="flex-shrink-0">
                               <svg
@@ -540,26 +599,37 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                             </p>
                           </div>
                         ) : deliveryInfo.deliveryFee > 0 ? (
-                          <div className="flex gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                            <div className="flex-shrink-0">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                                className="w-5 h-5 text-green-600"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
+                          <div className="space-y-3">
+                            {/* Route map — keyless embed, no API key exposed */}
+                            <div className="rounded-lg overflow-hidden border border-cream-200">
+                              <iframe
+                                src={`https://maps.google.com/maps?saddr=${encodeURIComponent('Via Selva 4, Massagno 6900, Switzerland')}&daddr=${encodeURIComponent(`${formData.address}, ${formData.postalCode} ${formData.city}, ${formData.country}`)}&output=embed`}
+                                width="100%"
+                                height="220"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                              />
                             </div>
-                            <p className="text-sm text-green-800">
-                              {t('deliveryFeeInfo', { fee: formatPrice(deliveryInfo.deliveryFee) })}
-                            </p>
+                            {/* Distance · Duration · Price */}
+                            <div className="flex items-center gap-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
+                              <div className="flex items-center gap-1.5 text-sm text-charcoal-900/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-600 flex-shrink-0">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                                </svg>
+                                <span>{deliveryInfo.distanceKm} km</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-sm text-charcoal-900/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-600 flex-shrink-0">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>~{deliveryInfo.durationMinutes} min</span>
+                              </div>
+                              <div className="ml-auto font-semibold text-charcoal-900">
+                                {locale === 'it' ? 'Consegna' : 'Delivery'}: {formatPrice(deliveryInfo.deliveryFee)}
+                              </div>
+                            </div>
                           </div>
                         ) : null}
                       </motion.div>
