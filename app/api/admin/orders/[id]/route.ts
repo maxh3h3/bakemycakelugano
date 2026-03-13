@@ -21,6 +21,7 @@ export async function PATCH(
       'delivery_date',
       'delivery_time',
       'delivery_address',
+      'delivery_fee',
       'paid',
       'payment_method',
       'customer_notes',
@@ -57,15 +58,25 @@ export async function PATCH(
     // Check if order exists and get current order_number
     const { data: existingOrder, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, client_id, order_number')
+      .select('id, client_id, order_number, total_amount, delivery_fee')
       .eq('id', id)
-      .single() as { data: { id: string; client_id: string | null; order_number: string | null } | null; error: any };
+      .single() as { data: { id: string; client_id: string | null; order_number: string | null; total_amount: string; delivery_fee: string } | null; error: any };
 
     if (fetchError || !existingOrder) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: 404 }
       );
+    }
+
+    // If delivery_fee is changing, recalculate total_amount to keep it consistent
+    if ('delivery_fee' in updateData && existingOrder) {
+      const currentTotal = parseFloat(existingOrder.total_amount) || 0;
+      const currentFee = parseFloat(existingOrder.delivery_fee) || 0;
+      const newFee = Math.max(0, Math.round((parseFloat(updateData.delivery_fee) || 0) * 100) / 100);
+      const newTotal = Math.round((currentTotal - currentFee + newFee) * 100) / 100;
+      updateData.delivery_fee = newFee;
+      updateData.total_amount = newTotal;
     }
 
     // If delivery_date is being updated, update order number date part while preserving counter
