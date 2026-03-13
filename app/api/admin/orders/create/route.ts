@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       payment_method,
       paid,
       channel,
-      total_amount,
       order_items,
+      delivery_fee,
       is_immediate, // Flag for immediate sales from shelf
     } = body;
 
@@ -57,6 +57,23 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate and sanitize delivery_fee
+    const rawFee = typeof delivery_fee === 'number' ? delivery_fee : 0;
+    if (rawFee < 0) {
+      return NextResponse.json(
+        { success: false, error: 'delivery_fee cannot be negative' },
+        { status: 400 }
+      );
+    }
+    const sanitizedDeliveryFee = Math.round(rawFee * 100) / 100;
+
+    // Compute total server-side from items + delivery fee
+    const itemsSubtotal = (order_items as any[]).reduce(
+      (sum: number, item: any) => sum + (item.unit_price * item.quantity),
+      0
+    );
+    const computedTotal = Math.round((itemsSubtotal + sanitizedDeliveryFee) * 100) / 100;
 
     // Validate delivery address for delivery orders
     const addressValidation = validateDeliveryAddress(delivery_type, delivery_address);
@@ -136,7 +153,8 @@ export async function POST(request: NextRequest) {
         payment_method: payment_method || null,
         paid: paid || false,
         channel: channel || 'phone',
-        total_amount: total_amount || 0,
+        total_amount: computedTotal,
+        delivery_fee: sanitizedDeliveryFee,
         currency: 'CHF',
       } as any)
       .select()
@@ -207,7 +225,7 @@ export async function POST(request: NextRequest) {
           orderId: (order as any).id,
           orderNumber: order_number,
           customerName: customer_name,
-          totalAmount: total_amount?.toString() || '0',
+          totalAmount: computedTotal.toString(),
           currency: 'CHF',
           clientId: clientId,
           paymentMethod: payment_method || 'cash',
