@@ -197,6 +197,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         channel: 'website',
         order_number: orderNumber,
         total_amount: totalAmount,
+        delivery_fee: deliveryFee,
         currency: 'chf',
         delivery_type: metadata.deliveryType || null,
         delivery_date: metadata.deliveryDate || null,
