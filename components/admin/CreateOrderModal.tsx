@@ -1084,6 +1084,32 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
                     </p>
                   </div>
                 )}
+
+                {formData.delivery_type === 'delivery' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-charcoal-700 mb-2">
+                      Стоимость доставки (CHF)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={deliveryFee}
+                        onChange={(e) => setDeliveryFee(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                      />
+                      {isFetchingFee && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-charcoal-500 animate-pulse">
+                          Рассчитывается...
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-charcoal-500 mt-1">
+                      Рассчитывается автоматически — можно изменить вручную
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1170,6 +1196,11 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
           {/* Center: Order Summary */}
           <div className="text-center">
             <p className="text-sm text-charcoal-600">Итого по заказу</p>
+            {deliveryFee > 0 && (
+              <p className="text-xs text-charcoal-500">
+                вкл. доставка CHF {deliveryFee.toFixed(2)}
+              </p>
+            )}
             <p className="text-2xl font-bold text-brown-500">CHF {calculateTotal().toFixed(2)}</p>
           </div>
 
