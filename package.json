@@ -14,7 +14,9 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@googlemaps/polyline-codec": "^1.0.28",
     "@react-email/render": "^2.0.0",
+    "@react-google-maps/api": "^2.20.8",
     "@react-pdf/renderer": "^4.3.2",
     "@sanity/client": "^7.12.0",
     "@sanity/image-url": "^1.2.0",
