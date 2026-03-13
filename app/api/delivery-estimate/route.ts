@@ -5,18 +5,24 @@ const BAKERY_ORIGIN = 'Via Selva 4, Massagno 6900, Switzerland';
 
 export async function POST(request: NextRequest) {
   try {
-    const { address, city, postalCode, country } = await request.json();
+    const { address, city, postalCode, country, fullAddress } = await request.json();
 
-    if (!address?.trim() || !city?.trim() || !postalCode?.trim()) {
-      return NextResponse.json({ error: 'Missing address fields' }, { status: 400 });
+    // Support either a pre-composed fullAddress string (from admin modal with single text field)
+    // or individual fields (from the public checkout form)
+    let destination: string;
+    if (fullAddress?.trim()) {
+      destination = fullAddress.trim();
+    } else {
+      if (!address?.trim() || !city?.trim() || !postalCode?.trim()) {
+        return NextResponse.json({ error: 'Missing address fields' }, { status: 400 });
+      }
+      destination = `${address.trim()}, ${postalCode.trim()} ${city.trim()}, ${country || 'Switzerland'}`;
     }
 
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'Maps API not configured' }, { status: 500 });
     }
-
-    const destination = `${address.trim()}, ${postalCode.trim()} ${city.trim()}, ${country || 'Switzerland'}`;
 
     const url = new URL('https://maps.googleapis.com/maps/api/distancematrix/json');
     url.searchParams.set('origins', BAKERY_ORIGIN);
