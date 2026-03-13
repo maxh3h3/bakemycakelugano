@@ -1097,7 +1097,7 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
                         min="0"
                         value={deliveryFee}
                         onChange={(e) => setDeliveryFee(Math.max(0, parseFloat(e.target.value) || 0))}
-                        className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
+                        className={`w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none ${isFetchingFee ? 'pr-32' : ''}`}
                       />
                       {isFetchingFee && (
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-charcoal-500 animate-pulse">

@@ -39,6 +39,8 @@ export async function PATCH(
     // Special handling: if delivery_type changes to 'pickup', clear delivery_address
     if (updateData.delivery_type === 'pickup') {
       updateData.delivery_address = null;
+      // Also zero out delivery fee and adjust total_amount when switching to pickup
+      updateData.delivery_fee = 0;
     }
 
     // Validate delivery_date format if provided
@@ -71,9 +73,12 @@ export async function PATCH(
 
     // If delivery_fee is changing, recalculate total_amount to keep it consistent
     if ('delivery_fee' in updateData && existingOrder) {
+      const rawFee = typeof updateData.delivery_fee === 'number'
+        ? updateData.delivery_fee
+        : parseFloat(updateData.delivery_fee) || 0;
       const currentTotal = parseFloat(existingOrder.total_amount) || 0;
       const currentFee = parseFloat(existingOrder.delivery_fee) || 0;
-      const newFee = Math.max(0, Math.round((parseFloat(updateData.delivery_fee) || 0) * 100) / 100);
+      const newFee = Math.max(0, Math.round(rawFee * 100) / 100);
       const newTotal = Math.round((currentTotal - currentFee + newFee) * 100) / 100;
       updateData.delivery_fee = newFee;
       updateData.total_amount = newTotal;
