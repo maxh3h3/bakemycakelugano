@@ -46,6 +46,7 @@ export const orders = pgTable('orders', {
   
   // Order details
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
+  deliveryFee: numeric('delivery_fee', { precision: 10, scale: 2 }).notNull().default('0'),
   currency: text('currency').default('CHF').notNull(),
   
   // Delivery information
