@@ -43,6 +43,9 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
     initialData?.delivery_date ? new Date(initialData.delivery_date) : undefined
   );
   
+  const [deliveryFee, setDeliveryFee] = useState<number>(0);
+  const [isFetchingFee, setIsFetchingFee] = useState(false);
+
   // AI Assistant modal state
   const [showAIModal, setShowAIModal] = useState(false);
   const [isAIPrefilled, setIsAIPrefilled] = useState(!!initialData);
@@ -111,15 +114,53 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
   useEffect(() => {
     // Save original overflow style
     const originalOverflow = document.body.style.overflow;
-    
+
     // Prevent scrolling
     document.body.style.overflow = 'hidden';
-    
+
     // Restore on unmount
     return () => {
       document.body.style.overflow = originalOverflow;
     };
   }, []);
+
+  // Auto-fetch delivery fee estimate when address changes (delivery orders only)
+  useEffect(() => {
+    if (formData.delivery_type !== 'delivery' || !formData.delivery_address.trim()) {
+      setDeliveryFee(0);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsFetchingFee(true);
+      try {
+        const res = await fetch('/api/delivery-estimate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullAddress: formData.delivery_address }),
+          signal: controller.signal,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.fee === 'number') {
+            setDeliveryFee(data.fee);
+          }
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Delivery estimate error:', err);
+        }
+      } finally {
+        setIsFetchingFee(false);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [formData.delivery_address, formData.delivery_type]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -207,7 +248,8 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
   };
 
   const calculateTotal = () => {
-    return orderItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+    const subtotal = orderItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+    return subtotal + deliveryFee;
   };
 
   // Step validation
@@ -345,11 +387,9 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
     setIsSubmitting(true);
 
     try {
-      const totalAmount = calculateTotal();
-      
       // Format delivery date to YYYY-MM-DD in local timezone (prevents timezone shift bug)
       const formattedDate = formatDateForDB(deliveryDate);
-      
+
       // Build delivery address JSONB object
       const deliveryAddressObj = formData.delivery_type === 'delivery' && formData.delivery_address
         ? {
@@ -359,7 +399,7 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
             country: 'Switzerland'
           }
         : null;
-      
+
       const payload = {
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
@@ -373,7 +413,7 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
         payment_method: formData.payment_method,
         paid: formData.paid,
         channel: formData.channel,
-        total_amount: totalAmount,
+        delivery_fee: deliveryFee,
         is_immediate: false, // Not an immediate order
         order_items: orderItems.map(item => ({
           ...item,
