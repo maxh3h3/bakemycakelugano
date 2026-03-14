@@ -38,6 +38,12 @@ function formatDuration(seconds: number): string {
   return h > 0 ? `~${h}h ${m}m` : `~${m}m`;
 }
 
+function pluralizePoints(n: number): string {
+  if (n % 10 === 1 && n % 100 !== 11) return 'точка';
+  if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return 'точки';
+  return 'точек';
+}
+
 function buildGoogleMapsUrl(addresses: string[], waypointOrder?: number[]): string {
   const base = 'https://www.google.com/maps/dir/?api=1';
   const origin = encodeURIComponent('Via Selva 4, Massagno 6900, Switzerland');
@@ -74,15 +80,9 @@ export default function DeliveryRouteMap({ addresses, orderInfos }: DeliveryRout
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
   });
 
-  // Return null if no addresses to display
-  if (addresses.length === 0) return null;
-
-  const n = addresses.length;
-  const singular = n === 1;
-
   // Fetch route on first expand
   useEffect(() => {
-    if (!isExpanded || hasFetched.current) return;
+    if (addresses.length === 0 || !isExpanded || hasFetched.current) return;
     hasFetched.current = true;
 
     const fetchRoute = async () => {
@@ -124,6 +124,21 @@ export default function DeliveryRouteMap({ addresses, orderInfos }: DeliveryRout
     map.fitBounds(bounds);
   }, [map, routeData, routeMode, isLoaded]);
 
+  // Reset fetch state when addresses change
+  useEffect(() => {
+    hasFetched.current = false;
+    setRouteData(null);
+    setError(false);
+    setIsExpanded(false);
+    setSelectedMarkerIdx(null);
+    setRouteMode('time');
+  }, [addresses]);
+
+  // Return null if no addresses to display
+  if (addresses.length === 0) return null;
+
+  const n = addresses.length;
+
   const activeRoute = routeData
     ? routeMode === 'optimized'
       ? routeData.optimized
@@ -162,7 +177,7 @@ export default function DeliveryRouteMap({ addresses, orderInfos }: DeliveryRout
         onClick={() => setIsExpanded(true)}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-cream-300 bg-white text-charcoal-700 hover:bg-cream-50 transition-colors font-medium text-sm shadow-sm"
       >
-        🗺️ Показать маршрут ({n} {singular ? 'точка' : 'точек'})
+        🗺️ Показать маршрут ({n} {pluralizePoints(n)})
       </button>
     );
   }
@@ -174,7 +189,7 @@ export default function DeliveryRouteMap({ addresses, orderInfos }: DeliveryRout
       <div className="flex items-center justify-between px-4 py-3 border-b border-cream-200 bg-cream-50">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-charcoal-900 text-sm">
-            Маршрут · {n} {singular ? 'точка' : 'точек'}
+            Маршрут · {n} {pluralizePoints(n)}
             {activeRoute && !loading && (
               <span className="text-charcoal-500 font-normal ml-1">
                 · {formatDuration(activeRoute.totalDurationSeconds)}
