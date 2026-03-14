@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { validateSession, getUserRole } from '@/lib/auth/session';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import AdminHeader from '@/components/admin/AdminHeader';
-import DeliveryViewTabs from '@/components/admin/DeliveryViewTabs';
+import DeliveryPageTabs from '@/components/admin/DeliveryPageTabs';
 import type { Database } from '@/lib/supabase/types';
 
 type Order = Database['public']['Tables']['orders']['Row'];
@@ -87,7 +87,7 @@ export default async function AdminDeliveryPage() {
             </p>
           </div>
 
-          <DeliveryViewTabs orders={orders} />
+          <DeliveryPageTabs orders={orders} />
         </div>
       </main>
     </div>
