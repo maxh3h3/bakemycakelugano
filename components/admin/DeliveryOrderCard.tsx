@@ -53,11 +53,18 @@ export default function DeliveryOrderCard({ order, isLoading, onTogglePaid }: De
 
       <div className="p-4 space-y-3">
         {/* 1. Time row — dominant element */}
-        <div>
-          {timeInfo ? (
-            <p className={`text-2xl font-bold ${timeInfo.className}`}>{timeInfo.label}</p>
-          ) : (
-            <p className="text-base text-charcoal-400 italic">Время не указано</p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            {timeInfo ? (
+              <p className={`text-2xl font-bold ${timeInfo.className}`}>{timeInfo.label}</p>
+            ) : (
+              <p className="text-base text-charcoal-400 italic">Время не указано</p>
+            )}
+          </div>
+          {order.order_number && (
+            <span className="shrink-0 text-xs font-semibold text-charcoal-500 bg-cream-100 border border-cream-300 rounded-md px-2 py-1 tracking-wide">
+              #{order.order_number}
+            </span>
           )}
         </div>
 
