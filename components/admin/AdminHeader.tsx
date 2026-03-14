@@ -37,7 +37,7 @@ function getNavLinks(role: UserRole | null | undefined): NavLink[] {
     ];
   }
   if (role === 'delivery') {
-    return [{ href: '/admin/deliveries', label: 'Доставки', match: '/deliveries' }];
+    return [{ href: '/admin/delivery', label: 'Доставки', match: '/delivery' }];
   }
   return [];
 }

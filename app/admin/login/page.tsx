@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import { adminTranslations as t } from '@/lib/admin-translations';
 
-type LoginRole = 'owner' | 'cook';
+type LoginRole = 'owner' | 'cook' | 'delivery';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -33,7 +33,12 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        const redirectTo = data.role === 'cook' ? '/admin/production' : '/admin/orders';
+        const redirectTo =
+          data.role === 'cook'
+            ? '/admin/production'
+            : data.role === 'delivery'
+            ? '/admin/delivery'
+            : '/admin/orders';
         router.push(redirectTo);
         router.refresh();
       } else {
@@ -88,6 +93,7 @@ export default function AdminLoginPage() {
               >
                 <option value="owner">{t.loginRoleOwner}</option>
                 <option value="cook">{t.loginRoleCook}</option>
+                <option value="delivery">Курьер</option>
               </select>
             </div>
 

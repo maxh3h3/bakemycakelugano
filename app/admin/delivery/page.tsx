@@ -24,7 +24,7 @@ export default async function AdminDeliveryPage() {
   }
 
   const role = await getUserRole();
-  if (role !== 'cook' && role !== 'owner') {
+  if (role !== 'cook' && role !== 'owner' && role !== 'delivery') {
     redirect('/admin/login');
   }
 
