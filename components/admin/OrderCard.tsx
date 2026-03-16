@@ -6,11 +6,10 @@ import { format } from 'date-fns';
 import type { Database } from '@/lib/supabase/types';
 import { formatDeliveryAddress } from '@/lib/schemas/delivery';
 import { parseDateFromDB } from '@/lib/utils';
-import EditOrderItemModal from '@/components/admin/EditOrderItemModal';
-import AddOrderItemModal from '@/components/admin/AddOrderItemModal';
+import EditOrderModal from '@/components/admin/EditOrderModal';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import t from '@/lib/admin-translations-extended';
-import { Edit, ChevronDown, Check, Trash2, Pencil, Paintbrush, FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, ChevronDown, Trash2, Pencil, Paintbrush, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -26,37 +25,10 @@ interface OrderCardProps {
   onUpdate: () => void;
 }
 
-interface OrderEditFormData {
-  delivery_type: string;
-  delivery_date: string;
-  delivery_time: string;
-  delivery_address: {
-    street: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  } | null;
-  paid: boolean;
-  payment_method: string;
-  customer_notes: string;
-}
-
 export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardProps) {
   const [order, setOrder] = useState<OrderWithItems>(initialOrder);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditingOrder, setIsEditingOrder] = useState(false);
-  const [editFormData, setEditFormData] = useState<OrderEditFormData>({
-    delivery_type: order.delivery_type || 'delivery',
-    delivery_date: order.delivery_date || '',
-    delivery_time: order.delivery_time || '',
-    delivery_address: order.delivery_address || null,
-    paid: order.paid || false,
-    payment_method: order.payment_method || '',
-    customer_notes: order.customer_notes || '',
-  });
-  const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
-  const [isAddingItem, setIsAddingItem] = useState(false);
-  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; orderId: string | null }>({
     isOpen: false,
     orderId: null,
@@ -131,80 +103,8 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
     );
   };
 
-  const toggleExpansion = async () => {
-    // If collapsing while in edit mode, save changes first
-    if (isExpanded && isEditingOrder) {
-      await saveOrderChanges();
-    }
+  const toggleExpansion = () => {
     setIsExpanded(!isExpanded);
-  };
-
-  const startEditingOrder = () => {
-    setEditFormData({
-      delivery_type: order.delivery_type || 'delivery',
-      delivery_date: order.delivery_date || '',
-      delivery_time: order.delivery_time || '',
-      delivery_address: order.delivery_address || null,
-      paid: order.paid || false,
-      payment_method: order.payment_method || '',
-      customer_notes: order.customer_notes || '',
-    });
-    setIsEditingOrder(true);
-  };
-
-  const cancelEditingOrder = () => {
-    setIsEditingOrder(false);
-    setEditFormData({
-      delivery_type: order.delivery_type || 'delivery',
-      delivery_date: order.delivery_date || '',
-      delivery_time: order.delivery_time || '',
-      delivery_address: order.delivery_address || null,
-      paid: order.paid || false,
-      payment_method: order.payment_method || '',
-      customer_notes: order.customer_notes || '',
-    });
-  };
-
-  const saveOrderChanges = async () => {
-    setIsSavingOrder(true);
-
-    try {
-      const response = await fetch(`/api/admin/orders/${order.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          delivery_type: editFormData.delivery_type,
-          delivery_date: editFormData.delivery_date || null,
-          delivery_time: editFormData.delivery_time || null,
-          delivery_address: editFormData.delivery_address,
-          paid: editFormData.paid,
-          payment_method: editFormData.payment_method || null,
-          customer_notes: editFormData.customer_notes || null,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update order');
-      }
-
-      const { order: updatedOrder } = await response.json();
-
-      // Update local state optimistically
-      setOrder(prev => ({
-        ...prev,
-        ...updatedOrder,
-      }));
-
-      setIsEditingOrder(false);
-      
-      // Refresh in background without reload
-      onUpdate();
-    } catch (error) {
-      console.error('Error updating order:', error);
-      alert('Failed to update order. Please try again.');
-    } finally {
-      setIsSavingOrder(false);
-    }
   };
 
   const deleteOrder = async (orderId: string) => {
@@ -227,16 +127,6 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
       setIsDeleting(false);
       setDeleteConfirm({ isOpen: false, orderId: null });
     }
-  };
-
-  const handleItemUpdate = () => {
-    // Refresh in background
-    onUpdate();
-  };
-
-  const handleItemAdd = () => {
-    // Refresh in background
-    onUpdate();
   };
 
   const handlePaymentStatusChange = async (newPaidStatus: string) => {
@@ -486,20 +376,22 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                 {/* Action Buttons - Bottom on Mobile */}
                 <div className="flex flex-row items-center justify-center gap-2 w-full mt-3">
                   {/* Edit Order Button */}
-                  {!isEditingOrder && (
-                    <button
-                      onClick={() => {
-                        if (!isExpanded) {
-                          setIsExpanded(true);
-                        }
-                        startEditingOrder();
-                      }}
-                      className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110 flex-1"
-                      title={t.editOrder}
-                    >
-                      <Edit className="w-4 h-4 mx-auto" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110 flex-1"
+                    title={t.editOrder}
+                  >
+                    <Edit className="w-4 h-4 mx-auto" />
+                  </button>
+
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
+                    className="p-2 rounded-full bg-rose-500 text-white hover:bg-rose-600 transition-all shadow-md hover:shadow-lg hover:scale-110 flex-1"
+                    title={t.deleteOrder}
+                  >
+                    <Trash2 className="w-4 h-4 mx-auto" />
+                  </button>
 
                   {/* Expand/Collapse Button */}
                   <button
@@ -520,17 +412,20 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
             {/* When expanded on mobile, show simplified view */}
             {isExpanded && (
               <div className="flex flex-row items-center justify-end gap-2 w-full">
-                {!isEditingOrder && (
-                  <button
-                    onClick={() => {
-                      startEditingOrder();
-                    }}
-                    className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
-                    title={t.editOrder}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                  title={t.editOrder}
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
+                  className="p-2 rounded-full bg-rose-500 text-white hover:bg-rose-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                  title={t.deleteOrder}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
                 <button
                   onClick={toggleExpansion}
                   className="p-2 rounded-full bg-cream-100 text-charcoal-700 hover:bg-cream-200 transition-all"
@@ -716,20 +611,22 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
             {/* Action Buttons - Vertically Centered */}
             <div className="flex flex-col items-center justify-center gap-2">
               {/* Edit Order Button */}
-              {!isEditingOrder && (
-                <button
-                  onClick={() => {
-                    if (!isExpanded) {
-                      setIsExpanded(true);
-                    }
-                    startEditingOrder();
-                  }}
-                  className="p-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
-                  title={t.editOrder}
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
-              )}
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="p-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                title={t.editOrder}
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+
+              {/* Delete Order Button */}
+              <button
+                onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
+                className="p-3 rounded-full bg-rose-500 text-white hover:bg-rose-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                title={t.deleteOrder}
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
 
               {/* Expand/Collapse Button */}
               <button
@@ -754,187 +651,43 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
           }`}
         >
           <div className="p-3 sm:p-4 md:p-6">
-            {/* Action Buttons - Top of expanded section */}
-            {isEditingOrder && (
-              <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b-2 border-cream-200">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <button
-                    onClick={saveOrderChanges}
-                    disabled={isSavingOrder}
-                    className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-brown-500 text-white text-sm sm:text-base font-semibold hover:bg-brown-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
-                  >
-                    {isSavingOrder ? (
-                      t.saving
-                    ) : (
-                      <>
-                        <Check className="w-4 sm:w-5 h-4 sm:h-5" />
-                        {t.save}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={cancelEditingOrder}
-                    disabled={isSavingOrder}
-                    className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full border-2 border-cream-300 bg-white text-charcoal-700 text-sm sm:text-base font-semibold hover:bg-cream-50 transition-all disabled:opacity-50"
-                  >
-                    {t.cancel}
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
-                    disabled={isSavingOrder}
-                    className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-rose-500 text-white text-sm sm:text-base font-semibold hover:bg-rose-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
-                  >
-                    <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
-                    <span className="hidden sm:inline">{t.deleteOrder}</span>
-                    <span className="sm:hidden">Удалить</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Delivery Details Section */}
             <div className="mb-4 sm:mb-6">
               <h4 className="font-heading font-semibold text-sm sm:text-base text-brown-500 mb-2 sm:mb-3">
                 Информация о доставке
               </h4>
-              {isEditingOrder ? (
-                // EDIT MODE
-                <div className="bg-white p-3 sm:p-4 rounded-xl border-2 border-brown-300">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    {/* Delivery Type */}
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-charcoal-700 mb-1">
-                        {t.deliveryType}
-                      </label>
-                      <select
-                        value={editFormData.delivery_type}
-                        onChange={(e) => {
-                          const newType = e.target.value;
-                          setEditFormData({
-                            ...editFormData,
-                            delivery_type: newType,
-                            delivery_address: newType === 'pickup' ? null : editFormData.delivery_address,
-                          });
-                        }}
-                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                      >
-                        <option value="delivery">{t.delivery}</option>
-                        <option value="pickup">{t.pickup}</option>
-                      </select>
-                    </div>
-
-                    {/* Delivery Date */}
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-charcoal-700 mb-1">
-                        {t.deliveryDate}
-                      </label>
-                      <input
-                        type="date"
-                        value={editFormData.delivery_date}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, delivery_date: e.target.value })
-                        }
-                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                      />
-                    </div>
-
-                    {/* Delivery Time */}
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-charcoal-700 mb-1">
-                        {t.deliveryTime}
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.delivery_time}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, delivery_time: e.target.value })
-                        }
-                        placeholder="e.g., 14:00-16:00"
-                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                      />
-                    </div>
-
-                    {/* Delivery Address (only if delivery type = delivery) */}
-                    {editFormData.delivery_type === 'delivery' && (
-                      <div className="col-span-1 sm:col-span-2">
-                        <label className="block text-xs sm:text-sm font-medium text-charcoal-700 mb-1 sm:mb-2">
-                          {t.deliveryAddress}
-                        </label>
-                        <input
-                          type="text"
-                          value={editFormData.delivery_address?.street || ''}
-                          onChange={(e) =>
-                            setEditFormData({
-                              ...editFormData,
-                              delivery_address: {
-                                street: e.target.value,
-                                city: '',
-                                postalCode: '',
-                                country: 'Switzerland',
-                              },
-                            })
-                          }
-                          placeholder="напр., ул. Bahnhofstrasse 10, Цюрих 8001"
-                          className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
-                        />
-                        <p className="text-xs text-charcoal-500 mt-1">
-                          Введите полный адрес: улица, город, индекс
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Customer Notes */}
-                    <div className="col-span-1 sm:col-span-2">
-                      <label className="block text-xs sm:text-sm font-medium text-charcoal-700 mb-1">
-                        {t.notes}
-                      </label>
-                      <textarea
-                        value={editFormData.customer_notes}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, customer_notes: e.target.value })
-                        }
-                        placeholder="Любые особые пожелания или примечания"
-                        rows={3}
-                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none resize-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // VIEW MODE
-                <div className="space-y-2 text-xs sm:text-sm bg-white p-3 sm:p-4 rounded-xl border border-cream-300">
+              <div className="space-y-2 text-xs sm:text-sm bg-white p-3 sm:p-4 rounded-xl border border-cream-300">
+                <p>
+                  <span className="text-charcoal-500">Тип:</span>{' '}
+                  <span className="font-medium capitalize">
+                    {order.delivery_type === 'delivery' ? t.delivery : order.delivery_type === 'pickup' ? t.pickup : 'N/A'}
+                  </span>
+                </p>
+                {order.delivery_date && (
                   <p>
-                    <span className="text-charcoal-500">Тип:</span>{' '}
-                    <span className="font-medium capitalize">
-                      {order.delivery_type === 'delivery' ? t.delivery : order.delivery_type === 'pickup' ? t.pickup : 'N/A'}
+                    <span className="text-charcoal-500">Дата:</span>{' '}
+                    <span className="font-medium">
+                      {format(parseDateFromDB(order.delivery_date), 'MMMM dd, yyyy')}
                     </span>
                   </p>
-                  {order.delivery_date && (
-                    <p>
-                      <span className="text-charcoal-500">Дата:</span>{' '}
-                      <span className="font-medium">
-                        {format(parseDateFromDB(order.delivery_date), 'MMMM dd, yyyy')}
-                      </span>
-                    </p>
-                  )}
-                  {order.delivery_address && (
-                    <p className="break-words">
-                      <span className="text-charcoal-500">Адрес:</span>{' '}
-                      <span className="font-medium">{formatDeliveryAddress(order.delivery_address)}</span>
-                    </p>
-                  )}
-                  {order.delivery_time && (
-                    <p>
-                      <span className="text-charcoal-500">Время:</span>{' '}
-                      <span className="font-medium">{order.delivery_time}</span>
-                    </p>
-                  )}
-                </div>
-              )}
+                )}
+                {order.delivery_address && (
+                  <p className="break-words">
+                    <span className="text-charcoal-500">Адрес:</span>{' '}
+                    <span className="font-medium">{formatDeliveryAddress(order.delivery_address)}</span>
+                  </p>
+                )}
+                {order.delivery_time && (
+                  <p>
+                    <span className="text-charcoal-500">Время:</span>{' '}
+                    <span className="font-medium">{order.delivery_time}</span>
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* Customer Notes (view only when not editing) */}
-            {!isEditingOrder && order.customer_notes && (
+            {/* Customer Notes */}
+            {order.customer_notes && (
               <div className="mb-4 sm:mb-6">
                 <h4 className="font-heading font-semibold text-sm sm:text-base text-brown-500 mb-2 sm:mb-3">
                   {t.notes}
@@ -969,17 +722,17 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         ) : (
                           <div className="flex-shrink-0 w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 rounded-xl border-2 border-dashed border-cream-400 bg-cream-50 flex items-center justify-center">
                             <div className="text-center px-2 sm:px-3">
-                              <svg 
-                                className="w-6 sm:w-8 md:w-10 h-6 sm:h-8 md:h-10 mx-auto mb-1 sm:mb-2 text-cream-400" 
-                                fill="none" 
-                                stroke="currentColor" 
+                              <svg
+                                className="w-6 sm:w-8 md:w-10 h-6 sm:h-8 md:h-10 mx-auto mb-1 sm:mb-2 text-cream-400"
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                               >
-                                <path 
-                                  strokeLinecap="round" 
-                                  strokeLinejoin="round" 
-                                  strokeWidth={2} 
-                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                                 />
                               </svg>
                               <p className="text-xs text-cream-500 font-medium">No photo</p>
@@ -1000,25 +753,13 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                         </div>
                       </div>
 
-                      {/* Price and Edit Button */}
+                      {/* Price */}
                       <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                        {/* Price */}
                         <div className="bg-cream-50 border-2 border-cream-300 rounded-xl px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 text-right flex-1 sm:flex-initial sm:min-w-[120px] md:min-w-[140px]">
                           <p className="text-lg sm:text-xl md:text-2xl font-bold text-brown-600">
                             {formatCurrency(item.subtotal, order.currency)}
                           </p>
                         </div>
-
-                        {/* Edit Item Button */}
-                        {!isEditingOrder && (
-                          <button
-                            onClick={() => setEditingItem(item)}
-                            className="p-2 sm:p-2.5 md:p-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:scale-105 flex-shrink-0"
-                            title={t.editItem}
-                          >
-                            <Edit className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-                          </button>
-                        )}
                       </div>
                     </div>
 
@@ -1130,16 +871,6 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                   </div>
                 ))}
 
-                {/* Add Item Button */}
-                {!isEditingOrder && (
-                  <button
-                    onClick={() => setIsAddingItem(true)}
-                    className="w-full p-4 sm:p-5 md:p-6 border-2 border-dashed border-brown-300 rounded-xl hover:border-brown-500 hover:bg-brown-50 transition-all text-brown-600 text-sm sm:text-base font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-5 sm:w-6 h-5 sm:h-6" />
-                    {t.addItem}
-                  </button>
-                )}
               </div>
             </div>
 
@@ -1147,25 +878,15 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
         </div>
       </div>
 
-      {/* Edit Item Modal */}
-      {editingItem && (
-        <EditOrderItemModal
-          item={editingItem}
-          orderId={order.id}
-          currency={order.currency}
-          onClose={() => setEditingItem(null)}
-          onUpdate={handleItemUpdate}
-        />
-      )}
-
-      {/* Add Item Modal */}
-      {isAddingItem && (
-        <AddOrderItemModal
-          orderId={order.id}
-          orderDeliveryDate={order.delivery_date || ''}
-          currency={order.currency}
-          onClose={() => setIsAddingItem(false)}
-          onSuccess={handleItemAdd}
+      {/* Edit Order Modal */}
+      {isEditModalOpen && (
+        <EditOrderModal
+          order={order}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={() => {
+            setIsEditModalOpen(false);
+            onUpdate();
+          }}
         />
       )}
 

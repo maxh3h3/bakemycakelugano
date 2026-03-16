@@ -28,8 +28,10 @@ export default async function AdminOrdersPage() {
 
   // Check role (only owner can see orders page)
   const role = await getUserRole();
-  if (role !== 'owner') {
-    redirect('/admin/production'); // Cooks go to production
+  if (role === 'cook') {
+    redirect('/admin/production');
+  } else if (role !== 'owner') {
+    redirect('/admin/delivery');
   }
   
   // Fetch all orders with their items and client info

@@ -13,8 +13,10 @@ export default async function ClientsPage() {
   }
 
   const role = await getUserRole();
-  if (role !== 'owner') {
+  if (role === 'cook') {
     redirect('/admin/production');
+  } else if (role !== 'owner') {
+    redirect('/admin/delivery');
   }
 
   return (

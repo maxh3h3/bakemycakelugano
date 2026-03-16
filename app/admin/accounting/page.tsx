@@ -16,8 +16,10 @@ export default async function AccountingPage() {
   // Get user role
   const role = await getUserRole();
 
-  if (role !== 'owner') {
+  if (role === 'cook') {
     redirect('/admin/production');
+  } else if (role !== 'owner') {
+    redirect('/admin/delivery');
   }
 
   return (

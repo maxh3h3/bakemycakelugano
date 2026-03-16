@@ -15,6 +15,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
     const {
+      product_name,
       quantity,
       unit_price,
       subtotal,
@@ -40,6 +41,7 @@ export async function PATCH(
     const { data: item, error } = await (supabaseAdmin as any)
       .from('order_items')
       .update({
+        product_name,
         quantity,
         unit_price,
         subtotal,

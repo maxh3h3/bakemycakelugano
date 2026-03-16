@@ -21,7 +21,7 @@ export default async function AdminProductionPage() {
   // Check role (cook or owner can see production)
   const role = await getUserRole();
   if (role !== 'cook' && role !== 'owner') {
-    redirect('/admin/orders');
+    redirect('/admin/delivery');
   }
 
   // Get today's date for filtering

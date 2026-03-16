@@ -25,6 +25,8 @@ export async function PATCH(
       'paid',
       'payment_method',
       'customer_notes',
+      'channel',
+      'client_id',
     ];
 
     // Build update object with only allowed fields
@@ -185,6 +187,19 @@ export async function PATCH(
       } catch (statsError) {
         console.error('Failed to update client stats:', statsError);
         // Non-critical error, don't fail the update
+      }
+    }
+
+    // If client_id changed, update stats on both old and new client
+    if ('client_id' in updateData && updateData.client_id !== existingOrder.client_id) {
+      const clientsToUpdate = [existingOrder.client_id, updateData.client_id].filter(Boolean);
+      for (const clientId of clientsToUpdate) {
+        try {
+          await updateClientStats(clientId);
+          console.log(`Client stats updated for client ${clientId} after reassignment`);
+        } catch (statsError) {
+          console.error(`Failed to update client stats for ${clientId}:`, statsError);
+        }
       }
     }
 
