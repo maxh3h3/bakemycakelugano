@@ -282,7 +282,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-lg shadow-xl flex items-center gap-3"
+          className="fixed bottom-24 right-4 sm:bottom-28 sm:right-6 z-50 bg-green-500 text-white px-6 py-4 rounded-lg shadow-xl flex items-center gap-3"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
