@@ -2,6 +2,7 @@ import HeroCarousel from '@/components/home/HeroCarousel';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import DiscountModal from '@/components/home/DiscountModal';
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -18,6 +19,7 @@ export default async function HomePage({ params }: HomePageProps) {
         <FeaturedProducts locale={locale} />
       </main>
       <Footer locale={locale} />
+      <DiscountModal locale={locale} />
     </div>
   );
 }

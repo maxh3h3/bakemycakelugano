@@ -12,10 +12,11 @@ interface CartSummaryProps {
 
 export default function CartSummary({ locale }: CartSummaryProps) {
   const t = useTranslations('cart');
-  const { getTotalPrice, getTotalItems } = useCartStore();
+  const { getTotalPrice } = useCartStore();
 
-  const total = getTotalPrice();
-  const itemCount = getTotalItems();
+  const subtotal = getTotalPrice();
+  const discountAmount = subtotal * 0.10;
+  const discountedTotal = subtotal - discountAmount;
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-cream-200 sticky top-24">
@@ -24,26 +25,31 @@ export default function CartSummary({ locale }: CartSummaryProps) {
         {t('title')}
       </h2>
 
-      {/* Item Count */}
-      <div className="flex justify-between items-center mb-4 pb-4 border-b border-cream-200">
-        <span className="text-charcoal-900/70">
-          {itemCount} {itemCount === 1 ? 'item' : 'items'}
-        </span>
-        <span className="text-charcoal-900 font-medium">
-          {formatPrice(total)}
-        </span>
-      </div>
+      {/* Price breakdown */}
+      <div className="space-y-3 mb-4">
+        {/* Original subtotal */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-charcoal-900/70">{t('subtotal')}</span>
+          <span className="text-sm text-charcoal-900/50 line-through">
+            {formatPrice(subtotal)}
+          </span>
+        </div>
 
-      {/* Subtotal */}
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-charcoal-900/70">{t('subtotal')}</span>
-        <span className="text-charcoal-900 font-medium">{formatPrice(total)}</span>
+        {/* Discount row */}
+        <div className="flex justify-between items-center bg-red-50 rounded-md px-3 py-2 border border-red-200">
+          <span className="text-sm font-semibold text-red-600">
+            {t('discount')}
+          </span>
+          <span className="text-sm font-bold text-red-600">
+            −{formatPrice(discountAmount)}
+          </span>
+        </div>
       </div>
 
       {/* Total */}
       <div className="flex justify-between items-center mb-6 pt-4 border-t-2 border-cream-200">
         <span className="text-xl font-semibold text-charcoal-900">{t('total')}</span>
-        <span className="text-3xl font-bold text-brown-600">{formatPrice(total)}</span>
+        <span className="text-3xl font-bold text-brown-600">{formatPrice(discountedTotal)}</span>
       </div>
 
       {/* Checkout Button */}
@@ -61,10 +67,10 @@ export default function CartSummary({ locale }: CartSummaryProps) {
         {t('continueShopping')}
       </Link>
 
-      {/* Info Text */}
+      {/* Delivery note */}
       <div className="mt-6 pt-6 border-t border-cream-200">
-        <p className="text-xs text-charcoal-900/60 text-center">
-          Tutti i prezzi sono in CHF (franco svizzero)
+        <p className="text-xs text-charcoal-900/50 text-center">
+          {t('deliveryNote')}
         </p>
       </div>
     </div>

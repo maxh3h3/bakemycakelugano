@@ -2,6 +2,12 @@
   "discount": {
     "bannerText": "10% di sconto su tutti gli ordini del sito — concediti qualcosa di buono oggi!"
   },
+  "discountModal": {
+    "badge": "Offerta Limitata",
+    "headline": "10% di Sconto su Tutti gli Ordini",
+    "subtext": "Concediti qualcosa di dolce. Lo sconto viene applicato automaticamente al checkout — nessun codice necessario.",
+    "cta": "Scopri i Prodotti"
+  },
   "common": {
     "bakeryName": "Bake My Cake",
     "tagline": "Dolci artigianali ed eleganti fatti con amore"
@@ -81,7 +87,12 @@
     "each": "cad.",
     "itemRemoved": "Prodotto rimosso dal carrello",
     "undo": "Annulla",
-    "updateDate": "Modifica Data"
+    "updateDate": "Modifica Data",
+    "discountBanner": "Sconto del 10% applicato automaticamente al checkout — nessun codice necessario",
+    "discount": "Sconto 10%",
+    "originalPrice": "Prezzo Originale",
+    "afterDiscount": "Dopo lo Sconto",
+    "deliveryNote": "Costo di consegna calcolato al checkout"
   },
   "footer": {
     "allRightsReserved": "Tutti i diritti riservati",

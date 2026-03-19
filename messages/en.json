@@ -2,6 +2,12 @@
   "discount": {
     "bannerText": "10% off all orders on the website — treat yourself today!"
   },
+  "discountModal": {
+    "badge": "Limited Offer",
+    "headline": "10% Off All Orders",
+    "subtext": "Treat yourself to something sweet. Your discount is automatically applied at checkout — no code needed.",
+    "cta": "Shop Now"
+  },
   "common": {
     "bakeryName": "Bake My Cake",
     "tagline": "Elegant, handcrafted cakes and pastries made with love"
@@ -81,7 +87,12 @@
     "each": "each",
     "itemRemoved": "Item removed from cart",
     "undo": "Undo",
-    "updateDate": "Update Date"
+    "updateDate": "Update Date",
+    "discountBanner": "10% off applied automatically at checkout — no code needed",
+    "discount": "10% Discount",
+    "originalPrice": "Original Price",
+    "afterDiscount": "After Discount",
+    "deliveryNote": "Delivery fee calculated at checkout"
   },
   "footer": {
     "allRightsReserved": "All rights reserved",

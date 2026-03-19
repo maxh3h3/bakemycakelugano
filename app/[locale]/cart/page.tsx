@@ -32,6 +32,20 @@ export default function CartPage({ params }: CartPageProps) {
           </div>
         </section>
 
+        {/* Discount Banner */}
+        <div className="bg-red-50 border-b border-red-100">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center gap-3">
+            <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-red-600 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M5.25 2.25a3 3 0 00-3 3v4.318a3 3 0 00.879 2.121l9.58 9.581c.92.92 2.39 1.013 3.316.05l4.37-4.37c.97-.97.876-2.44-.044-3.361L11.03 4.99A3 3 0 008.907 4.11L5.25 2.25zm4.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clipRule="evenodd" />
+              </svg>
+            </span>
+            <p className="text-sm font-medium text-red-700">
+              {t('discountBanner')}
+            </p>
+          </div>
+        </div>
+
         {/* Cart Content */}
         <section className="py-8 md:py-12">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,13 +84,20 @@ export default function CartPage({ params }: CartPageProps) {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-cream-200 shadow-xl p-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-charcoal-900/60">{t('total')}</p>
-              <p className="text-2xl font-bold text-brown-600">
+              <p className="text-xs text-charcoal-900/50 line-through">
                 {(() => {
                   const store = useCartStore.getState();
                   return `CHF ${store.getTotalPrice().toFixed(2)}`;
                 })()}
               </p>
+              <p className="text-2xl font-bold text-brown-600">
+                {(() => {
+                  const store = useCartStore.getState();
+                  const discounted = store.getTotalPrice() * 0.90;
+                  return `CHF ${discounted.toFixed(2)}`;
+                })()}
+              </p>
+              <p className="text-xs font-semibold text-red-600">{t('discount')}</p>
             </div>
             <a
               href={`/${locale}/checkout`}
