@@ -57,7 +57,7 @@ async function fetchMessages(session: BotpressSession): Promise<ChatMessage[]> {
     .filter((m) => m.payload?.type === 'text' && m.payload?.text)
     .map((m) => ({
       id: m.id,
-      role: m.userId === session.userId ? 'user' : 'bot',
+      role: (m.userId === session.userId ? 'user' : 'bot') as 'user' | 'bot',
       text: m.payload.text,
       createdAt: m.createdAt,
     }))

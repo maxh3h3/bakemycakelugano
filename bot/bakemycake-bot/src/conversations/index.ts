@@ -2,7 +2,7 @@ import { Conversation, Autonomous, z } from '@botpress/runtime';
 
 // ─── Website base URL ────────────────────────────────────────────────────────
 // Update this when deploying to production.
-const WEBSITE_URL = process.env.WEBSITE_URL ?? 'https://7a5b-13-250-92-153.ngrok-free.app';
+const WEBSITE_URL = process.env.WEBSITE_URL ?? 'https://bakemycakelugano.ch';
 
 // ─── Tool: Fetch product catalog ─────────────────────────────────────────────
 const getProducts = new Autonomous.Tool({
