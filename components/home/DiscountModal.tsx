@@ -17,7 +17,7 @@ export default function DiscountModal({ locale }: DiscountModalProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    if (!sessionStorage.getItem(STORAGE_KEY)) {
       const timer = setTimeout(() => setVisible(true), 800);
       return () => clearTimeout(timer);
     }
@@ -32,7 +32,7 @@ export default function DiscountModal({ locale }: DiscountModalProps) {
   }, [visible]);
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    sessionStorage.setItem(STORAGE_KEY, 'true');
     setVisible(false);
   }
 
@@ -55,7 +55,7 @@ export default function DiscountModal({ locale }: DiscountModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 8 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl bg-white max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl bg-white"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -69,15 +69,16 @@ export default function DiscountModal({ locale }: DiscountModalProps) {
               </svg>
             </button>
 
-            {/* Cake image — full image, no cropping */}
-            <Image
-              src="/images/discount/red_cake_discount_modal.jpg"
-              alt="Bake My Cake — 10% off"
-              width={924}
-              height={1232}
-              className="w-full h-auto"
-              priority
-            />
+            {/* Cake image — anchored to bottom, ~10% cropped from top */}
+            <div className="relative w-full h-[280px] sm:h-[460px]">
+              <Image
+                src="/images/discount/red_cake_discount_modal.jpg"
+                alt="Bake My Cake — 10% off"
+                fill
+                className="object-cover object-bottom"
+                priority
+              />
+            </div>
 
             {/* Content */}
             <div className="px-7 pt-5 pb-7 text-center">
