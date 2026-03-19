@@ -106,13 +106,6 @@ export default function OrderSummary({ locale, isProcessing, deliveryFee = 0 }: 
           </span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-charcoal-900/70">{t('discountApplied')}</span>
-          <span className="text-sm font-medium text-charcoal-900">
-            {formatPrice(discountedSubtotal)}
-          </span>
-        </div>
-
         {deliveryFee > 0 && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-charcoal-900/70">
