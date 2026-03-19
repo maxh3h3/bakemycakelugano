@@ -1,4 +1,7 @@
 {
+  "discount": {
+    "bannerText": "10% off all orders on the website — treat yourself today!"
+  },
   "common": {
     "bakeryName": "Bake My Cake",
     "tagline": "Elegant, handcrafted cakes and pastries made with love"
@@ -185,7 +188,9 @@
     "goToCart": "Go to Cart",
     "datePickerHelp": "Orders require at least 2 days advance notice. Available up to 3 months in advance.",
     "leadTime": "Minimum 2 days advance notice required",
-    "checkoutError": "An error occurred during checkout. Please try again."
+    "checkoutError": "An error occurred during checkout. Please try again.",
+    "discount": "10% Discount",
+    "discountApplied": "10% discount applied automatically"
   },
   "checkoutSuccess": {
     "title": "Order Confirmed!",

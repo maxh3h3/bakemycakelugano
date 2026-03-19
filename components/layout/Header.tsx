@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
 import LanguageSwitcher from './LanguageSwitcher';
+import DiscountBanner from './DiscountBanner';
 
 export default function Header() {
   const t = useTranslations('nav');
@@ -51,6 +52,8 @@ export default function Header() {
           : 'bg-transparent'
       }`}
     >
+      {/* Full-width discount banner — sits above the nav bar */}
+      <DiscountBanner />
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}

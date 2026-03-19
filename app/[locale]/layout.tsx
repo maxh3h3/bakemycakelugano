@@ -6,6 +6,7 @@ import { locales } from '@/i18n';
 import { inter, playfair } from '@/lib/fonts';
 import AnimatedBackground from '@/components/background/AnimatedBackground';
 import LocalBusinessSchema from '@/components/seo/LocalBusinessSchema';
+import ChatWidget from '@/components/chat/ChatWidget';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -89,7 +90,7 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  
+
   // Validate that the incoming `locale` parameter is valid
   if (!locales.includes(locale as any)) {
     notFound();
@@ -97,6 +98,7 @@ export default async function LocaleLayout({
 
   // Providing all messages to the client side is the easiest way to get started
   const messages = await getMessages();
+
 
   return (
     <html 
@@ -125,6 +127,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
+        <ChatWidget locale={locale} />
       </body>
     </html>
   );

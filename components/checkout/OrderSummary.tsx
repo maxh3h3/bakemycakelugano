@@ -27,7 +27,9 @@ export default function OrderSummary({ locale, isProcessing, deliveryFee = 0 }: 
 
   const dateLocale = localeMap[locale as keyof typeof localeMap] || enUS;
   const subtotal = getTotalPrice();
-  const totalPrice = subtotal + deliveryFee;
+  const discountAmount = subtotal * 0.10;
+  const discountedSubtotal = subtotal - discountAmount;
+  const totalPrice = discountedSubtotal + deliveryFee;
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -90,11 +92,27 @@ export default function OrderSummary({ locale, isProcessing, deliveryFee = 0 }: 
           <span className="text-sm text-charcoal-900/70">
             {t('subtotal')} ({totalItems} {totalItems === 1 ? t('item') : t('items')})
           </span>
-          <span className="text-sm font-medium text-charcoal-900">
+          <span className="text-sm font-medium text-charcoal-900 line-through text-charcoal-900/50">
             {formatPrice(subtotal)}
           </span>
         </div>
-        
+
+        <div className="flex items-center justify-between bg-red-50 rounded-md px-3 py-2 border border-red-200">
+          <span className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
+            {t('discount')}
+          </span>
+          <span className="text-sm font-bold text-red-600">
+            −{formatPrice(discountAmount)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-charcoal-900/70">{t('discountApplied')}</span>
+          <span className="text-sm font-medium text-charcoal-900">
+            {formatPrice(discountedSubtotal)}
+          </span>
+        </div>
+
         {deliveryFee > 0 && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-charcoal-900/70">

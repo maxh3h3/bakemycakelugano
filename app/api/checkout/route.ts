@@ -22,9 +22,12 @@ export async function POST(request: NextRequest) {
     const subtotal = items.reduce((sum: number, item: any) => {
       return sum + (item.unitPrice * item.quantity);
     }, 0);
-    
+
+    const DISCOUNT_PERCENTAGE = 0.10;
+    const discountAmount = subtotal * DISCOUNT_PERCENTAGE;
+    const discountedSubtotal = subtotal - discountAmount;
     const deliveryFee = deliveryInfo.fee || 0;
-    const totalAmount = subtotal + deliveryFee;
+    const totalAmount = discountedSubtotal + deliveryFee;
 
     // Simplify items for metadata (Stripe has 500 char limit per field)
     // Only store essential order info - minimize to fit within 500 char limit
@@ -84,11 +87,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Ensure the site-wide 10% discount coupon exists in Stripe
+    const COUPON_ID = 'BAKEMYCAKE_SITE_10PCT';
+    try {
+      await stripe.coupons.retrieve(COUPON_ID);
+    } catch {
+      // Coupon doesn't exist yet — create it once
+      await stripe.coupons.create({
+        id: COUPON_ID,
+        percent_off: 10,
+        duration: 'forever',
+        name: locale === 'it' ? 'Sconto 10% — Bake My Cake' : '10% Off — Bake My Cake',
+      });
+    }
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
+      discounts: [{ coupon: COUPON_ID }],
       customer_email: customerInfo.email,
       metadata: {
         customerName: customerInfo.name,
@@ -106,6 +124,8 @@ export async function POST(request: NextRequest) {
         deliveryRequiresContact: deliveryInfo.requiresContact ? 'true' : 'false',
         specialInstructions: specialInstructions || '',
         orderItems: JSON.stringify(simplifiedItems), // Simplified, no image objects
+        discountPercentage: '10',
+        discountAmount: discountAmount.toFixed(2),
         locale,
       },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,

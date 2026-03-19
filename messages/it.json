@@ -1,4 +1,7 @@
 {
+  "discount": {
+    "bannerText": "10% di sconto su tutti gli ordini del sito — concediti qualcosa di buono oggi!"
+  },
   "common": {
     "bakeryName": "Bake My Cake",
     "tagline": "Dolci artigianali ed eleganti fatti con amore"
@@ -185,7 +188,9 @@
     "goToCart": "Vai al Carrello",
     "datePickerHelp": "Gli ordini richiedono almeno 2 giorni di preavviso. Disponibile fino a 3 mesi in anticipo.",
     "leadTime": "Richiesto preavviso minimo di 2 giorni",
-    "checkoutError": "Si è verificato un errore durante il checkout. Riprova."
+    "checkoutError": "Si è verificato un errore durante il checkout. Riprova.",
+    "discount": "Sconto 10%",
+    "discountApplied": "Sconto del 10% applicato automaticamente"
   },
   "checkoutSuccess": {
     "title": "Ordine Confermato!",
