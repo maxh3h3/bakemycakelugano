@@ -99,7 +99,7 @@ export default function DiscountModal({ locale }: DiscountModalProps) {
 
               {/* CTA */}
               <Link
-                href={`/${locale}/products`}
+                href={`/${locale}/categories`}
                 onClick={dismiss}
                 className="block w-full rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3.5 transition-colors"
               >

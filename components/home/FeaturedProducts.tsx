@@ -39,7 +39,7 @@ export default async function FeaturedProducts({ locale }: FeaturedProductsProps
         {/* View All Button */}
         {products.length > 0 && (
           <div className="text-center mt-12">
-            <Link href={`/${locale}/products`}>
+            <Link href={`/${locale}/categories`}>
               <Button variant="secondary" size="lg">
                 {t('viewAll')} →
               </Button>

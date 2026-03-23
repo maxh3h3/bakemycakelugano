@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -17,6 +18,11 @@ interface ProductsPageProps {
 export default async function ProductsPage({ params, searchParams }: ProductsPageProps) {
   const { locale } = await params;
   const { category } = await searchParams;
+
+  if (!category) {
+    redirect(`/${locale}/categories`);
+  }
+
   const t = await getTranslations('products');
 
   // Fetch only categories (fast) - products will be fetched in ProductsSection

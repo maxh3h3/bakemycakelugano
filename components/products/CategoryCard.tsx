@@ -63,7 +63,7 @@ export default function CategoryCard({ category, locale, index = 0 }: CategoryCa
             <Button
               className="w-full"
               size="sm"
-              variant="secondary"
+              variant="primary"
             >
               {t('browseCategory')}
             </Button>
