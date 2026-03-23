@@ -133,11 +133,15 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const deliveryFee = parseFloat(metadata.deliveryFee || '0');
   const deliveryRequiresContact = metadata.deliveryRequiresContact === 'true';
 
-  // Calculate total from order items
+  // Use the actual amount charged by Stripe (post-discount, post-delivery)
+  // session.amount_total is in cents, convert to CHF
   const subtotal = orderItems.reduce((sum: number, item: any) => {
     return sum + (item.unitPrice * item.quantity);
   }, 0);
-  const totalAmount = subtotal + deliveryFee;
+  const discountAmount = parseFloat(metadata.discountAmount || '0');
+  const totalAmount = session.amount_total != null
+    ? session.amount_total / 100
+    : subtotal - discountAmount + deliveryFee;
 
   try {
     // Determine if payment was successful
