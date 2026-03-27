@@ -80,9 +80,9 @@ export async function POST(
     // Fetch order to get order_number, delivery_date, delivery_type, and delivery_time
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('order_number, delivery_date, delivery_type, delivery_time')
+      .select('order_number, delivery_date, delivery_type, delivery_time, delivery_fee')
       .eq('id', orderId)
-      .single() as { data: { order_number: string | null; delivery_date: string | null; delivery_type: string | null; delivery_time: string | null } | null; error: any };
+      .single() as { data: { order_number: string | null; delivery_date: string | null; delivery_type: string | null; delivery_time: string | null; delivery_fee: string | number | null } | null; error: any };
 
     if (orderError || !order) {
       return NextResponse.json(
@@ -126,15 +126,17 @@ export async function POST(
       );
     }
 
-    // Recalculate order total
+    // Recalculate order total (items subtotal + delivery fee)
     const { data: allItems } = await supabaseAdmin
       .from('order_items')
       .select('subtotal')
       .eq('order_id', orderId) as { data: Array<{ subtotal: number }> | null };
 
     if (allItems) {
-      const newTotal = allItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
-      
+      const itemsSubtotal = allItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
+      const deliveryFee = parseFloat(String((order as any).delivery_fee || '0')) || 0;
+      const newTotal = Math.round((itemsSubtotal + deliveryFee) * 100) / 100;
+
       await (supabaseAdmin as any)
         .from('orders')
         .update({

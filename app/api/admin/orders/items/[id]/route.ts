@@ -77,15 +77,23 @@ export async function PATCH(
     // Get the order ID to update the order total
     const orderId = (item as any).order_id;
 
-    // Recalculate order total
+    // Recalculate order total (items subtotal + delivery fee)
     const { data: allItems } = await supabaseAdmin
       .from('order_items')
       .select('subtotal')
       .eq('order_id', orderId) as { data: Array<{ subtotal: number }> | null };
 
+    const { data: orderForFee } = await supabaseAdmin
+      .from('orders')
+      .select('delivery_fee')
+      .eq('id', orderId)
+      .single() as { data: { delivery_fee: string | number } | null };
+
     if (allItems) {
-      const newTotal = allItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
-      
+      const itemsSubtotal = allItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
+      const deliveryFee = parseFloat(String(orderForFee?.delivery_fee || '0')) || 0;
+      const newTotal = Math.round((itemsSubtotal + deliveryFee) * 100) / 100;
+
       await (supabaseAdmin as any)
         .from('orders')
         .update({
@@ -244,15 +252,23 @@ export async function DELETE(
       );
     }
 
-    // Recalculate order total
+    // Recalculate order total (items subtotal + delivery fee)
     const { data: remainingItems } = await supabaseAdmin
       .from('order_items')
       .select('subtotal')
       .eq('order_id', orderId) as { data: Array<{ subtotal: number }> | null };
 
+    const { data: orderForFee } = await supabaseAdmin
+      .from('orders')
+      .select('delivery_fee')
+      .eq('id', orderId)
+      .single() as { data: { delivery_fee: string | number } | null };
+
     if (remainingItems) {
-      const newTotal = remainingItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
-      
+      const itemsSubtotal = remainingItems.reduce((sum, i) => sum + parseFloat(i.subtotal.toString()), 0);
+      const deliveryFee = parseFloat(String(orderForFee?.delivery_fee || '0')) || 0;
+      const newTotal = Math.round((itemsSubtotal + deliveryFee) * 100) / 100;
+
       await (supabaseAdmin as any)
         .from('orders')
         .update({
