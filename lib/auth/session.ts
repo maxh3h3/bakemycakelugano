@@ -72,7 +72,6 @@ export async function validateSession(): Promise<boolean> {
 
   // Check if session has expired
   if (session.expiresAt && Date.now() > session.expiresAt) {
-    await destroySession();
     return false;
   }
 
