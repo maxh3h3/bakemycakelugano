@@ -3,28 +3,59 @@
 import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import DatePicker from '@/components/products/DatePicker';
-import { X, User, Soup, Smartphone } from 'lucide-react';
+import { X, User, Soup, Smartphone, Coffee } from 'lucide-react';
 
 interface QuickSaleModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const QUICK_CLIENTS = [
+interface QuickProduct {
+  name: string;
+  price: number;
+}
+
+interface QuickClient {
+  id: string;
+  name: string;
+  icon: string;
+  useItemBuilder: boolean;
+  quickProducts?: QuickProduct[];
+}
+
+const QUICK_CLIENTS: QuickClient[] = [
   {
     id: '06efda69-8386-4365-a2f7-3bcf5bdc483e',
     name: 'Витрина',
     icon: 'walkin',
+    useItemBuilder: false,
   },
   {
     id: '9323a8bb-6ec4-481c-b040-aa762dc626bd',
     name: 'Раменная',
     icon: 'ramen',
+    useItemBuilder: true,
+    quickProducts: [
+      { name: 'Matcha Cake', price: 3 },
+      { name: 'Mango Cheesecake', price: 3 },
+      { name: 'Pasticcini Drago', price: 5 },
+    ],
   },
   {
     id: '5b8862a9-9ed1-4d60-85b2-9d13b69b0e3c',
     name: 'Divora',
     icon: 'mobile',
+    useItemBuilder: false,
+  },
+  {
+    id: '380d7bbd-5fa3-459a-a76c-be035c777a09',
+    name: 'Kohi House',
+    icon: 'coffee',
+    useItemBuilder: true,
+    quickProducts: [
+      { name: 'Mango Crepe Cake', price: 40 },
+      { name: 'Japanese Cheesecake', price: 30 },
+    ],
   },
 ];
 
@@ -41,12 +72,38 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  
-  // Item builder for Раменная
+
   const [items, setItems] = useState<OrderItem[]>([{ product_name: '', quantity: 1, unit_price: 0 }]);
+
+  const selectedClientConfig = QUICK_CLIENTS.find(c => c.id === selectedClient);
+  const useItemBuilder = selectedClientConfig?.useItemBuilder ?? false;
+
+  const addQuickProduct = (product: QuickProduct) => {
+    const existingIndex = items.findIndex(
+      item => item.product_name.trim().toLowerCase() === product.name.toLowerCase()
+    );
+    if (existingIndex !== -1) {
+      const newItems = [...items];
+      newItems[existingIndex] = { ...newItems[existingIndex], quantity: newItems[existingIndex].quantity + 1 };
+      setItems(newItems);
+      return;
+    }
+    const lastItem = items[items.length - 1];
+    if (lastItem && !lastItem.product_name.trim() && lastItem.unit_price === 0) {
+      const newItems = [...items];
+      newItems[items.length - 1] = { ...lastItem, product_name: product.name, unit_price: product.price };
+      setItems(newItems);
+    } else {
+      setItems([...items, { product_name: product.name, quantity: 1, unit_price: product.price }]);
+    }
+  };
   
-  const isRamennaya = selectedClient === '9323a8bb-6ec4-481c-b040-aa762dc626bd';
-  
+  useEffect(() => {
+    setItems([{ product_name: '', quantity: 1, unit_price: 0 }]);
+    setAmount('');
+    setDescription('');
+  }, [selectedClient]);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     // Store original body overflow style
@@ -81,7 +138,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
     }
 
     // Validation based on client type
-    if (isRamennaya) {
+    if (useItemBuilder) {
       // Validate items for Раменная
       if (items.length === 0) {
         setError('Добавьте хотя бы один товар');
@@ -121,7 +178,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
       const deliveryDate = selectedDate.toISOString().split('T')[0];
 
       // Build order items based on client type
-      const orderItems = isRamennaya 
+      const orderItems = useItemBuilder 
         ? items.map(item => ({
             product_name: item.product_name.trim(),
             quantity: item.quantity,
@@ -135,7 +192,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
             subtotal: parseFloat(amount),
           }];
 
-      const totalAmount = isRamennaya ? calculateTotal() : parseFloat(amount);
+      const totalAmount = useItemBuilder ? calculateTotal() : parseFloat(amount);
 
       // Create immediate order with pre-existing client ID
       const orderData = {
@@ -224,7 +281,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
             <label className="block text-sm font-semibold text-charcoal-700 mb-2">
               Клиент <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {QUICK_CLIENTS.map((client) => (
                 <button
                   key={client.id}
@@ -240,6 +297,8 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
                     <User className="w-8 h-8" />
                   ) : client.icon === 'ramen' ? (
                     <Soup className="w-8 h-8" />
+                  ) : client.icon === 'coffee' ? (
+                    <Coffee className="w-8 h-8" />
                   ) : (
                     <Smartphone className="w-8 h-8" />
                   )}
@@ -250,7 +309,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
           </div>
 
           {/* Conditional Input: Item Builder for Раменная OR Simple Amount for Others */}
-          {isRamennaya ? (
+          {useItemBuilder ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-semibold text-charcoal-700">
@@ -264,6 +323,24 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
                   + Добавить товар
                 </button>
               </div>
+
+              {selectedClientConfig?.quickProducts && (
+                <div>
+                  <p className="text-xs font-semibold text-charcoal-500 mb-2">Быстрый выбор</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedClientConfig.quickProducts.map((product) => (
+                      <button
+                        key={product.name}
+                        type="button"
+                        onClick={() => addQuickProduct(product)}
+                        className="px-3 py-1.5 text-sm bg-cream-100 border-2 border-cream-300 text-charcoal-700 rounded-lg hover:bg-brown-100 hover:border-brown-300 transition-colors font-medium"
+                      >
+                        {product.name} · CHF {product.price}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {items.map((item, index) => (
                 <div key={index} className="p-4 bg-cream-50 rounded-lg border-2 border-cream-200 space-y-3">

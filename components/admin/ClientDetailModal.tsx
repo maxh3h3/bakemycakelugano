@@ -551,13 +551,7 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
         confirmText={t.delete}
         cancelText={t.cancel}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={async () => {
-          setIsDeleting(true);
-          await onDelete();
-          setIsDeleting(false);
-          setShowDeleteConfirm(false);
-          onClose();
-        }}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );
