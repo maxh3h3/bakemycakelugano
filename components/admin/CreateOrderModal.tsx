@@ -17,6 +17,9 @@ interface CreateOrderModalProps {
   initialData?: AIExtractedOrderData; // AI-extracted data for pre-filling
 }
 
+const ADMIN_MIN_DATE = new Date(2000, 0, 1);
+ADMIN_MIN_DATE.setHours(0, 0, 0, 0);
+
 interface OrderItem {
   product_name: string;
   product_image_urls: string[];
@@ -1033,7 +1036,8 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
                         onDateChange={setDeliveryDate}
                         locale="ru"
                         required
-                        minDate={new Date()}
+                        minDate={ADMIN_MIN_DATE}
+                        showHelperText={false}
                     />
                   </div>
 

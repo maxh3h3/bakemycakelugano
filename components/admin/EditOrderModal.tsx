@@ -19,6 +19,9 @@ interface OrderWithItems extends Order {
   client: DBClient | null;
 }
 
+const ADMIN_MIN_DATE = new Date(2000, 0, 1);
+ADMIN_MIN_DATE.setHours(0, 0, 0, 0);
+
 // ClientSearchInput uses camelCase field names
 interface SearchClient {
   id: string;
@@ -780,6 +783,7 @@ export default function EditOrderModal({ order, onClose, onSaved }: EditOrderMod
                     onDateChange={setDeliveryDate}
                     locale="ru"
                     required
+                    minDate={ADMIN_MIN_DATE}
                     showHelperText={false}
                   />
                 </div>
