@@ -70,6 +70,11 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
   // Check if selected date is Sunday
   const isSunday = formData.deliveryDate ? formData.deliveryDate.getDay() === 0 : false;
 
+  // On Sundays the minimum delivery fee is CHF 30
+  const effectiveDeliveryFee = isSunday && deliveryInfo.deliveryFee > 0
+    ? Math.max(deliveryInfo.deliveryFee, 30)
+    : deliveryInfo.deliveryFee;
+
   // Redirect if cart is empty
   useEffect(() => {
     if (items.length === 0) {
@@ -234,7 +239,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
             city: formData.deliveryType === 'delivery' ? formData.city : null,
             postalCode: formData.deliveryType === 'delivery' ? formData.postalCode : null,
             country: formData.deliveryType === 'delivery' ? formData.country : null,
-            fee: deliveryInfo.deliveryFee,
+            fee: effectiveDeliveryFee,
             requiresContact: deliveryInfo.requiresContact,
           },
           specialInstructions: formData.specialInstructions || null,
@@ -416,6 +421,43 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                         </h3>
                         <p className="text-sm text-blue-800 leading-relaxed">
                           {t('sundayPickupNotice')}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Sunday Minimum Delivery Fee Notice */}
+              <AnimatePresence>
+                {isSunday && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-lg shadow-sm">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-6 h-6 text-amber-600"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-amber-800 font-medium leading-relaxed">
+                          {t('sundayMinimumOrderNotice')}
                         </p>
                       </div>
                     </div>
@@ -620,7 +662,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                               </svg>
                             </div>
                             <p className="text-sm text-green-800">
-                              {t('deliveryFeeInfo', { fee: formatPrice(deliveryInfo.deliveryFee) })}
+                              {t('deliveryFeeInfo', { fee: formatPrice(effectiveDeliveryFee) })}
                             </p>
                           </div>
                         ) : deliveryInfo.deliveryFee > 0 && deliveryInfo.distanceKm ? (
@@ -653,7 +695,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
                                 <span>~{deliveryInfo.durationMinutes} min</span>
                               </div>
                               <div className="ml-auto font-semibold text-charcoal-900">
-                                {locale === 'it' ? 'Consegna' : 'Delivery'}: {formatPrice(deliveryInfo.deliveryFee)}
+                                {locale === 'it' ? 'Consegna' : 'Delivery'}: {formatPrice(effectiveDeliveryFee)}
                               </div>
                             </div>
                           </div>
@@ -747,7 +789,7 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
         <OrderSummary 
           locale={locale} 
           isProcessing={isProcessing}
-          deliveryFee={deliveryInfo.deliveryFee}
+          deliveryFee={effectiveDeliveryFee}
         />
       </div>
     </div>

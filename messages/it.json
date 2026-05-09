@@ -17,6 +17,7 @@
     "categories": "Categorie",
     "products": "Prodotti",
     "flavours": "Gusti",
+    "builder": "Costruttore 3D",
     "about": "Chi Siamo",
     "contact": "Contatti",
     "cart": "Carrello"
@@ -171,6 +172,7 @@
     "delivery": "Consegna a domicilio",
     "sundayPickupNotAvailable": "Il ritiro in negozio non è disponibile di domenica",
     "sundayPickupNotice": "Siamo chiusi la domenica, ma saremo felici di consegnare il tuo ordine a casa! Seleziona la consegna a domicilio qui sotto.",
+    "sundayMinimumOrderNotice": "Le consegne domenicali hanno un costo minimo di consegna di CHF 30.",
     "notAvailable": "Non disponibile",
     "address": "Indirizzo",
     "addressPlaceholder": "Via Roma 123",
