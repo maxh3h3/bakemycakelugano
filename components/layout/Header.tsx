@@ -76,13 +76,21 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-base font-medium transition-colors hover:text-brown-500 px-2 py-1 ${
-                  pathname === link.href
-                    ? 'text-brown-500'
-                    : 'text-charcoal-900/70'
-                }`}
+                className={
+                  link.highlight
+                    ? `text-base font-semibold transition-all px-3 py-1.5 rounded-full border-2 ${
+                        pathname === link.href
+                          ? 'bg-brown-500 text-white border-brown-500'
+                          : 'border-brown-400 text-brown-600 hover:bg-brown-500 hover:text-white hover:border-brown-500'
+                      }`
+                    : `text-base font-medium transition-colors hover:text-brown-500 px-2 py-1 ${
+                        pathname === link.href
+                          ? 'text-brown-500'
+                          : 'text-charcoal-900/70'
+                      }`
+                }
               >
-                {link.label}
+                {link.highlight ? `✦ ${link.label}` : link.label}
               </Link>
             ))}
           </div>
@@ -170,12 +178,16 @@ export default function Header() {
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${
-                      pathname === link.href
+                      link.highlight
+                        ? pathname === link.href
+                          ? 'bg-brown-500 text-white'
+                          : 'bg-brown-50 text-brown-600 border border-brown-200'
+                        : pathname === link.href
                         ? 'bg-brown-50 text-brown-500'
                         : 'text-charcoal-900/70 hover:bg-cream-100'
                     }`}
                   >
-                    {link.label}
+                    {link.highlight ? `✦ ${link.label}` : link.label}
                   </Link>
                 ))}
               </div>

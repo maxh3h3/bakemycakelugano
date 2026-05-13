@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useBotpressChat } from './useBotpressChat';
@@ -46,6 +47,7 @@ const FAB_LABEL: Record<string, string> = {
 
 
 export default function ChatWidget({ locale }: ChatWidgetProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [hasOpened, setHasOpened] = useState(false);
@@ -85,6 +87,9 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
   };
 
   const lang = locale in PLACEHOLDER ? locale : 'it';
+
+  // Hide on the cake builder page — the floating menu is already there
+  if (pathname?.includes('/builder')) return null;
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-3">
