@@ -149,31 +149,25 @@ export default function EditOrderModal({ order, onClose, onSaved }: EditOrderMod
     getFlavours('en').then(data => setFlavours(data || [])).catch(console.error);
   }, []);
 
-  // Auto-fetch delivery fee estimate when address changes
-  useEffect(() => {
-    if (deliveryData.delivery_type !== 'delivery' || !deliveryData.delivery_address.trim()) return;
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      setIsFetchingFee(true);
-      try {
-        const res = await fetch('/api/delivery-estimate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullAddress: deliveryData.delivery_address }),
-          signal: controller.signal,
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (typeof data.fee === 'number') setDeliveryFee(data.fee);
-        }
-      } catch (err: any) {
-        if (err.name !== 'AbortError') console.error('Delivery estimate error:', err);
-      } finally {
-        setIsFetchingFee(false);
+  const handleFetchEstimate = async () => {
+    if (!deliveryData.delivery_address.trim()) return;
+    setIsFetchingFee(true);
+    try {
+      const res = await fetch('/api/delivery-estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullAddress: deliveryData.delivery_address }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data.fee === 'number') setDeliveryFee(data.fee);
       }
-    }, 500);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [deliveryData.delivery_address, deliveryData.delivery_type]);
+    } catch (err) {
+      console.error('Delivery estimate error:', err);
+    } finally {
+      setIsFetchingFee(false);
+    }
+  };
 
   // Client handlers
   const handleClientSelect = (client: SearchClient) => {
@@ -843,22 +837,25 @@ export default function EditOrderModal({ order, onClose, onSaved }: EditOrderMod
                       <label className="block text-sm font-semibold text-charcoal-700 mb-2">
                         Стоимость доставки (CHF)
                       </label>
-                      <div className="relative">
+                      <div className="flex gap-2">
                         <input
                           type="number"
                           step="0.01"
                           min="0"
                           value={deliveryFee}
                           onChange={(e) => setDeliveryFee(Math.max(0, parseFloat(e.target.value) || 0))}
-                          className={`w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none ${isFetchingFee ? 'pr-36' : ''}`}
+                          className="flex-1 px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                         />
-                        {isFetchingFee && (
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-charcoal-500 animate-pulse">
-                            Рассчитывается...
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={handleFetchEstimate}
+                          disabled={isFetchingFee || !deliveryData.delivery_address.trim()}
+                          className="px-4 py-2 rounded-lg border-2 border-brown-300 text-brown-600 text-sm font-semibold hover:bg-brown-50 hover:border-brown-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          {isFetchingFee ? 'Расчёт...' : 'Рассчитать'}
+                        </button>
                       </div>
-                      <p className="text-xs text-charcoal-500 mt-1">Рассчитывается автоматически — можно изменить вручную</p>
+                      <p className="text-xs text-charcoal-500 mt-1">Показывается сохранённое значение — нажмите «Рассчитать» для пересчёта по адресу</p>
                     </div>
                   </>
                 )}
