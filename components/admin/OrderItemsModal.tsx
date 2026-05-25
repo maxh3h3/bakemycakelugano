@@ -67,6 +67,8 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [localItems, setLocalItems] = useState<OrderItem[]>(orderGroup.items);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
+  const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
 
   const updateItemStatus = async (itemId: string, newStatus: ProductionStatus) => {
     setUpdatingItemId(itemId);
@@ -108,11 +110,46 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
     }
   };
 
+  const saveStaffNote = async (itemId: string) => {
+    const note = noteInputs[itemId]?.trim();
+    if (!note) return;
+
+    setSavingNoteId(itemId);
+    try {
+      const response = await fetch('/api/admin/production/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, note }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save note');
+
+      const result = await response.json();
+
+      setLocalItems(prev =>
+        prev.map(item =>
+          item.id === itemId
+            ? { ...item, staff_notes: result.item.staff_notes }
+            : item
+        )
+      );
+      setNoteInputs(prev => ({ ...prev, [itemId]: '' }));
+      setSuccessMessage('Заметка сохранена!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+      router.refresh();
+    } catch (error) {
+      console.error('Error saving staff note:', error);
+      alert('Не удалось сохранить заметку. Попробуйте еще раз.');
+    } finally {
+      setSavingNoteId(null);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-brown-500 to-brown-600 text-white p-6">
+        <div className="bg-gradient-to-r from-brown-500 to-brown-600 text-white p-4 md:p-6">
           <div className="flex items-center justify-between mb-2">
             <div className="flex-1">
               <h2 className="text-3xl font-heading font-bold mb-2">
@@ -149,7 +186,15 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
 
 
         {/* Modal Body - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          {/* Customer Note (order-level, shown once before items) */}
+          {localItems[0]?.customer_notes && (
+            <div className="mb-4 bg-teal-50 border-2 border-teal-300 rounded-xl p-3">
+              <p className="text-xs text-teal-700 font-semibold uppercase mb-1">Примечание клиента</p>
+              <p className="text-sm text-teal-900 font-medium">{localItems[0].customer_notes}</p>
+            </div>
+          )}
+
           {/* Order Items */}
           <div>
             <h3 className="font-heading font-bold text-brown-500 text-xl mb-4">
@@ -160,42 +205,42 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                 localItems.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl p-6 border-2 border-cream-300 shadow-md"
+                    className="bg-white rounded-2xl p-4 md:p-6 border-2 border-cream-300 shadow-md"
                   >
                     {/* Item Header */}
-                    <div className="flex items-start gap-6 mb-4">
-                      <div className="flex-1">
-                        <h4 className="text-2xl font-bold text-charcoal-900 mb-4">
+                    <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6 mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xl md:text-2xl font-bold text-charcoal-900 mb-4">
                           {item.quantity}x {item.product_name}
                         </h4>
-                        
+
                         {/* Product Details Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                           {item.weight_kg && (
-                            <div className="bg-orange-50 rounded-xl px-4 py-3 border-2 border-orange-300">
-                              <p className="text-sm font-semibold text-orange-600 uppercase mb-1 flex items-center gap-1.5">
+                            <div className="bg-orange-50 rounded-xl px-3 md:px-4 py-3 border-2 border-orange-300">
+                              <p className="text-xs md:text-sm font-semibold text-orange-600 uppercase mb-1 flex items-center gap-1.5">
                                 <Weight className="w-4 h-4" />
                                 Вес
                               </p>
-                              <p className="text-2xl font-bold text-orange-900">{item.weight_kg}</p>
+                              <p className="text-xl md:text-2xl font-bold text-orange-900">{item.weight_kg}</p>
                             </div>
                           )}
                           {item.diameter_cm && (
-                            <div className="bg-blue-50 rounded-xl px-4 py-3 border-2 border-blue-300">
-                              <p className="text-sm font-semibold text-blue-600 uppercase mb-1 flex items-center gap-1.5">
+                            <div className="bg-blue-50 rounded-xl px-3 md:px-4 py-3 border-2 border-blue-300">
+                              <p className="text-xs md:text-sm font-semibold text-blue-600 uppercase mb-1 flex items-center gap-1.5">
                                 <Circle className="w-4 h-4" />
                                 Диаметр
                               </p>
-                              <p className="text-2xl font-bold text-blue-900">{item.diameter_cm}см</p>
+                              <p className="text-xl md:text-2xl font-bold text-blue-900">{item.diameter_cm}см</p>
                             </div>
                           )}
                           {item.flavour_name && (
-                            <div className="bg-purple-50 rounded-xl px-4 py-3 border-2 border-purple-300">
-                              <p className="text-sm font-semibold text-purple-600 uppercase mb-1 flex items-center gap-1.5">
+                            <div className="bg-purple-50 rounded-xl px-3 md:px-4 py-3 border-2 border-purple-300">
+                              <p className="text-xs md:text-sm font-semibold text-purple-600 uppercase mb-1 flex items-center gap-1.5">
                                 <Cake className="w-4 h-4" />
                                 {t.flavour}
                               </p>
-                              <p className="text-2xl font-bold text-purple-900">{item.flavour_name}</p>
+                              <p className="text-xl md:text-2xl font-bold text-purple-900">{item.flavour_name}</p>
                             </div>
                           )}
                         </div>
@@ -203,10 +248,10 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
 
                       {/* Product Images Reference */}
                       {item.product_image_urls && item.product_image_urls.length > 0 && (
-                        <div className="flex-shrink-0">
+                        <div className="w-full md:w-64 md:flex-shrink-0">
                           <OrderItemImageCarousel
                             urls={item.product_image_urls}
-                            containerClassName="relative w-64 h-64 rounded-2xl overflow-hidden border-4 border-brown-300 shadow-2xl"
+                            containerClassName="relative w-full h-48 md:w-64 md:h-64 rounded-2xl overflow-hidden border-4 border-brown-300 shadow-2xl"
                             imageClassName="object-cover"
                           />
                         </div>
@@ -231,18 +276,36 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
 
                     {/* Staff Notes */}
                     {item.staff_notes && (
-                      <div className="mb-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                      <div className="mb-2 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
                         <p className="text-xs text-blue-600 font-semibold mb-1">Примечания персонала</p>
-                        <p className="text-sm text-blue-900">{item.staff_notes}</p>
+                        <p className="text-sm text-blue-900 whitespace-pre-line">{item.staff_notes}</p>
                       </div>
                     )}
+
+                    {/* Add Staff Note */}
+                    <div className="mb-4">
+                      <textarea
+                        value={noteInputs[item.id] || ''}
+                        onChange={e => setNoteInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
+                        placeholder="Добавить заметку..."
+                        rows={2}
+                        className="w-full text-sm border-2 border-blue-200 rounded-lg px-3 py-2 text-charcoal-800 placeholder-charcoal-400 resize-none focus:outline-none focus:border-blue-400"
+                      />
+                      <button
+                        onClick={() => saveStaffNote(item.id)}
+                        disabled={!noteInputs[item.id]?.trim() || savingNoteId === item.id}
+                        className="mt-1 px-4 py-1.5 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {savingNoteId === item.id ? 'Сохранение...' : 'Сохранить заметку'}
+                      </button>
+                    </div>
 
                     {/* Status Selector */}
                     <div>
                       <label className="block text-sm font-semibold text-charcoal-700 mb-2">
                         Статус производства
                       </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                         {statusOptions.map((status) => {
                           const isActive = item.production_status === status.value;
                           return (
@@ -255,7 +318,7 @@ export default function OrderItemsModal({ orderGroup, onClose }: OrderItemsModal
                               }}
                               disabled={updatingItemId === item.id}
                               className={`
-                                px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all
+                                px-2 py-2 rounded-lg text-xs font-medium border-2 transition-all text-center
                                 ${isActive 
                                   ? `${status.color} ring-2 ring-brown-500 scale-105 shadow-lg` 
                                   : updatingItemId === item.id

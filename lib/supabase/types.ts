@@ -150,6 +150,7 @@ export interface Database {
           writing_on_cake: string | null
           internal_decoration_notes: string | null
           staff_notes: string | null
+          customer_notes: string | null
           delivery_date: string | null
           started_at: string | null
           completed_at: string | null
@@ -175,6 +176,7 @@ export interface Database {
           writing_on_cake?: string | null
           internal_decoration_notes?: string | null
           staff_notes?: string | null
+          customer_notes?: string | null
           delivery_date?: string | null
           started_at?: string | null
           completed_at?: string | null
@@ -200,6 +202,7 @@ export interface Database {
           writing_on_cake: string | null
           internal_decoration_notes: string | null
           staff_notes: string | null
+          customer_notes: string | null
           delivery_date: string | null
           started_at: string | null
           completed_at: string | null

@@ -107,6 +107,9 @@ export const orderItems = pgTable('order_items', {
   // Customer-facing decoration
   writingOnCake: text('writing_on_cake'),
   
+  // Customer note from checkout (denormalized from orders.customer_notes)
+  customerNotes: text('customer_notes'),
+
   // Internal staff notes
   internalDecorationNotes: text('internal_decoration_notes'),
   staffNotes: text('staff_notes'),

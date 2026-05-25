@@ -80,7 +80,7 @@ export async function POST(
     // Fetch order to get order_number, delivery_date, delivery_type, and delivery_time
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('order_number, delivery_date, delivery_type, delivery_time, delivery_fee')
+      .select('order_number, delivery_date, delivery_type, delivery_time, delivery_fee, customer_notes')
       .eq('id', orderId)
       .single() as { data: { order_number: string | null; delivery_date: string | null; delivery_type: string | null; delivery_time: string | null; delivery_fee: string | number | null } | null; error: any };
 
@@ -111,6 +111,7 @@ export async function POST(
         writing_on_cake,
         internal_decoration_notes,
         staff_notes,
+        customer_notes: (order as any).customer_notes || null,
         weight_kg,
         diameter_cm,
         production_status: 'new',

@@ -200,6 +200,7 @@ export async function POST(request: NextRequest) {
       writing_on_cake: item.writing_on_cake || null,
       internal_decoration_notes: item.internal_decoration_notes || null,
       staff_notes: item.staff_notes || null,
+      customer_notes: customer_notes || null,
       production_status: is_immediate ? 'decorated' : 'new', // Immediate sales are complete (use final production status)
       completed_at: is_immediate ? new Date().toISOString() : null, // Mark completion time
     }));

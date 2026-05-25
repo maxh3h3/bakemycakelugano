@@ -252,6 +252,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       flavour_name: item.flavourName || null,
       weight_kg: item.weight_kg ?? item.weightKg ?? null,
       writing_on_cake: item.writingOnCake || null,
+      customer_notes: metadata.specialInstructions || null,
       production_status: 'new',
     }));
 
