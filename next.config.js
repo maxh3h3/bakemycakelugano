@@ -17,6 +17,7 @@ const nextConfig = {
     ],
     qualities: [50, 75, 90, 100], // Configure allowed image quality values
   },
+  serverExternalPackages: ['imapflow', 'mailparser'],
   experimental: {
     optimizePackageImports: ['framer-motion'],
   },

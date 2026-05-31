@@ -14,7 +14,8 @@ import { Zap, Lightbulb, X, CheckCircle, ShoppingBag, Phone, MessageCircle, Came
 
 interface CreateOrderModalProps {
   onClose: () => void;
-  initialData?: AIExtractedOrderData; // AI-extracted data for pre-filling
+  initialData?: AIExtractedOrderData;
+  onSuccess?: (orderId: string, orderNumber: string) => void;
 }
 
 const ADMIN_MIN_DATE = new Date(2000, 0, 1);
@@ -36,7 +37,7 @@ interface OrderItem {
 
 type Step = 1 | 2 | 3;
 
-export default function CreateOrderModal({ onClose, initialData }: CreateOrderModalProps) {
+export default function CreateOrderModal({ onClose, initialData, onSuccess }: CreateOrderModalProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -446,7 +447,9 @@ export default function CreateOrderModal({ onClose, initialData }: CreateOrderMo
       }
 
       // Success - refresh and close
+      const created = await response.json();
       router.refresh();
+      onSuccess?.(created.order?.id, created.order?.order_number);
       onClose();
     } catch (error) {
       console.error('Error creating order:', error);

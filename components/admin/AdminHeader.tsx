@@ -23,6 +23,7 @@ function getNavLinks(role: UserRole | null | undefined): NavLink[] {
   if (role === 'owner') {
     return [
       { href: '/admin/orders', label: t.orders, match: '/orders' },
+      { href: '/admin/emails', label: 'Email', match: '/emails' },
       { href: '/admin/clients', label: t.clients, match: '/clients' },
       { href: '/admin/meetings', label: 'Встречи', match: '/meetings' },
       { href: '/admin/production', label: t.production, match: '/production' },

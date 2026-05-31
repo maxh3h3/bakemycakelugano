@@ -1,0 +1,79 @@
+<h2>Delivery Page — Map Layout</h2>
+<p class="subtitle">For Today & Tomorrow tabs: where does the map live relative to the order list?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8f5f0;padding:16px;font-size:12px;">
+      <div style="background:#7c5c3e;color:white;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-weight:bold;">🚗 Доставка &nbsp;|&nbsp; 🏪 Самовывоз</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;font-weight:bold;border:2px solid #7c5c3e;">Сегодня (4)</div>
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;">Завтра (2)</div>
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;">Эта неделя</div>
+      </div>
+      <div style="background:#c8d8c0;border-radius:6px;height:140px;display:flex;align-items:center;justify-content:center;color:#2d5a1b;font-weight:bold;margin-bottom:8px;">
+        🗺️ Карта маршрута<br><span style="font-size:10px;font-weight:normal;">4 точки доставки · ~1h 20m</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="background:white;border-radius:4px;padding:6px;border-left:3px solid #e85d04;">⏰ 11:00 · Иванова А. · ул. Ленина 10</div>
+        <div style="background:white;border-radius:4px;padding:6px;border-left:3px solid #e85d04;">⏰ 13:30 · Петров С. · пр. Мира 45</div>
+        <div style="background:white;border-radius:4px;padding:6px;border-left:3px solid #aaa;">⏰ 15:00 · Смирнова О. · ул. Садовая 7</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Карта сверху, список снизу</h3>
+      <p>Маршрут всегда виден. Прокрутка вниз для деталей заказов. Подходит для курьера, который быстро проверяет маршрут.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8f5f0;padding:16px;font-size:12px;">
+      <div style="background:#7c5c3e;color:white;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-weight:bold;">🚗 Доставка &nbsp;|&nbsp; 🏪 Самовывоз</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;font-weight:bold;border:2px solid #7c5c3e;">Сегодня (4)</div>
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;">Завтра (2)</div>
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;">Эта неделя</div>
+      </div>
+      <div style="display:flex;gap:8px;height:180px;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
+          <div style="background:white;border-radius:4px;padding:5px;border-left:3px solid #e85d04;font-size:11px;"><b>11:00</b> Иванова А.<br>ул. Ленина 10</div>
+          <div style="background:white;border-radius:4px;padding:5px;border-left:3px solid #e85d04;font-size:11px;"><b>13:30</b> Петров С.<br>пр. Мира 45</div>
+          <div style="background:white;border-radius:4px;padding:5px;border-left:3px solid #aaa;font-size:11px;"><b>15:00</b> Смирнова О.<br>ул. Садовая 7</div>
+        </div>
+        <div style="flex:1;background:#c8d8c0;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#2d5a1b;font-weight:bold;text-align:center;font-size:11px;">
+          🗺️ Карта<br><span style="font-weight:normal;">маршрут + точки</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Список слева, карта справа</h3>
+      <p>Всё видно одновременно без прокрутки. Идеально для экранов 1080p+. Может быть тесно на маленьких экранах или планшетах.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8f5f0;padding:16px;font-size:12px;">
+      <div style="background:#7c5c3e;color:white;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-weight:bold;">🚗 Доставка &nbsp;|&nbsp; 🏪 Самовывоз</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;font-weight:bold;border:2px solid #7c5c3e;">Сегодня (4)</div>
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;">Завтра (2)</div>
+        <div style="background:#e8ddd3;padding:4px 10px;border-radius:4px;">Эта неделя</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="background:white;border-radius:4px;padding:6px;border-left:3px solid #e85d04;">⏰ 11:00 · Иванова А. · ул. Ленина 10</div>
+        <div style="background:white;border-radius:4px;padding:6px;border-left:3px solid #e85d04;">⏰ 13:30 · Петров С. · пр. Мира 45</div>
+        <div style="background:white;border-radius:4px;padding:6px;border-left:3px solid #aaa;">⏰ 15:00 · Смирнова О. · ул. Садовая 7</div>
+      </div>
+      <div style="background:#e8ddd3;border-radius:4px;padding:6px;text-align:center;margin-top:6px;cursor:pointer;font-weight:bold;">
+        🗺️ Показать маршрут на карте ▼
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Список + кнопка раскрыть карту</h3>
+      <p>Карта по запросу. Список заказов — главный. Хорошо работает на телефоне или планшете. Карта раскрывается под списком или в модальном окне.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Кликните на вариант, который ближе к тому, что вы хотите, затем напишите в чате.</p>
