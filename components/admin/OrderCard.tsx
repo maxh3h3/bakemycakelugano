@@ -8,8 +8,9 @@ import { formatDeliveryAddress } from '@/lib/schemas/delivery';
 import { parseDateFromDB } from '@/lib/utils';
 import EditOrderModal from '@/components/admin/EditOrderModal';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import OrderConfirmationModal from '@/components/admin/OrderConfirmationModal';
 import t from '@/lib/admin-translations-extended';
-import { Edit, ChevronDown, Trash2, Pencil, Paintbrush, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, ChevronDown, Trash2, Pencil, Paintbrush, FileText, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -36,6 +37,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const paymentSelectorRef = useRef<HTMLDivElement>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
@@ -384,6 +386,15 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                     <Edit className="w-4 h-4 mx-auto" />
                   </button>
 
+                  {/* Confirmation Card Button */}
+                  <button
+                    onClick={() => setIsConfirmationModalOpen(true)}
+                    className="p-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition-all shadow-md hover:shadow-lg hover:scale-110 flex-1"
+                    title="Карточка подтверждения"
+                  >
+                    <MessageSquare className="w-4 h-4 mx-auto" />
+                  </button>
+
                   {/* Delete Button */}
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
@@ -418,6 +429,13 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                   title={t.editOrder}
                 >
                   <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsConfirmationModalOpen(true)}
+                  className="p-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                  title="Карточка подтверждения"
+                >
+                  <MessageSquare className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setDeleteConfirm({ isOpen: true, orderId: order.id })}
@@ -617,6 +635,15 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                 title={t.editOrder}
               >
                 <Edit className="w-5 h-5" />
+              </button>
+
+              {/* Confirmation Card Button */}
+              <button
+                onClick={() => setIsConfirmationModalOpen(true)}
+                className="p-3 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                title="Карточка подтверждения"
+              >
+                <MessageSquare className="w-5 h-5" />
               </button>
 
               {/* Delete Order Button */}
@@ -887,6 +914,14 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
             setIsEditModalOpen(false);
             onUpdate();
           }}
+        />
+      )}
+
+      {/* Order Confirmation Card Modal */}
+      {isConfirmationModalOpen && (
+        <OrderConfirmationModal
+          order={order}
+          onClose={() => setIsConfirmationModalOpen(false)}
         />
       )}
 

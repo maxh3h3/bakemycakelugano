@@ -86,6 +86,7 @@ export interface Database {
           paid: boolean | null
           payment_method: string | null
           order_number: string | null
+          delivery_fee: number
           created_at: string
           updated_at: string
         }
@@ -102,6 +103,7 @@ export interface Database {
           delivery_address?: DeliveryAddress | null
           customer_notes?: string | null
           channel?: string | null
+          delivery_fee?: number
           created_by_user_id?: string | null
           paid?: boolean | null
           payment_method?: string | null
@@ -126,6 +128,7 @@ export interface Database {
           paid: boolean | null
           payment_method: string | null
           order_number: string | null
+          delivery_fee: number
           created_at: string
           updated_at: string
         }>
