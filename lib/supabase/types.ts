@@ -145,7 +145,7 @@ export interface Database {
           production_status: string | null
           order_number: string | null
           weight_kg: string | null
-          diameter_cm: number | null
+          diameter_cm: string | null
           product_category: string | null
           writing_on_cake: string | null
           internal_decoration_notes: string | null
@@ -171,7 +171,7 @@ export interface Database {
           production_status?: string | null
           order_number?: string | null
           weight_kg?: string | null
-          diameter_cm?: number | null
+          diameter_cm?: string | null
           product_category?: string | null
           writing_on_cake?: string | null
           internal_decoration_notes?: string | null
@@ -197,7 +197,7 @@ export interface Database {
           production_status: string | null
           order_number: string | null
           weight_kg: string | null
-          diameter_cm: number | null
+          diameter_cm: string | null
           product_category: string | null
           writing_on_cake: string | null
           internal_decoration_notes: string | null

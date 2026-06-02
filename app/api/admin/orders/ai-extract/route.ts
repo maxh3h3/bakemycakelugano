@@ -59,7 +59,7 @@ const SYSTEM_PROMPT = `Вы - экспертный ассистент по из�
       "unit_price": number (required, use 0 if unknown),
       "flavour_name": "string or null",
       "weight_kg": string or null (e.g., "1.5", "1.5 kg", "approx 2"),
-      "diameter_cm": number or null,
+      "diameter_cm": string or null (e.g., "20", "20-22", "approx 18"),
       "writing_on_cake": "string or null",
       "internal_decoration_notes": "string or null",
       "staff_notes": "string or null"

@@ -29,7 +29,7 @@ interface OrderItem {
   selected_flavour: string | null;
   flavour_name: string | null;
   weight_kg: string | null;
-  diameter_cm: number | null;
+  diameter_cm: string | null;
   writing_on_cake: string | null;
   internal_decoration_notes: string | null;
   staff_notes: string | null;
@@ -942,11 +942,9 @@ export default function CreateOrderModal({ onClose, initialData, onSuccess }: Cr
                             Диаметр (см)
                           </label>
                           <input
-                            type="number"
-                            step="1"
-                            min="0"
+                            type="text"
                             value={item.diameter_cm || ''}
-                            onChange={(e) => updateOrderItem(index, 'diameter_cm', e.target.value ? parseFloat(e.target.value) : null)}
+                            onChange={(e) => updateOrderItem(index, 'diameter_cm', e.target.value || null)}
                             placeholder="напр., 20"
                             className="w-full px-4 py-2 rounded-lg border-2 border-cream-300 focus:border-brown-500 focus:outline-none"
                           />

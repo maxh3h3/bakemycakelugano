@@ -101,7 +101,7 @@ export const orderItems = pgTable('order_items', {
   orderNumber: text('order_number'), // Denormalized from orders for production view
   deliveryType: text('delivery_type'), // Denormalized from orders for filtering immediate sales
   weightKg: text('weight_kg'),
-  diameterCm: numeric('diameter_cm', { precision: 5, scale: 2 }),
+  diameterCm: text('diameter_cm'),
   productCategory: text('product_category'),
   
   // Customer-facing decoration

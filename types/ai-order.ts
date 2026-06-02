@@ -10,7 +10,7 @@ export interface AIExtractedOrderItem {
   selected_flavour?: string | null;
   flavour_name?: string | null;
   weight_kg?: string | null;
-  diameter_cm?: number | null;
+  diameter_cm?: string | null;
   writing_on_cake?: string | null;
   internal_decoration_notes?: string | null;
   staff_notes?: string | null;

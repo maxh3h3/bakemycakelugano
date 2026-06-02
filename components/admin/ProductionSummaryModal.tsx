@@ -33,7 +33,7 @@ interface ProductionSummaryModalProps {
 
 interface DiameterFlavourGroup {
   flavour: string;
-  diameter: number;
+  diameter: string;
   count: number;
 }
 
@@ -135,10 +135,12 @@ export default function ProductionSummaryModal({ items, viewMode, onClose }: Pro
       groups.get(key)!.count += item.quantity;
     });
 
-    // Sort by diameter first, then by flavour
+    // Sort by diameter numerically first (parseFloat handles "20", "20-22", etc.), then by flavour
     return Array.from(groups.values()).sort((a, b) => {
-      if (a.diameter !== b.diameter) {
-        return a.diameter - b.diameter;
+      const numA = parseFloat(a.diameter) || 0;
+      const numB = parseFloat(b.diameter) || 0;
+      if (numA !== numB) {
+        return numA - numB;
       }
       return a.flavour.localeCompare(b.flavour);
     });
