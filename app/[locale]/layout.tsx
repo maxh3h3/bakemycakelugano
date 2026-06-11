@@ -7,6 +7,7 @@ import { inter, playfair } from '@/lib/fonts';
 import AnimatedBackground from '@/components/background/AnimatedBackground';
 import LocalBusinessSchema from '@/components/seo/LocalBusinessSchema';
 import ChatWidget from '@/components/chat/ChatWidget';
+import { META_PIXEL_ID } from '@/lib/meta-pixel';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -131,7 +132,7 @@ export default async function LocaleLayout({
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '1011240291849184');
+            fbq('init', '${META_PIXEL_ID}');
             fbq('track', 'PageView');
           `}
         </Script>
@@ -139,7 +140,7 @@ export default async function LocaleLayout({
       <body className="antialiased">
         <noscript>
           <img height="1" width="1" style={{display:'none'}}
-            src="https://www.facebook.com/tr?id=1011240291849184&ev=PageView&noscript=1"
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
             alt=""
           />
         </noscript>

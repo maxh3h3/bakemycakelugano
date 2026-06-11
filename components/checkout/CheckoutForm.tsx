@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice, formatDateForDB } from '@/lib/utils';
 import { type DeliveryInfo, LUGANO_ZIP_CODES, LUGANO_DELIVERY_FEE } from '@/lib/delivery';
+import { trackInitiateCheckout } from '@/lib/meta-pixel';
 import Button from '@/components/ui/Button';
 import OrderSummary from './OrderSummary';
 import DatePicker from '@/components/products/DatePicker';
@@ -81,6 +82,20 @@ export default function CheckoutForm({ locale }: CheckoutFormProps) {
       router.push(`/${locale}/cart`);
     }
   }, [items, locale, router]);
+
+  // Meta Pixel: checkout started (once per visit, after cart hydrates)
+  const initiateCheckoutTracked = useRef(false);
+  useEffect(() => {
+    if (items.length === 0 || initiateCheckoutTracked.current) {
+      return;
+    }
+    initiateCheckoutTracked.current = true;
+    trackInitiateCheckout({
+      contentIds: items.map((item) => item.product._id),
+      numItems: items.reduce((total, item) => total + item.quantity, 0),
+      value: getTotalPrice(),
+    });
+  }, [items, getTotalPrice]);
 
   // Calculate delivery fee — fast path for known Lugano zip codes, Maps API for everything else
   useEffect(() => {

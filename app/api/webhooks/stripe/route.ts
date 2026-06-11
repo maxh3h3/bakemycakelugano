@@ -14,6 +14,7 @@ import { generateOrderNumber } from '@/lib/order-number-generator';
 import { findOrCreateClient, updateClientStats } from '@/lib/clients/utils';
 import { emitNewOrderEvent } from '@/lib/events/production-events';
 import { createRevenueFromOrder } from '@/lib/accounting/transactions';
+import { sendPurchaseEvent } from '@/lib/meta-capi';
 
 /**
  * Batch-fetches product images from Sanity for a list of product IDs.
@@ -284,6 +285,48 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       } catch (revenueError) {
         console.error('Failed to create revenue transaction:', revenueError);
         // Don't throw - order is already created, revenue can be added manually
+      }
+    }
+
+    // Send server-side Purchase event to Meta Conversions API.
+    // event_id = session.id deduplicates against the browser pixel event
+    // fired on the success page, and protects against webhook retries.
+    if (isPaid) {
+      try {
+        const nameParts = (metadata.customerName || '').trim().split(/\s+/);
+        const firstName = nameParts[0] || null;
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+        const capiResult = await sendPurchaseEvent({
+          eventId: session.id,
+          value: totalAmount,
+          eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${metadata.locale || 'it'}/checkout/success`,
+          email: metadata.customerEmail,
+          phone: metadata.customerPhone,
+          firstName,
+          lastName,
+          city: metadata.deliveryAddressCity,
+          zipCode: metadata.deliveryAddressPostalCode,
+          country: metadata.deliveryAddressCountry,
+          fbp: metadata.fbp,
+          fbc: metadata.fbc,
+          clientIp: metadata.clientIp,
+          clientUserAgent: metadata.clientUserAgent,
+          contents: orderItems.map((item: any) => ({
+            id: item.productId,
+            quantity: item.quantity,
+            item_price: item.unitPrice,
+          })),
+        });
+
+        if (capiResult.success) {
+          console.log('Meta CAPI Purchase event sent:', session.id);
+        } else {
+          console.error('Meta CAPI Purchase event failed:', capiResult.error);
+        }
+      } catch (capiError) {
+        console.error('Error sending Meta CAPI Purchase event:', capiError);
+        // Don't throw - tracking must never fail the webhook
       }
     }
 

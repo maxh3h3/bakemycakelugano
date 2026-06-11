@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import type { Product } from '@/types/sanity';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { trackViewContent, trackAddToCart } from '@/lib/meta-pixel';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import ProductImageGallery from './ProductImageGallery';
@@ -47,6 +48,17 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
   const currentPrice = getCurrentPrice();
   const totalPrice = currentPrice * quantity;
 
+  // Meta Pixel: product page view
+  useEffect(() => {
+    trackViewContent({
+      contentId: product._id,
+      contentName: product.name,
+      contentCategory: product.category?.name,
+      value: product.price,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product._id]);
+
   // Validation
   const validate = () => {
     const newErrors: { weight?: string; flavour?: string } = {};
@@ -79,6 +91,14 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
         selectedFlavour || undefined,
         writingOnCake || undefined
       );
+
+      // Meta Pixel: add to cart with selected-variant price
+      trackAddToCart({
+        contentId: product._id,
+        contentName: product.name,
+        value: currentPrice * quantity,
+        quantity,
+      });
 
       // Show success feedback
       setShowSuccess(true);

@@ -87,6 +87,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Capture Meta browser identifiers for the Conversions API Purchase
+    // event sent later from the Stripe webhook (improves ad attribution)
+    const fbp = request.cookies.get('_fbp')?.value || '';
+    const fbc = request.cookies.get('_fbc')?.value || '';
+    const clientIp = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+    const clientUserAgent = request.headers.get('user-agent') || '';
+
     // Ensure the site-wide 10% discount coupon exists in Stripe
     const COUPON_ID = 'BAKEMYCAKE_SITE_10PCT';
     try {
@@ -127,6 +134,10 @@ export async function POST(request: NextRequest) {
         discountPercentage: '10',
         discountAmount: discountAmount.toFixed(2),
         locale,
+        fbp,
+        fbc,
+        clientIp,
+        clientUserAgent,
       },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/checkout/cancel`,

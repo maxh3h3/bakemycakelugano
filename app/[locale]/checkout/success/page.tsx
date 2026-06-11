@@ -8,6 +8,7 @@ import { stripe } from '@/lib/stripe/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { formatDeliveryAddress } from '@/lib/schemas/delivery';
 import { parseDateFromDB } from '@/lib/utils';
+import MetaPurchaseTracker from '@/components/analytics/MetaPurchaseTracker';
 
 interface SuccessPageProps {
   params: Promise<{ locale: string }>;
@@ -60,8 +61,44 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
     console.error('Error retrieving session:', error);
   }
 
+  // Meta Pixel Purchase data: prefer the DB order (real charged total);
+  // fall back to the Stripe session if the webhook hasn't processed yet
+  let purchaseValue = 0;
+  let purchaseContents: Array<{ id: string; quantity: number; item_price: number }> = [];
+
+  if (order) {
+    purchaseValue = order.total_amount;
+    purchaseContents = (order.order_items || []).map((item: any) => ({
+      id: item.product_id || item.product_name,
+      quantity: item.quantity,
+      item_price: item.unit_price,
+    }));
+  } else if (session?.amount_total != null) {
+    purchaseValue = session.amount_total / 100;
+    try {
+      const metadataItems = JSON.parse(session.metadata?.orderItems || '[]');
+      purchaseContents = metadataItems.map((item: any) => ({
+        id: item.productId,
+        quantity: item.quantity,
+        item_price: item.unitPrice,
+      }));
+    } catch {
+      purchaseContents = [];
+    }
+  }
+
+  const purchaseNumItems = purchaseContents.reduce((sum, c) => sum + c.quantity, 0);
+
   return (
     <div className="min-h-screen flex flex-col">
+      {purchaseValue > 0 && (
+        <MetaPurchaseTracker
+          sessionId={session_id}
+          value={purchaseValue}
+          contents={purchaseContents}
+          numItems={purchaseNumItems}
+        />
+      )}
       <Header />
       <main className="flex-1 py-12 md:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
