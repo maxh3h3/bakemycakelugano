@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { resend, emailConfig } from '@/lib/resend/client';
+import { appendToSent } from '@/lib/email/imap-client';
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB per file
 
@@ -75,6 +76,25 @@ export async function POST(request: NextRequest) {
     console.error('[send] Resend error:', sendError);
     return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
   }
+
+  // Append to Infomaniak Sent folder so owner sees it in her mail client
+  const sentDate = new Date().toUTCString();
+  const rawMime = [
+    `From: ${emailConfig.from}`,
+    `To: ${to}`,
+    `Subject: ${subject || 'Re: Bake My Cake'}`,
+    `Date: ${sentDate}`,
+    inReplyToMessageId ? `In-Reply-To: ${inReplyToMessageId}` : '',
+    inReplyToMessageId ? `References: ${inReplyToMessageId}` : '',
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    body,
+  ].filter(Boolean).join('\r\n');
+
+  appendToSent(rawMime).catch(err =>
+    console.error('[send] IMAP append failed (non-fatal):', err)
+  );
 
   // Store outbound email with attachment URLs
   await supabaseAdmin.from('order_emails').insert({

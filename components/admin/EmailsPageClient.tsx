@@ -91,6 +91,12 @@ export default function EmailsPageClient() {
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [extractingOrder, setExtractingOrder] = useState(false);
   const [orderModalData, setOrderModalData] = useState<AIExtractedOrderData | null>(null);
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeTo, setComposeTo] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [composeSending, setComposeSending] = useState(false);
+  const [deletingContact, setDeletingContact] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -212,6 +218,40 @@ export default function EmailsPageClient() {
     setExtractingOrder(false);
   };
 
+  const sendNewConversation = async () => {
+    if (!composeTo.trim() || !composeBody.trim()) return;
+    setComposeSending(true);
+    await fetch('/api/admin/emails/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: composeTo.trim(),
+        subject: composeSubject.trim() || 'Bake My Cake',
+        body: composeBody.trim(),
+        attachments: [],
+      }),
+    });
+    // Reload threads and open the new contact's thread
+    const r = await fetch('/api/admin/emails');
+    const d = await r.json();
+    setThreads(d.threads || []);
+    setShowCompose(false);
+    setComposeTo('');
+    setComposeSubject('');
+    setComposeBody('');
+    setComposeSending(false);
+    selectThread(composeTo.trim());
+  };
+
+  const deleteThread = async (contact: string) => {
+    if (!confirm(`Удалить всю переписку с ${contact}?`)) return;
+    setDeletingContact(contact);
+    await fetch(`/api/admin/emails/thread/delete?contact=${encodeURIComponent(contact)}`, { method: 'DELETE' });
+    setThreads(prev => prev.filter(t => t.contact !== contact));
+    if (selected === contact) { setSelected(null); setDetail(null); }
+    setDeletingContact(null);
+  };
+
   const handleOrderCreated = async (orderId: string, orderNumber: string) => {
     if (!detail?.contact) return;
     // Link all unlinked emails for this contact to the new order
@@ -229,8 +269,15 @@ export default function EmailsPageClient() {
 
       {/* Thread list */}
       <div className="w-72 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-cream-200 overflow-y-auto">
-        <div className="px-4 py-3 border-b border-cream-100">
+        <div className="px-4 py-3 border-b border-cream-100 flex items-center justify-between">
           <span className="text-xs font-medium text-charcoal-400 uppercase tracking-wide">Переписка</span>
+          <button
+            onClick={() => setShowCompose(true)}
+            className="text-xs bg-brown-500 text-white px-2.5 py-1 rounded-lg hover:bg-brown-600 transition-colors"
+            title="Новое письмо"
+          >
+            + Написать
+          </button>
         </div>
         {loadingThreads ? (
           <p className="p-6 text-center text-sm text-charcoal-400">Загрузка...</p>
@@ -239,9 +286,10 @@ export default function EmailsPageClient() {
         ) : threads.map((t, i) => (
           <div key={t.contact}>
             {i > 0 && <div className="border-t border-cream-100 mx-3" />}
+            <div className="group relative">
             <button
               onClick={() => selectThread(t.contact)}
-              className={`w-full text-left px-4 py-3 transition-colors ${selected === t.contact ? 'bg-cream-100' : 'hover:bg-cream-50'}`}
+              className={`w-full text-left px-4 py-3 transition-colors pr-9 ${selected === t.contact ? 'bg-cream-100' : 'hover:bg-cream-50'}`}
             >
               <div className="flex items-center justify-between gap-1 mb-0.5">
                 <span className="font-medium text-sm text-charcoal-900 truncate">
@@ -258,6 +306,15 @@ export default function EmailsPageClient() {
                 {t.count > 1 && <span className="text-xs text-charcoal-400 ml-auto">{t.count} сообщ.</span>}
               </div>
             </button>
+            <button
+              onClick={e => { e.stopPropagation(); deleteThread(t.contact); }}
+              disabled={deletingContact === t.contact}
+              title="Удалить переписку"
+              className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-charcoal-300 hover:text-rose-500 px-1.5 py-1 rounded-lg"
+            >
+              {deletingContact === t.contact ? '⏳' : '🗑'}
+            </button>
+          </div>
           </div>
         ))}
       </div>
@@ -446,6 +503,59 @@ export default function EmailsPageClient() {
           initialData={orderModalData}
           onSuccess={handleOrderCreated}
         />
+      )}
+
+      {/* New conversation compose modal */}
+      {showCompose && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+            <h3 className="font-heading font-bold text-charcoal-900 text-lg mb-4">Новое письмо</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-charcoal-500 uppercase tracking-wide block mb-1">Кому</label>
+                <input
+                  type="email"
+                  value={composeTo}
+                  onChange={e => setComposeTo(e.target.value)}
+                  placeholder="email@client.com"
+                  className="w-full text-sm border border-cream-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brown-400"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-charcoal-500 uppercase tracking-wide block mb-1">Тема</label>
+                <input
+                  type="text"
+                  value={composeSubject}
+                  onChange={e => setComposeSubject(e.target.value)}
+                  placeholder="Bake My Cake — ваш заказ"
+                  className="w-full text-sm border border-cream-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brown-400"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-charcoal-500 uppercase tracking-wide block mb-1">Сообщение</label>
+                <textarea
+                  value={composeBody}
+                  onChange={e => setComposeBody(e.target.value)}
+                  rows={6}
+                  placeholder="Напишите сообщение..."
+                  className="w-full text-sm border border-cream-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-brown-400"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-4">
+              <button onClick={() => setShowCompose(false)} className="px-4 py-2 text-sm text-charcoal-500 hover:text-charcoal-700">
+                Отмена
+              </button>
+              <button
+                onClick={sendNewConversation}
+                disabled={composeSending || !composeTo.trim() || !composeBody.trim()}
+                className="px-6 py-2 bg-brown-500 text-white text-sm rounded-xl hover:bg-brown-600 disabled:opacity-50 transition-colors"
+              >
+                {composeSending ? 'Отправка...' : 'Отправить'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Confirmation modal for direct (non-AI) sends */}

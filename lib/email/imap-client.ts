@@ -124,6 +124,20 @@ async function fetchBodyParts(client: ImapFlow, uid: number): Promise<{
 }
 
 /**
+ * Appends a raw MIME message to the Infomaniak Sent folder so the owner
+ * sees outbound messages sent via Resend in her own mail client.
+ */
+export async function appendToSent(rawMime: string): Promise<void> {
+  const client = getImapClient();
+  await client.connect();
+  try {
+    await client.append('Sent', Buffer.from(rawMime), ['\\Seen']);
+  } finally {
+    await client.logout();
+  }
+}
+
+/**
  * Fetches emails received in the last WINDOW_MINUTES from INBOX.
  * Skips system/no-reply senders. Deduplication happens in the DB via message_id UNIQUE.
  */
