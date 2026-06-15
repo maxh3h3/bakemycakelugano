@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Trash2, Paperclip, FileText, Image, Loader2, Sparkles, Send, Plus, Download, X } from 'lucide-react';
 import CreateOrderModal from '@/components/admin/CreateOrderModal';
 import type { AIExtractedOrderData } from '@/types/ai-order';
 
@@ -97,6 +98,7 @@ export default function EmailsPageClient() {
   const [composeBody, setComposeBody] = useState('');
   const [composeSending, setComposeSending] = useState(false);
   const [deletingContact, setDeletingContact] = useState<string | null>(null);
+  const [deleteConfirmContact, setDeleteConfirmContact] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -125,17 +127,19 @@ export default function EmailsPageClient() {
   }, []);
 
   const enhanceWithAI = async () => {
-    if (!input.trim() || !detail) return;
+    if (!input.trim()) return;
     setDrafting(true);
     const r = await fetch('/api/admin/emails/draft', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        orderId: detail.order?.id || null,
+        orderId: detail?.order?.id || null,
         ownerNote: input,
-        threadContext: detail.emails.map(e =>
-          `[${e.direction === 'inbound' ? e.from_email : 'Вы'} — ${new Date(e.email_date).toLocaleDateString()}]\n${e.body_text?.slice(0, 500)}`
-        ).join('\n---\n'),
+        threadContext: detail?.emails?.length
+          ? detail.emails.map(e =>
+              `[${e.direction === 'inbound' ? e.from_email : 'Вы'} — ${new Date(e.email_date).toLocaleDateString()}]\n${e.body_text?.slice(0, 500)}`
+            ).join('\n---\n')
+          : `New email to: ${composeTo}`,
       }),
     });
     const d = await r.json();
@@ -218,8 +222,18 @@ export default function EmailsPageClient() {
     setExtractingOrder(false);
   };
 
-  const sendNewConversation = async () => {
-    if (!composeTo.trim() || !composeBody.trim()) return;
+  const openCompose = () => {
+    setSelected('__new__');
+    setDetail({ emails: [], order: null, contact: '' });
+    setComposeTo('');
+    setComposeSubject('');
+    setInput('');
+    setShowDraft(false);
+    setDraft('');
+  };
+
+  const sendNewConversation = async (body: string) => {
+    if (!composeTo.trim() || !body.trim()) return;
     setComposeSending(true);
     await fetch('/api/admin/emails/send', {
       method: 'POST',
@@ -227,25 +241,20 @@ export default function EmailsPageClient() {
       body: JSON.stringify({
         to: composeTo.trim(),
         subject: composeSubject.trim() || 'Bake My Cake',
-        body: composeBody.trim(),
+        body,
         attachments: [],
       }),
     });
-    // Reload threads and open the new contact's thread
     const r = await fetch('/api/admin/emails');
     const d = await r.json();
     setThreads(d.threads || []);
-    setShowCompose(false);
-    setComposeTo('');
-    setComposeSubject('');
-    setComposeBody('');
     setComposeSending(false);
     selectThread(composeTo.trim());
   };
 
   const deleteThread = async (contact: string) => {
-    if (!confirm(`Удалить всю переписку с ${contact}?`)) return;
     setDeletingContact(contact);
+    setDeleteConfirmContact(null);
     await fetch(`/api/admin/emails/thread/delete?contact=${encodeURIComponent(contact)}`, { method: 'DELETE' });
     setThreads(prev => prev.filter(t => t.contact !== contact));
     if (selected === contact) { setSelected(null); setDetail(null); }
@@ -272,11 +281,11 @@ export default function EmailsPageClient() {
         <div className="px-4 py-3 border-b border-cream-100 flex items-center justify-between">
           <span className="text-xs font-medium text-charcoal-400 uppercase tracking-wide">Переписка</span>
           <button
-            onClick={() => setShowCompose(true)}
-            className="text-xs bg-brown-500 text-white px-2.5 py-1 rounded-lg hover:bg-brown-600 transition-colors"
+            onClick={openCompose}
+            className="flex items-center gap-1 text-xs bg-brown-500 text-white px-2.5 py-1 rounded-lg hover:bg-brown-600 transition-colors"
             title="Новое письмо"
           >
-            + Написать
+            <Plus size={12} /> Написать
           </button>
         </div>
         {loadingThreads ? (
@@ -307,12 +316,15 @@ export default function EmailsPageClient() {
               </div>
             </button>
             <button
-              onClick={e => { e.stopPropagation(); deleteThread(t.contact); }}
+              onClick={e => { e.stopPropagation(); setDeleteConfirmContact(t.contact); }}
               disabled={deletingContact === t.contact}
               title="Удалить переписку"
               className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-charcoal-300 hover:text-rose-500 px-1.5 py-1 rounded-lg"
             >
-              {deletingContact === t.contact ? '⏳' : '🗑'}
+              {deletingContact === t.contact
+                ? <Loader2 size={14} className="animate-spin" />
+                : <Trash2 size={14} />
+              }
             </button>
           </div>
           </div>
@@ -330,25 +342,47 @@ export default function EmailsPageClient() {
         ) : detail ? (
           <>
             {/* Header */}
-            <div className="px-5 py-3 border-b border-cream-100 bg-cream-50 flex items-center justify-between flex-shrink-0">
-              <div>
-                <span className="font-medium text-sm text-charcoal-900">{detail.contact}</span>
-                {detail.order && (
-                  <span className="ml-3 text-xs font-mono bg-white border border-cream-200 px-2 py-0.5 rounded text-charcoal-600">
-                    {detail.order.order_number}
-                  </span>
+            {selected === '__new__' ? (
+              <div className="px-5 py-3 border-b border-cream-100 bg-cream-50 flex items-center gap-3 flex-shrink-0">
+                <span className="text-xs font-medium text-charcoal-400 flex-shrink-0">Кому:</span>
+                <input
+                  type="email"
+                  value={composeTo}
+                  onChange={e => setComposeTo(e.target.value)}
+                  placeholder="email@client.com"
+                  className="flex-1 text-sm bg-transparent border-none focus:outline-none text-charcoal-900 placeholder:text-charcoal-300"
+                  autoFocus
+                />
+                <span className="text-xs font-medium text-charcoal-400 flex-shrink-0">Тема:</span>
+                <input
+                  type="text"
+                  value={composeSubject}
+                  onChange={e => setComposeSubject(e.target.value)}
+                  placeholder="Bake My Cake"
+                  className="w-40 text-sm bg-transparent border-none focus:outline-none text-charcoal-900 placeholder:text-charcoal-300"
+                />
+              </div>
+            ) : (
+              <div className="px-5 py-3 border-b border-cream-100 bg-cream-50 flex items-center justify-between flex-shrink-0">
+                <div>
+                  <span className="font-medium text-sm text-charcoal-900">{detail.contact}</span>
+                  {detail.order && (
+                    <span className="ml-3 text-xs font-mono bg-white border border-cream-200 px-2 py-0.5 rounded text-charcoal-600">
+                      {detail.order.order_number}
+                    </span>
+                  )}
+                </div>
+                {!detail.order && (
+                  <button
+                    onClick={openCreateOrder}
+                    disabled={extractingOrder}
+                    className="flex items-center gap-1.5 text-xs bg-brown-500 text-white px-3 py-1.5 rounded-lg hover:bg-brown-600 disabled:opacity-50 transition-colors"
+                  >
+                    {extractingOrder ? <><Loader2 size={12} className="animate-spin" />Анализ...</> : <><Plus size={12} />Создать заказ</>}
+                  </button>
                 )}
               </div>
-              {!detail.order && (
-                <button
-                  onClick={openCreateOrder}
-                  disabled={extractingOrder}
-                  className="text-xs bg-brown-500 text-white px-3 py-1.5 rounded-lg hover:bg-brown-600 disabled:opacity-50 transition-colors"
-                >
-                  {extractingOrder ? '⏳ Анализ...' : '+ Создать заказ'}
-                </button>
-              )}
-            </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
@@ -377,6 +411,7 @@ export default function EmailsPageClient() {
                             <div className="flex flex-wrap gap-1.5">
                               {email.attachments.filter(a => a.url && a.contentType.startsWith('image/')).map((att, i) => (
                                 <a key={i} href={att.url!} target="_blank" rel="noopener noreferrer">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img src={att.url!} alt={att.name} className="rounded-lg w-24 h-24 object-cover border border-white/20 hover:opacity-90 transition-opacity" />
                                 </a>
                               ))}
@@ -387,7 +422,7 @@ export default function EmailsPageClient() {
                           {email.attachments.filter(a => a.url && !a.contentType.startsWith('image/')).map((att, i) => (
                             <a key={i} href={att.url!} target="_blank" rel="noopener noreferrer"
                               className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg border w-fit ${isOutbound ? 'border-charcoal-600 text-charcoal-200 hover:bg-charcoal-800' : 'border-cream-300 text-charcoal-600 hover:bg-cream-200'} transition-colors`}>
-                              📄 {att.name} <span className="opacity-60">{(att.size / 1024).toFixed(0)}KB</span>
+                              <FileText size={12} /> {att.name} <span className="opacity-60">{(att.size / 1024).toFixed(0)}KB</span>
                             </a>
                           ))}
 
@@ -396,7 +431,7 @@ export default function EmailsPageClient() {
                             <div className="space-y-1">
                               {email.attachments.filter(a => !a.url).map((att, i) => (
                                 <div key={i} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs ${isOutbound ? 'bg-charcoal-800 text-charcoal-300' : 'bg-cream-200 text-charcoal-500'}`}>
-                                  <span>{att.contentType.startsWith('image/') ? '🖼️' : '📄'}</span>
+                                  {att.contentType.startsWith('image/') ? <Image size={12} /> : <FileText size={12} />}
                                   <span className="truncate max-w-[160px]">{att.name}</span>
                                   <span className="opacity-60 ml-auto flex-shrink-0">{(att.size / 1024).toFixed(0)}KB</span>
                                 </div>
@@ -406,7 +441,10 @@ export default function EmailsPageClient() {
                                 disabled={downloadingId === email.id}
                                 className={`mt-1 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors w-full text-center ${isOutbound ? 'bg-charcoal-700 text-white hover:bg-charcoal-600' : 'bg-brown-500 text-white hover:bg-brown-600'} disabled:opacity-50`}
                               >
-                                {downloadingId === email.id ? '⏳ Загрузка...' : `↓ Загрузить ${email.attachments.filter(a => !a.url).length} файл(ов)`}
+                                {downloadingId === email.id
+                                  ? <><Loader2 size={12} className="animate-spin inline mr-1" />Загрузка...</>
+                                  : <><Download size={12} className="inline mr-1" />Загрузить {email.attachments.filter(a => !a.url).length} файл(ов)</>
+                                }
                               </button>
                             </div>
                           )}
@@ -431,8 +469,13 @@ export default function EmailsPageClient() {
                 />
                 <div className="flex gap-2 justify-end mt-2">
                   <button onClick={() => { setShowDraft(false); setDraft(''); }} className="px-4 py-2 text-sm text-charcoal-500 hover:text-charcoal-700">Отмена</button>
-                  <button onClick={() => sendReply(draft)} disabled={sending} className="px-6 py-2 bg-brown-500 text-white text-sm rounded-xl hover:bg-brown-600 disabled:opacity-50 transition-colors">
-                    {sending ? 'Отправка...' : 'Отправить'}
+                  <button
+                    onClick={() => selected === '__new__' ? sendNewConversation(draft) : sendReply(draft)}
+                    disabled={sending || composeSending}
+                    className="flex items-center gap-2 px-6 py-2 bg-brown-500 text-white text-sm rounded-xl hover:bg-brown-600 disabled:opacity-50 transition-colors"
+                  >
+                    {(sending || composeSending) ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    Отправить
                   </button>
                 </div>
               </div>
@@ -446,8 +489,8 @@ export default function EmailsPageClient() {
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {attachedFiles.map((f, i) => (
                       <span key={i} className="flex items-center gap-1 text-xs bg-cream-100 border border-cream-200 text-charcoal-700 px-2 py-1 rounded-lg">
-                        📎 {f.name} <span className="text-charcoal-400">({(f.size / 1024).toFixed(0)}KB)</span>
-                        <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="ml-1 text-charcoal-400 hover:text-rose-500">×</button>
+                        <Paperclip size={11} /> {f.name} <span className="text-charcoal-400">({(f.size / 1024).toFixed(0)}KB)</span>
+                        <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="ml-1 text-charcoal-400 hover:text-rose-500"><X size={11} /></button>
                       </span>
                     ))}
                   </div>
@@ -479,15 +522,21 @@ export default function EmailsPageClient() {
                     style={{ minHeight: '24px', maxHeight: '120px' }}
                   />
                   <div className="flex items-center gap-1.5 flex-shrink-0 pb-0.5">
-                    <button onClick={() => fileInputRef.current?.click()} title="Прикрепить файл" className="px-2.5 py-1.5 text-sm text-charcoal-400 hover:text-charcoal-700 hover:bg-cream-100 rounded-xl transition-colors">
-                      📎
+                    <button onClick={() => fileInputRef.current?.click()} title="Прикрепить файл" className="px-2.5 py-1.5 text-charcoal-400 hover:text-charcoal-700 hover:bg-cream-100 rounded-xl transition-colors">
+                      <Paperclip size={15} />
                     </button>
-                    <button onClick={enhanceWithAI} disabled={drafting || !input.trim()} className="px-3 py-1.5 text-xs bg-white border border-cream-300 text-charcoal-600 rounded-xl hover:bg-cream-100 disabled:opacity-40 transition-colors">
-                      {drafting ? '...' : '✦ AI'}
+                    <button onClick={enhanceWithAI} disabled={drafting || !input.trim()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-cream-300 text-charcoal-600 rounded-xl hover:bg-cream-100 disabled:opacity-40 transition-colors">
+                      {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} AI
                     </button>
-                    <button onClick={() => setConfirmText(input)} disabled={!input.trim()} className="px-3 py-1.5 text-xs bg-charcoal-900 text-white rounded-xl hover:bg-charcoal-800 disabled:opacity-40 transition-colors">
-                      Отправить
-                    </button>
+                    {selected === '__new__' ? (
+                      <button onClick={() => sendNewConversation(input)} disabled={composeSending || !input.trim() || !composeTo.trim()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-charcoal-900 text-white rounded-xl hover:bg-charcoal-800 disabled:opacity-40 transition-colors">
+                        {composeSending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Отправить
+                      </button>
+                    ) : (
+                      <button onClick={() => setConfirmText(input)} disabled={!input.trim()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-charcoal-900 text-white rounded-xl hover:bg-charcoal-800 disabled:opacity-40 transition-colors">
+                        <Send size={12} /> Отправить
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -505,53 +554,23 @@ export default function EmailsPageClient() {
         />
       )}
 
-      {/* New conversation compose modal */}
-      {showCompose && (
+      {/* Delete thread confirmation modal */}
+      {deleteConfirmContact && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
-            <h3 className="font-heading font-bold text-charcoal-900 text-lg mb-4">Новое письмо</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-charcoal-500 uppercase tracking-wide block mb-1">Кому</label>
-                <input
-                  type="email"
-                  value={composeTo}
-                  onChange={e => setComposeTo(e.target.value)}
-                  placeholder="email@client.com"
-                  className="w-full text-sm border border-cream-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brown-400"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-charcoal-500 uppercase tracking-wide block mb-1">Тема</label>
-                <input
-                  type="text"
-                  value={composeSubject}
-                  onChange={e => setComposeSubject(e.target.value)}
-                  placeholder="Bake My Cake — ваш заказ"
-                  className="w-full text-sm border border-cream-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brown-400"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-charcoal-500 uppercase tracking-wide block mb-1">Сообщение</label>
-                <textarea
-                  value={composeBody}
-                  onChange={e => setComposeBody(e.target.value)}
-                  rows={6}
-                  placeholder="Напишите сообщение..."
-                  className="w-full text-sm border border-cream-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-brown-400"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end mt-4">
-              <button onClick={() => setShowCompose(false)} className="px-4 py-2 text-sm text-charcoal-500 hover:text-charcoal-700">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+            <h3 className="font-heading font-bold text-charcoal-900 text-lg mb-2">Удалить переписку?</h3>
+            <p className="text-charcoal-500 text-sm mb-1">Вся переписка с</p>
+            <p className="text-charcoal-900 text-sm font-medium mb-4 break-all">{deleteConfirmContact}</p>
+            <p className="text-charcoal-400 text-xs mb-5">Это действие нельзя отменить. Письма будут удалены только из нашей базы данных, не из почтового ящика.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteConfirmContact(null)} className="px-4 py-2 text-sm text-charcoal-500 hover:text-charcoal-700 transition-colors">
                 Отмена
               </button>
               <button
-                onClick={sendNewConversation}
-                disabled={composeSending || !composeTo.trim() || !composeBody.trim()}
-                className="px-6 py-2 bg-brown-500 text-white text-sm rounded-xl hover:bg-brown-600 disabled:opacity-50 transition-colors"
+                onClick={() => deleteThread(deleteConfirmContact)}
+                className="flex items-center gap-2 px-5 py-2 bg-rose-500 text-white text-sm rounded-xl hover:bg-rose-600 transition-colors"
               >
-                {composeSending ? 'Отправка...' : 'Отправить'}
+                <Trash2 size={14} /> Удалить
               </button>
             </div>
           </div>
@@ -570,8 +589,8 @@ export default function EmailsPageClient() {
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {attachedFiles.map((f, i) => (
-                  <span key={i} className="text-xs bg-cream-100 border border-cream-200 text-charcoal-600 px-2 py-1 rounded-lg">
-                    📎 {f.name}
+                  <span key={i} className="flex items-center gap-1 text-xs bg-cream-100 border border-cream-200 text-charcoal-600 px-2 py-1 rounded-lg">
+                    <Paperclip size={11} /> {f.name}
                   </span>
                 ))}
               </div>
