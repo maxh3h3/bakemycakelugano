@@ -186,6 +186,16 @@ export default function ProductionView({ items }: ProductionViewProps) {
     return orderGroup.items.some(item => item.production_status === 'new');
   }
 
+  // Helper function to check if every item in an order has reached the final
+  // 'decorated' stage. Completed orders stay clickable but are visually
+  // de-emphasized so they aren't treated as actively-in-production work.
+  function isOrderComplete(orderGroup: OrderGroup): boolean {
+    return (
+      orderGroup.items.length > 0 &&
+      orderGroup.items.every(item => item.production_status === 'decorated')
+    );
+  }
+
   // Get items for today view
   const todayViewItems = todayItems;
   
@@ -351,14 +361,17 @@ export default function ProductionView({ items }: ProductionViewProps) {
             ) : (
               todayOrderGroups.map((orderGroup) => {
                 const isNew = hasNewItems(orderGroup);
+                const isComplete = !isNew && isOrderComplete(orderGroup);
                 return (
                 <button
                   key={orderGroup.order_id}
                   onClick={() => setSelectedOrderGroup(orderGroup)}
-                  className={`w-full bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all text-left ${
-                    isNew 
-                      ? 'border-2 border-blue-400 shadow-blue-200 shadow-lg ring-2 ring-blue-300 ring-opacity-50' 
-                      : 'border-2 border-cream-200 hover:border-brown-300'
+                  className={`w-full rounded-2xl p-6 transition-all text-left ${
+                    isNew
+                      ? 'bg-white shadow-md hover:shadow-lg border-2 border-blue-400 shadow-blue-200 shadow-lg ring-2 ring-blue-300 ring-opacity-50'
+                      : isComplete
+                      ? 'bg-gray-50 border-2 border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
+                      : 'bg-white shadow-md hover:shadow-lg border-2 border-cream-200 hover:border-brown-300'
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -454,13 +467,16 @@ export default function ProductionView({ items }: ProductionViewProps) {
                   <div className="space-y-2">
                     {dayOrderGroups.map((orderGroup) => {
                       const isNew = hasNewItems(orderGroup);
+                      const isComplete = !isNew && isOrderComplete(orderGroup);
                       return (
                         <button
                           key={orderGroup.order_id}
                           onClick={() => setSelectedOrderGroup(orderGroup)}
                           className={`w-full p-6 rounded-xl transition-all text-left ${
-                            isNew 
-                              ? 'border-2 border-blue-400 shadow-lg shadow-blue-200 ring-2 ring-blue-300 ring-opacity-50 bg-blue-50/30' 
+                            isNew
+                              ? 'border-2 border-blue-400 shadow-lg shadow-blue-200 ring-2 ring-blue-300 ring-opacity-50 bg-blue-50/30'
+                              : isComplete
+                              ? 'border-2 border-gray-200 bg-gray-50 opacity-60 hover:opacity-100 hover:border-gray-300'
                               : 'border-2 border-cream-300 hover:border-brown-400 hover:bg-cream-50'
                           }`}
                         >
@@ -557,13 +573,16 @@ export default function ProductionView({ items }: ProductionViewProps) {
                   <div className="space-y-1.5">
                     {dayOrderGroups.map((orderGroup) => {
                       const isNew = hasNewItems(orderGroup);
+                      const isComplete = !isNew && isOrderComplete(orderGroup);
                       return (
                         <button
                           key={orderGroup.order_id}
                           onClick={() => setSelectedOrderGroup(orderGroup)}
                           className={`w-full p-2 rounded-lg transition-all text-left ${
-                            isNew 
-                              ? 'border-2 border-blue-400 shadow-md shadow-blue-200 ring-1 ring-blue-300 ring-opacity-50 bg-blue-50/30' 
+                            isNew
+                              ? 'border-2 border-blue-400 shadow-md shadow-blue-200 ring-1 ring-blue-300 ring-opacity-50 bg-blue-50/30'
+                              : isComplete
+                              ? 'border border-gray-200 bg-gray-50 opacity-60 hover:opacity-100 hover:border-gray-300'
                               : 'border border-cream-300 hover:border-brown-400 hover:bg-cream-50'
                           }`}
                         >
