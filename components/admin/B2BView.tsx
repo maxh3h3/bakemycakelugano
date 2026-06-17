@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useJsApiLoader, GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
-import { Loader2, Trash2, Plus, MapPin } from 'lucide-react';
+import { Loader2, Trash2, Plus, MapPin, Navigation } from 'lucide-react';
 
 // ⚠️ TEMPORARY B2B prospects CRM — see migration 045.
 
@@ -18,6 +18,15 @@ interface Prospect {
   lat: number | null;
   lng: number | null;
   opening_hours: string[] | null;
+  place_id: string | null;
+}
+
+// Build a Google Maps directions deep link. On mobile this opens the Maps app
+// straight into navigation; place_id (when present) pins the exact business.
+function mapsUrl(p: Prospect): string {
+  const dest = encodeURIComponent(p.address || p.name);
+  const base = `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
+  return p.place_id ? `${base}&destination_place_id=${p.place_id}` : base;
 }
 
 // weekdayDescriptions are ordered Monday..Sunday; JS getDay() is Sun=0..Sat=6.
@@ -265,6 +274,14 @@ export default function B2BView() {
                           ))}
                         </div>
                       )}
+                    <a
+                      href={mapsUrl(selectedProspect)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1.5 text-blue-600 font-medium hover:underline"
+                    >
+                      <Navigation className="w-3.5 h-3.5" /> Маршрут в Google Maps
+                    </a>
                   </div>
                 </InfoWindow>
               )}
@@ -333,13 +350,24 @@ export default function B2BView() {
               <div key={p.id} className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="font-semibold text-charcoal-800">{p.name}</div>
-                  <button
-                    onClick={() => remove(p.id)}
-                    className="text-charcoal-400 hover:text-red-500 transition-colors shrink-0"
-                    aria-label="Удалить"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <a
+                      href={mapsUrl(p)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brown-500 hover:text-brown-700 transition-colors"
+                      aria-label="Маршрут в Google Maps"
+                    >
+                      <Navigation className="w-4 h-4" />
+                    </a>
+                    <button
+                      onClick={() => remove(p.id)}
+                      className="text-charcoal-400 hover:text-red-500 transition-colors"
+                      aria-label="Удалить"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 {p.address && (
                   <div className="text-sm text-charcoal-600">{p.address}</div>
@@ -408,13 +436,25 @@ export default function B2BView() {
                       </select>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => remove(p.id)}
-                        className="text-charcoal-400 hover:text-red-500 transition-colors"
-                        aria-label="Удалить"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <a
+                          href={mapsUrl(p)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brown-500 hover:text-brown-700 transition-colors"
+                          aria-label="Маршрут в Google Maps"
+                          title="Маршрут в Google Maps"
+                        >
+                          <Navigation className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => remove(p.id)}
+                          className="text-charcoal-400 hover:text-red-500 transition-colors"
+                          aria-label="Удалить"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
