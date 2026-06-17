@@ -213,6 +213,60 @@ export interface Database {
           created_at: string
         }>
       }
+      // ⚠️ TEMPORARY: lightweight B2B prospect CRM (see migration 045). Drop when real CRM ships.
+      b2b_prospects: {
+        Row: {
+          id: string
+          name: string
+          address: string | null
+          reviews_count: number | null
+          status: string
+          category: string | null
+          phone: string | null
+          website: string | null
+          rating: number | null
+          lat: number | null
+          lng: number | null
+          place_id: string | null
+          opening_hours: string[] | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          address?: string | null
+          reviews_count?: number | null
+          status?: string
+          category?: string | null
+          phone?: string | null
+          website?: string | null
+          rating?: number | null
+          lat?: number | null
+          lng?: number | null
+          place_id?: string | null
+          opening_hours?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<{
+          id: string
+          name: string
+          address: string | null
+          reviews_count: number | null
+          status: string
+          category: string | null
+          phone: string | null
+          website: string | null
+          rating: number | null
+          lat: number | null
+          lng: number | null
+          place_id: string | null
+          opening_hours: string[] | null
+          created_at: string
+          updated_at: string
+        }>
+      }
     }
   }
 }

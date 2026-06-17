@@ -26,6 +26,7 @@ function getNavLinks(role: UserRole | null | undefined): NavLink[] {
       { href: '/admin/emails', label: 'Email', match: '/emails' },
       { href: '/admin/clients', label: t.clients, match: '/clients' },
       { href: '/admin/meetings', label: 'Встречи', match: '/meetings' },
+      { href: '/admin/b2b', label: 'B2B', match: '/b2b' },
       { href: '/admin/production', label: t.production, match: '/production' },
       { href: '/admin/delivery', label: 'Доставки', match: '/delivery' },
       { href: '/admin/accounting', label: t.accounting, match: '/accounting' },
