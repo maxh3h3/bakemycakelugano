@@ -488,24 +488,35 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
                 {orders.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between p-4 bg-cream-50 rounded-lg border border-cream-200 hover:border-brown-300 transition-colors"
+                    className="p-4 bg-cream-50 rounded-lg border border-cream-200 hover:border-brown-300 transition-colors"
                   >
-                    <div>
-                      <p className="font-semibold text-charcoal-900">
-                        {order.order_number || `#${order.id.slice(0, 8)}`}
-                      </p>
-                      <p className="text-sm text-charcoal-600">
-                        {order.delivery_date
-                          ? new Date(order.delivery_date).toLocaleDateString('ru-RU')
-                          : new Date(order.created_at).toLocaleDateString('ru-RU')}
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-charcoal-900">
+                          {order.order_number || `#${order.id.slice(0, 8)}`}
+                        </p>
+                        <p className="text-sm text-charcoal-600">
+                          {order.delivery_date
+                            ? new Date(order.delivery_date).toLocaleDateString('ru-RU')
+                            : new Date(order.created_at).toLocaleDateString('ru-RU')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-brown-600">CHF {parseFloat(order.total_amount).toFixed(2)}</p>
+                        <p className={`text-sm ${order.paid ? 'text-green-600' : 'text-orange-600'}`}>
+                          {order.paid ? 'Оплачено' : 'Не оплачено'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-brown-600">CHF {parseFloat(order.total_amount).toFixed(2)}</p>
-                      <p className={`text-sm ${order.paid ? 'text-green-600' : 'text-orange-600'}`}>
-                        {order.paid ? 'Оплачено' : 'Не оплачено'}
+
+                    {/* Order items preview — uses data already loaded with the order */}
+                    {order.order_items && order.order_items.length > 0 && (
+                      <p className="mt-2 pt-2 border-t border-cream-200 text-sm text-charcoal-600">
+                        {order.order_items
+                          .map((item) => `${item.product_name} ×${item.quantity}`)
+                          .join(' · ')}
                       </p>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
