@@ -79,18 +79,18 @@ export async function POST(request: NextRequest) {
 
   // Append to Infomaniak Sent folder so owner sees it in her mail client
   const sentDate = new Date().toUTCString();
-  const rawMime = [
+  const htmlBody = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6;max-width:600px">${body.replace(/\n/g, '<br>')}</body></html>`;
+  const headers = [
     `From: ${emailConfig.from}`,
     `To: ${to}`,
     `Subject: ${subject || 'Re: Bake My Cake'}`,
     `Date: ${sentDate}`,
-    inReplyToMessageId ? `In-Reply-To: ${inReplyToMessageId}` : '',
-    inReplyToMessageId ? `References: ${inReplyToMessageId}` : '',
+    ...(inReplyToMessageId ? [`In-Reply-To: ${inReplyToMessageId}`, `References: ${inReplyToMessageId}`] : []),
     'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=utf-8',
-    '',
-    body,
-  ].filter(Boolean).join('\r\n');
+    'Content-Type: text/html; charset=utf-8',
+    'Content-Transfer-Encoding: quoted-printable',
+  ];
+  const rawMime = headers.join('\r\n') + '\r\n\r\n' + htmlBody;
 
   appendToSent(rawMime).catch(err =>
     console.error('[send] IMAP append failed (non-fatal):', err)
