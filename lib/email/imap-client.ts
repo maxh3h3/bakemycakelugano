@@ -128,10 +128,17 @@ async function fetchBodyParts(client: ImapFlow, uid: number): Promise<{
  * sees outbound messages sent via Resend in her own mail client.
  */
 export async function appendToSent(rawMime: string): Promise<void> {
+  if (!process.env.IMAP_HOST || !process.env.IMAP_PASSWORD) {
+    console.warn('[appendToSent] skipped — IMAP env vars not set');
+    return;
+  }
   const client = getImapClient();
   await client.connect();
   try {
-    await client.append('Sent', Buffer.from(rawMime), ['\\Seen']);
+    // imapflow returns a BigInt UID which may throw on serialization — the append itself succeeds
+    await client.append('Sent', Buffer.from(rawMime), ['\\Seen']).catch((err: Error) => {
+      if (!err.message.includes('BigInt')) throw err;
+    });
   } finally {
     await client.logout();
   }
