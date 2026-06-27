@@ -108,19 +108,19 @@ export async function runReminders() {
     }
   }
 
-  // Deliveries/pickups not yet reminded, happening today
+  // Deliveries/pickups not yet reminded, happening today. The customer name
+  // lives in the related `clients` table (orders has no customer_name column).
   const { data: orderRows } = await (supabaseAdmin as any)
     .from('orders')
-    .select('id, order_number, customer_name, delivery_type, delivery_time, delivery_address, delivery_reminder_sent_at')
+    .select('id, order_number, delivery_type, delivery_time, delivery_address, delivery_reminder_sent_at, clients ( name )')
     .eq('delivery_date', today)
-    .is('delivery_reminder_sent_at', null)
-    .not('status', 'in', '(cancelled,completed)');
+    .is('delivery_reminder_sent_at', null);
 
   for (const row of orderRows ?? []) {
     if (!isUpcoming(parseTimeToMinutes(row.delivery_time), nowMinutes)) continue;
     const delivery: AgendaDelivery = {
       order_number: row.order_number,
-      customer_name: row.customer_name,
+      customer_name: clientName(row),
       delivery_type: row.delivery_type,
       delivery_time: row.delivery_time,
       delivery_address: row.delivery_address as DeliveryAddress | null,
@@ -159,16 +159,22 @@ async function fetchMeetings(today: string): Promise<AgendaMeeting[]> {
 async function fetchDeliveries(today: string): Promise<AgendaDelivery[]> {
   const { data } = await (supabaseAdmin as any)
     .from('orders')
-    .select('order_number, customer_name, delivery_type, delivery_time, delivery_address')
+    .select('order_number, delivery_type, delivery_time, delivery_address, clients ( name )')
     .eq('delivery_date', today)
-    .not('status', 'in', '(cancelled,completed)')
     .order('delivery_time', { ascending: true });
 
   return (data ?? []).map((row: any) => ({
     order_number: row.order_number,
-    customer_name: row.customer_name,
+    customer_name: clientName(row),
     delivery_type: row.delivery_type,
     delivery_time: row.delivery_time,
     delivery_address: row.delivery_address as DeliveryAddress | null,
   }));
+}
+
+/** Extract the client's name from an embedded `clients` relation (object or
+ * single-element array, depending on how PostgREST resolves the join). */
+function clientName(row: any): string {
+  const client = Array.isArray(row.clients) ? row.clients[0] : row.clients;
+  return client?.name ?? 'Cliente';
 }

@@ -65,16 +65,31 @@ export function generateDailyDigestMessage(
   }
   message += '\n';
 
+  // Split into pickups (delivery_type === 'pickup') and deliveries
+  // (everything else), so both are clearly visible as separate sections.
+  const pickups = deliveries.filter((d) => d.delivery_type === 'pickup');
+  const dropoffs = deliveries.filter((d) => d.delivery_type !== 'pickup');
+
+  const formatLine = (icon: string, d: AgendaDelivery) => {
+    const time = d.delivery_time ? `<b>${d.delivery_time}</b>` : '<i>orario n/d</i>';
+    return `${icon} ${time} — #${d.order_number} ${d.customer_name}\n`;
+  };
+
+  // Pickups section
+  message += `${icons.pickup} <b>Ritiri (${pickups.length})</b>\n`;
+  if (pickups.length === 0) {
+    message += `<i>Nessun ritiro</i>\n`;
+  } else {
+    for (const d of pickups) message += formatLine(icons.pickup, d);
+  }
+  message += '\n';
+
   // Deliveries section
-  message += `${icons.delivery} <b>Consegne / Ritiri (${deliveries.length})</b>\n`;
-  if (deliveries.length === 0) {
+  message += `${icons.delivery} <b>Consegne (${dropoffs.length})</b>\n`;
+  if (dropoffs.length === 0) {
     message += `<i>Nessuna consegna</i>\n`;
   } else {
-    for (const d of deliveries) {
-      const kind = d.delivery_type === 'pickup' ? icons.pickup : icons.delivery;
-      const time = d.delivery_time ? `<b>${d.delivery_time}</b>` : '<i>orario n/d</i>';
-      message += `${kind} ${time} — #${d.order_number} ${d.customer_name}\n`;
-    }
+    for (const d of dropoffs) message += formatLine(icons.delivery, d);
   }
 
   if (meetings.length === 0 && deliveries.length === 0) {
