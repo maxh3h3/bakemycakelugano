@@ -167,14 +167,14 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
     if (!invoiceFromDate && !invoiceToDate) return orders;
     
     return orders.filter(order => {
-      const orderDate = new Date(order.created_at);
+      const orderDate = new Date(order.delivery_date || order.created_at);
       const from = invoiceFromDate ? new Date(invoiceFromDate) : new Date(0);
       const to = invoiceToDate ? new Date(invoiceToDate) : new Date();
-      
+
       // Set time to start/end of day for comparison
       from.setHours(0, 0, 0, 0);
       to.setHours(23, 59, 59, 999);
-      
+
       return orderDate >= from && orderDate <= to;
     });
   };

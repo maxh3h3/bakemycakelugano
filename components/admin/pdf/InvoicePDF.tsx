@@ -229,6 +229,33 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FDFCFB',
   },
+  paymentBox: {
+    marginTop: 20,
+    backgroundColor: '#F9F6F1', // cream-100
+    padding: 12,
+    borderRadius: 6,
+    borderLeft: '3 solid #8B6B47', // brown-500
+  },
+  paymentBoxTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#8B6B47', // brown-500
+    marginBottom: 6,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    marginBottom: 3,
+  },
+  paymentLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#533D29', // brown-700
+    width: 90,
+  },
+  paymentValue: {
+    fontSize: 10,
+    color: '#2C2C2C', // charcoal-900
+  },
   footer: {
     position: 'absolute',
     bottom: 20,
@@ -357,6 +384,27 @@ export default function InvoicePDF({ client, orders, dateRange }: InvoicePDFProp
         <View style={styles.totalBox}>
           <Text style={styles.totalLabel}>Totale:</Text>
           <Text style={styles.totalAmount}>CHF {totalAmount.toFixed(2)}</Text>
+        </View>
+
+        {/* Payment Details */}
+        <View style={styles.paymentBox}>
+          <Text style={styles.paymentBoxTitle}>Dati per il pagamento</Text>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Intestato a:</Text>
+            <Text style={styles.paymentValue}>Bake My Cake Sagl</Text>
+          </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>IBAN:</Text>
+            <Text style={styles.paymentValue}>CH95 0024 7247 2607 0101 T</Text>
+          </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>BIC:</Text>
+            <Text style={styles.paymentValue}>UBSWCHZH80A</Text>
+          </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Banca:</Text>
+            <Text style={styles.paymentValue}>UBS Switzerland AG</Text>
+          </View>
         </View>
 
         {/* Footer */}
