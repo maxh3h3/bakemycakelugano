@@ -20,7 +20,10 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { payment_method } = body;
+    // Distinguish "not provided" (use existing/default) from an explicit
+    // null (clear the cash flag) - `payment_method || fallback` can't tell those apart.
+    const methodProvided = Object.prototype.hasOwnProperty.call(body, 'payment_method');
+    const payment_method = body.payment_method as string | null | undefined;
 
     // Create untyped Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -39,12 +42,39 @@ export async function POST(
       );
     }
 
-    // Check if already paid
+    const method = methodProvided ? payment_method : (order.payment_method || 'cash');
+
+    // Order already paid: only allow correcting the payment method,
+    // keeping the existing revenue transaction in sync
     if (order.paid) {
-      return NextResponse.json(
-        { success: false, error: 'Заказ уже оплачен' },
-        { status: 400 }
-      );
+      if (order.payment_method === method) {
+        return NextResponse.json({ success: true, message: 'Способ оплаты не изменился' });
+      }
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ payment_method: method, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (updateError) {
+        console.error('Error updating payment method:', updateError);
+        return NextResponse.json(
+          { success: false, error: 'Не удалось обновить способ оплаты' },
+          { status: 500 }
+        );
+      }
+
+      const { error: txError } = await supabase
+        .from('financial_transactions')
+        .update({ payment_method: method })
+        .eq('source_type', 'order')
+        .eq('source_id', id);
+
+      if (txError) {
+        console.error('Error syncing revenue transaction payment method:', txError);
+      }
+
+      return NextResponse.json({ success: true, message: 'Способ оплаты обновлён' });
     }
 
     // Update order to paid
@@ -52,7 +82,7 @@ export async function POST(
       .from('orders')
       .update({
         paid: true,
-        payment_method: payment_method || order.payment_method || 'cash',
+        payment_method: method,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id);
@@ -77,7 +107,7 @@ export async function POST(
         totalAmount: order.total_amount.toString(),
         currency: order.currency,
         clientId: order.client_id,
-        paymentMethod: payment_method || order.payment_method || 'cash',
+        paymentMethod: method,
         channel: order.channel || 'phone',
         createdAt: orderDate,
       });

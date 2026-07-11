@@ -133,12 +133,12 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
 
   const handlePaymentStatusChange = async (newPaidStatus: string) => {
     if (newPaidStatus === '') return;
-    
+
     const isPaid = newPaidStatus === 'paid';
-    
+
     // If marking as paid, call mark-paid endpoint (creates revenue transaction)
     // If marking as unpaid, call mark-unpaid endpoint (deletes revenue transaction)
-    
+
     setIsMarkingPaid(true);
     setShowPaymentSelector(false);
 
@@ -148,7 +148,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
         const response = await fetch(`/api/admin/orders/${order.id}/mark-paid`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ payment_method: 'cash' }), // Default to cash
+          body: JSON.stringify({}),
         });
 
         if (!response.ok) {
@@ -160,7 +160,7 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
         setOrder(prev => ({
           ...prev,
           paid: true,
-          payment_method: 'cash',
+          payment_method: prev.payment_method || 'cash',
         }));
       } else {
         // Call mark-unpaid endpoint (deletes revenue transaction)
@@ -186,6 +186,35 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
     } catch (error) {
       console.error('Error updating payment status:', error);
       alert(error instanceof Error ? error.message : 'Failed to update payment status. Please try again.');
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
+  // Cash toggle - independent of paid/unpaid state, only meaningful once paid
+  const handleCashToggle = async () => {
+    if (!order.paid || isMarkingPaid) return;
+
+    const newMethod = order.payment_method === 'cash' ? null : 'cash';
+
+    setIsMarkingPaid(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}/mark-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_method: newMethod }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update payment method');
+      }
+
+      setOrder(prev => ({ ...prev, payment_method: newMethod }));
+      onUpdate();
+    } catch (error) {
+      console.error('Error toggling cash payment:', error);
+      alert(error instanceof Error ? error.message : 'Failed to update payment method. Please try again.');
     } finally {
       setIsMarkingPaid(false);
     }
@@ -344,8 +373,8 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                           <button
                             onClick={() => handlePaymentStatusChange('paid')}
                             className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 border-b border-cream-200 ${
-                              order.paid 
-                                ? 'bg-green-100 text-green-800 font-semibold' 
+                              order.paid
+                                ? 'bg-green-100 text-green-800 font-semibold'
                                 : 'hover:bg-green-50 text-charcoal-900'
                             }`}
                           >
@@ -354,13 +383,28 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                           <button
                             onClick={() => handlePaymentStatusChange('unpaid')}
                             className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 ${
-                              !order.paid 
-                                ? 'bg-rose-100 text-rose-800 font-semibold' 
+                              !order.paid
+                                ? 'bg-rose-100 text-rose-800 font-semibold'
                                 : 'hover:bg-rose-50 text-charcoal-900'
                             }`}
                           >
                             <span className="text-xs">Не оплачено</span>
                           </button>
+                          {order.paid && (
+                            <button
+                              onClick={handleCashToggle}
+                              className="w-full px-3 py-2 flex items-center justify-between gap-2 border-t border-cream-200 hover:bg-cream-50 transition-colors"
+                            >
+                              <span className="text-xs text-charcoal-700">💵 Наличные</span>
+                              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                order.payment_method === 'cash' ? 'bg-green-500' : 'bg-cream-300'
+                              }`}>
+                                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                  order.payment_method === 'cash' ? 'translate-x-4' : 'translate-x-1'
+                                }`} />
+                              </span>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -597,8 +641,8 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                   <button
                     onClick={() => handlePaymentStatusChange('paid')}
                     className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-2 border-b border-cream-200 ${
-                      order.paid 
-                        ? 'bg-green-100 text-green-800 font-semibold' 
+                      order.paid
+                        ? 'bg-green-100 text-green-800 font-semibold'
                         : 'hover:bg-green-50 text-charcoal-900'
                     }`}
                   >
@@ -607,13 +651,28 @@ export default function OrderCard({ order: initialOrder, onUpdate }: OrderCardPr
                   <button
                     onClick={() => handlePaymentStatusChange('unpaid')}
                     className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-2 ${
-                      !order.paid 
-                        ? 'bg-rose-100 text-rose-800 font-semibold' 
+                      !order.paid
+                        ? 'bg-rose-100 text-rose-800 font-semibold'
                         : 'hover:bg-rose-50 text-charcoal-900'
                     }`}
                   >
                     <span className="text-sm">Не оплачено</span>
                   </button>
+                  {order.paid && (
+                    <button
+                      onClick={handleCashToggle}
+                      className="w-full px-4 py-3 flex items-center justify-between gap-2 border-t border-cream-200 hover:bg-cream-50 transition-colors"
+                    >
+                      <span className="text-sm text-charcoal-700">💵 Наличные</span>
+                      <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        order.payment_method === 'cash' ? 'bg-green-500' : 'bg-cream-300'
+                      }`}>
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                          order.payment_method === 'cash' ? 'translate-x-4' : 'translate-x-1'
+                        }`} />
+                      </span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
