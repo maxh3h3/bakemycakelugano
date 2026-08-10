@@ -32,7 +32,7 @@ const QUICK_CLIENTS: QuickClient[] = [
   },
   {
     id: '9323a8bb-6ec4-481c-b040-aa762dc626bd',
-    name: 'Раменная',
+    name: 'Toku Ramen',
     icon: 'ramen',
     useItemBuilder: true,
     quickProducts: [
@@ -53,7 +53,7 @@ const QUICK_CLIENTS: QuickClient[] = [
     icon: 'coffee',
     useItemBuilder: true,
     quickProducts: [
-      { name: 'Mango Crepe Cake', price: 40 },
+      { name: 'Matcha Crepe Cake', price: 40 },
       { name: 'Japanese Cheesecake', price: 30 },
     ],
   },
@@ -118,7 +118,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
     };
   }, []);
   
-  // Calculate total for Раменная
+  // Calculate total for Toku Ramen
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
   };
@@ -139,7 +139,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
 
     // Validation based on client type
     if (useItemBuilder) {
-      // Validate items for Раменная
+      // Validate items for Toku Ramen
       if (items.length === 0) {
         setError('Добавьте хотя бы один товар');
         return;
@@ -308,7 +308,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
             </div>
           </div>
 
-          {/* Conditional Input: Item Builder for Раменная OR Simple Amount for Others */}
+          {/* Conditional Input: Item Builder for Toku Ramen OR Simple Amount for Others */}
           {useItemBuilder ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">

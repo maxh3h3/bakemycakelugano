@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import {
-  RAMENNAYA_CLIENT_ID,
+  TOKU_RAMEN_CLIENT_ID,
   DIVORAA_CLIENT_ID,
   VITRINA_CLIENT_ID,
 } from '@/lib/constants/quick-sale-clients';
@@ -261,7 +261,7 @@ export async function GET(request: NextRequest) {
       const clientId = t.client_id;
       const channel = (t.channel || '').toLowerCase();
 
-      if (clientId === RAMENNAYA_CLIENT_ID) {
+      if (clientId === TOKU_RAMEN_CLIENT_ID) {
         ramen += amt;
       } else if (channel === 'website') {
         website += amt;

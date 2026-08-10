@@ -5,7 +5,7 @@ import type { Database } from '@/lib/supabase/types';
 import OrdersTable from './OrdersTable';
 import DatePicker from '@/components/products/DatePicker';
 import { parseDateFromDB, extractTimeForSorting } from '@/lib/utils';
-import { VITRINA_CLIENT_ID, RAMENNAYA_CLIENT_ID } from '@/lib/constants/quick-sale-clients';
+import { VITRINA_CLIENT_ID, TOKU_RAMEN_CLIENT_ID } from '@/lib/constants/quick-sale-clients';
 import t from '@/lib/admin-translations-extended';
 import { ArrowDown, ArrowUp, User, Soup } from 'lucide-react';
 
@@ -36,7 +36,7 @@ function getDefaultCustomFrom(): Date {
 export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('week');
   const [showVitrina, setShowVitrina] = useState(true);
-  const [showRamennaya, setShowRamennaya] = useState(true);
+  const [showTokuRamen, setShowTokuRamen] = useState(true);
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('asc');
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(getDefaultCustomFrom);
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>(() => new Date());
@@ -108,7 +108,7 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
     // Apply walk-in client filters
     return filtered.filter(o => {
       if (!showVitrina && o.client_id === VITRINA_CLIENT_ID) return false;
-      if (!showRamennaya && o.client_id === RAMENNAYA_CLIENT_ID) return false;
+      if (!showTokuRamen && o.client_id === TOKU_RAMEN_CLIENT_ID) return false;
       return true;
     });
   };
@@ -318,18 +318,18 @@ export default function OrdersViewTabs({ orders }: OrdersViewTabsProps) {
             <span>Витрина</span>
           </button>
 
-          {/* Ramennaya Toggle */}
+          {/* Toku Ramen Toggle */}
           <button
-            onClick={() => setShowRamennaya(!showRamennaya)}
+            onClick={() => setShowTokuRamen(!showTokuRamen)}
             className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all border-2 ${
-              showRamennaya
+              showTokuRamen
                 ? 'bg-brown-500 text-white border-brown-500 shadow-md'
                 : 'bg-gray-100 text-gray-400 border-gray-300 opacity-50 hover:opacity-70'
             }`}
-            title={showRamennaya ? 'Скрыть заказы Раменной' : 'Показать заказы Раменной'}
+            title={showTokuRamen ? 'Скрыть заказы Toku Ramen' : 'Показать заказы Toku Ramen'}
           >
             <Soup className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Раменная</span>
+            <span>Toku Ramen</span>
           </button>
         </div>
       </div>

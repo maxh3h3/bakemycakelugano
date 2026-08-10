@@ -462,7 +462,7 @@ export default function FinancialDashboard() {
                   sublabel: total > 0 ? `${r.websitePercent}%` : null,
                 },
                 {
-                  label: '🍜 Раменная',
+                  label: '🍜 Toku Ramen',
                   amount: r.ramen,
                   sublabel: null,
                 },
