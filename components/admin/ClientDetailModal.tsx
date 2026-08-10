@@ -162,21 +162,31 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
     ? (parseFloat(client.totalSpent || '0') / orders.length).toFixed(2)
     : '0.00';
 
-  // Filter orders by date range for invoice
+  // Date an order is invoiced under: delivery date, falling back to creation date
+  const getInvoiceDate = (order: Order) =>
+    new Date(order.delivery_date || order.created_at);
+
+  // Filter orders by date range for invoice, oldest delivery first
   const getFilteredOrders = () => {
-    if (!invoiceFromDate && !invoiceToDate) return orders;
-    
-    return orders.filter(order => {
-      const orderDate = new Date(order.delivery_date || order.created_at);
-      const from = invoiceFromDate ? new Date(invoiceFromDate) : new Date(0);
-      const to = invoiceToDate ? new Date(invoiceToDate) : new Date();
+    const inRange =
+      !invoiceFromDate && !invoiceToDate
+        ? orders
+        : orders.filter(order => {
+            const orderDate = getInvoiceDate(order);
+            const from = invoiceFromDate ? new Date(invoiceFromDate) : new Date(0);
+            const to = invoiceToDate ? new Date(invoiceToDate) : new Date();
 
-      // Set time to start/end of day for comparison
-      from.setHours(0, 0, 0, 0);
-      to.setHours(23, 59, 59, 999);
+            // Set time to start/end of day for comparison
+            from.setHours(0, 0, 0, 0);
+            to.setHours(23, 59, 59, 999);
 
-      return orderDate >= from && orderDate <= to;
-    });
+            return orderDate >= from && orderDate <= to;
+          });
+
+    // Copy before sorting: `orders` is React state and sort() mutates in place
+    return [...inRange].sort(
+      (a, b) => getInvoiceDate(a).getTime() - getInvoiceDate(b).getTime()
+    );
   };
 
   const getInvoiceFilename = () => {
