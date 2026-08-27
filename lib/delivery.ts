@@ -1,15 +1,10 @@
-// Lugano area zip codes — flat CHF 20 delivery, no API call needed
-export const LUGANO_ZIP_CODES = [
-  '6876', '6900', '6901', '6902', '6903', '6904', '6905', '6906', '6907',
-  '6910', '6911', '6912', '6913', '6915', '6917', '6918', '6925', '6932', '6962',
-  '6963', '6964', '6966', '6974', '6976', '6977', '6978', '6979', '6926', '6927',
-  '22061'
-];
+// Lugano city zip code — flat CHF 20 delivery, no API call needed
+export const LUGANO_ZIP_CODES = ['6900'];
 
 // Delivery fee tiers for addresses outside the Lugano zip code list (via Google Maps distance):
-// 0–15 km  → CHF 20
-// 15–30 km → CHF 30
-// 30–50 km → CHF 45
+// 0–15 km  → CHF 30
+// 15–30 km → CHF 40
+// 30–50 km → CHF 55
 // > 50 km  → requires contact
 
 export const LUGANO_DELIVERY_FEE = 20; // CHF — flat fee for known Lugano zip codes
@@ -27,10 +22,35 @@ export interface DeliveryInfo {
  * Used by /api/delivery-estimate for addresses outside the Lugano zip code list.
  */
 export function calculateDeliveryFeeFromDistance(distanceKm: number): { fee: number; requiresContact: boolean } {
-  if (distanceKm <= 15) return { fee: 20, requiresContact: false };
-  if (distanceKm <= 30) return { fee: 30, requiresContact: false };
-  if (distanceKm <= 50) return { fee: 45, requiresContact: false };
+  if (distanceKm <= 15) return { fee: 30, requiresContact: false };
+  if (distanceKm <= 30) return { fee: 40, requiresContact: false };
+  if (distanceKm <= 50) return { fee: 55, requiresContact: false };
   return { fee: 0, requiresContact: true };
+}
+
+/**
+ * True if a Lugano zip code appears in the given value. Accepts either a bare
+ * postal code ("6900") or a free-text address ("Via Nassa 12, 6900 Lugano"),
+ * since the admin modals submit a single address field.
+ */
+export function matchesLuganoZip(postalCodeOrAddress?: string | null): boolean {
+  if (!postalCodeOrAddress) return false;
+  return LUGANO_ZIP_CODES.some((zip) => new RegExp(`\\b${zip}\\b`).test(postalCodeOrAddress));
+}
+
+/**
+ * Resolve the delivery fee for a destination. The Lugano flat fee wins over the
+ * distance tiers, so every caller (checkout, bot, admin) prices the same address
+ * the same way.
+ */
+export function resolveDeliveryFee(
+  distanceKm: number,
+  postalCodeOrAddress?: string | null
+): { fee: number; requiresContact: boolean } {
+  if (matchesLuganoZip(postalCodeOrAddress)) {
+    return { fee: LUGANO_DELIVERY_FEE, requiresContact: false };
+  }
+  return calculateDeliveryFeeFromDistance(distanceKm);
 }
 
 /**
