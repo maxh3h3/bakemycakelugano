@@ -212,7 +212,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
         delivery_type: isImmediate ? 'immediate' : 'pickup',
         paid: isImmediate,
         payment_method: isImmediate ? 'cash' : null,
-        channel: isImmediate ? 'walk_in' : 'restaurant',
+        channel: isImmediate ? 'walk_in' : 'phone',
         total_amount: totalAmount,
         is_immediate: isImmediate,
         order_items: orderItems,
