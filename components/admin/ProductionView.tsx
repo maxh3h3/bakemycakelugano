@@ -8,7 +8,7 @@ import ProductionPrintingModal from './ProductionPrintingModal';
 import Toast from '@/components/ui/Toast';
 import { useProductionSSE } from '@/lib/hooks/useProductionSSE';
 import type { ProductionEvent } from '@/lib/events/production-events';
-import { Printer, Cake, Weight, Circle, Clock } from 'lucide-react';
+import { Printer, Cake, Weight, Circle, Clock, ArrowLeftRight } from 'lucide-react';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -30,6 +30,9 @@ interface OrderGroup {
 export default function ProductionView({ items }: ProductionViewProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('week');
+  // Week/month tabs toggle between a rolling window from today and the calendar period
+  const [weekRolling, setWeekRolling] = useState(true);
+  const [monthRolling, setMonthRolling] = useState(true);
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<OrderGroup | null>(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
   
@@ -140,6 +143,28 @@ export default function ProductionView({ items }: ProductionViewProps) {
     return days;
   }
 
+  // Calendar week (Monday start, through next Monday)
+  function getCalendarWeekDays(): Date[] {
+    const today = new Date();
+    const daysFromMonday = today.getDay() === 0 ? 6 : today.getDay() - 1;
+    const days = [];
+    for (let i = 0; i < 8; i++) {
+      days.push(new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysFromMonday + i));
+    }
+    return days;
+  }
+
+  // All days of the current calendar month
+  function getCalendarMonthDays(): Date[] {
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const days = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(today.getFullYear(), today.getMonth(), i));
+    }
+    return days;
+  }
+
   // Convert Date to local YYYY-MM-DD string (avoiding timezone issues)
   function dateToLocalString(date: Date): string {
     const year = date.getFullYear();
@@ -155,8 +180,8 @@ export default function ProductionView({ items }: ProductionViewProps) {
     return groupItemsByOrder(dayItems);
   }
 
-  const weekDays = getUpcomingDays(7);
-  const monthDays = getUpcomingDays(30);
+  const weekDays = weekRolling ? getUpcomingDays(7) : getCalendarWeekDays();
+  const monthDays = monthRolling ? getUpcomingDays(30) : getCalendarMonthDays();
   const today = new Date();
   const todayStr = dateToLocalString(today);
   const todayItems = items.filter(item => item.delivery_date === todayStr);
@@ -212,46 +237,33 @@ export default function ProductionView({ items }: ProductionViewProps) {
         {/* View Mode Tabs */}
         <div className="bg-white rounded-2xl shadow-md border-2 border-cream-200 p-2">
           <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setViewMode('today')}
-              className={`
-                px-6 py-3 rounded-xl font-medium transition-all duration-200 relative
-                ${viewMode === 'today'
-                  ? 'bg-brown-500 text-white shadow-lg scale-105'
-                  : 'bg-cream-50 text-charcoal-700 hover:bg-cream-100'
-                }
-              `}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span>Today ({todayOrderGroups.length})</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setViewMode('week')}
-              className={`
-                px-6 py-3 rounded-xl font-medium transition-all duration-200 relative
-                ${viewMode === 'week'
-                  ? 'bg-brown-500 text-white shadow-lg scale-105'
-                  : 'bg-cream-50 text-charcoal-700 hover:bg-cream-100'
-                }
-              `}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span>Next 7 days</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setViewMode('month')}
-              className={`
-                px-6 py-3 rounded-xl font-medium transition-all duration-200
-                ${viewMode === 'month'
-                  ? 'bg-brown-500 text-white shadow-lg scale-105'
-                  : 'bg-cream-50 text-charcoal-700 hover:bg-cream-100'
-                }
-              `}
-            >
-              Next 30 days
-            </button>
+            {([
+              { mode: 'today', label: `Сегодня (${todayOrderGroups.length})`, toggleable: false },
+              { mode: 'week', label: weekRolling ? 'Следующие 7 дней' : 'Эта неделя', toggleable: true },
+              { mode: 'month', label: monthRolling ? 'Следующие 30 дней' : 'Этот месяц', toggleable: true },
+            ] as const).map(({ mode, label, toggleable }) => (
+              <button
+                key={mode}
+                onClick={() => {
+                  // Clicking the already-selected week/month tab flips between rolling and calendar
+                  if (viewMode === mode && mode === 'week') setWeekRolling(!weekRolling);
+                  else if (viewMode === mode && mode === 'month') setMonthRolling(!monthRolling);
+                  else setViewMode(mode);
+                }}
+                className={`
+                  px-6 py-3 rounded-xl font-medium transition-all duration-200
+                  ${viewMode === mode
+                    ? 'bg-brown-500 text-white shadow-lg scale-105'
+                    : 'bg-cream-50 text-charcoal-700 hover:bg-cream-100'
+                  }
+                `}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  {label}
+                  {toggleable && viewMode === mode && <ArrowLeftRight className="w-4 h-4 opacity-70" />}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
 
