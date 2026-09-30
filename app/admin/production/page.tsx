@@ -31,7 +31,7 @@ export default async function AdminProductionPage() {
   startOfWeek.setHours(0, 0, 0, 0);
   
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 28); // 4 weeks
+  endOfWeek.setDate(startOfWeek.getDate() + 35); // covers today + 30 days from any weekday
   
   // Fetch order_items directly with delivery dates in the next 4 weeks
   // NO JOIN - This is the whole point of denormalization!

@@ -155,6 +155,7 @@ export interface Database {
           staff_notes: string | null
           customer_notes: string | null
           delivery_date: string | null
+          delivery_time: string | null
           started_at: string | null
           completed_at: string | null
           updated_at: string | null
@@ -181,6 +182,7 @@ export interface Database {
           staff_notes?: string | null
           customer_notes?: string | null
           delivery_date?: string | null
+          delivery_time?: string | null
           started_at?: string | null
           completed_at?: string | null
           updated_at?: string | null
@@ -207,6 +209,7 @@ export interface Database {
           staff_notes: string | null
           customer_notes: string | null
           delivery_date: string | null
+          delivery_time: string | null
           started_at: string | null
           completed_at: string | null
           updated_at: string | null

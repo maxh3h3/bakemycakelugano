@@ -4,12 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Database } from '@/lib/supabase/types';
 import OrderItemsModal from './OrderItemsModal';
-import ProductionSummaryModal from './ProductionSummaryModal';
 import ProductionPrintingModal from './ProductionPrintingModal';
 import Toast from '@/components/ui/Toast';
 import { useProductionSSE } from '@/lib/hooks/useProductionSSE';
 import type { ProductionEvent } from '@/lib/events/production-events';
-import { Printer, Cake, Weight, Circle } from 'lucide-react';
+import { Printer, Cake, Weight, Circle, Clock } from 'lucide-react';
 
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
 
@@ -24,6 +23,7 @@ interface OrderGroup {
   order_number: string;
   order_id: string;
   delivery_date: string;
+  delivery_time?: string | null;
   items: OrderItem[];
 }
 
@@ -31,7 +31,6 @@ export default function ProductionView({ items }: ProductionViewProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<OrderGroup | null>(null);
-  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   
   // Toast notification state
@@ -117,44 +116,26 @@ export default function ProductionView({ items }: ProductionViewProps) {
           order_number: item.order_number || 'N/A',
           order_id: item.order_id,
           delivery_date: item.delivery_date || '',
+          delivery_time: item.delivery_time || null,
           items: [],
         });
       }
       
+      const group = groups.get(key)!;
+      if (!group.delivery_time && item.delivery_time) group.delivery_time = item.delivery_time;
+
       groups.get(key)!.items.push(item);
     });
 
     return Array.from(groups.values());
   }
 
-  // Get week days
-  function getWeekDays(): Date[] {
+  // Rolling window of `count` days starting from today
+  function getUpcomingDays(count: number): Date[] {
     const today = new Date();
-    const startOfWeek = new Date(today);
-    // Start week with Monday instead of Sunday
-    const dayOfWeek = today.getDay();
-    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(today.getDate() - daysFromMonday);
-    
     const days = [];
-    for (let i = 0; i < 8; i++) {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  }
-
-  // Get all days in current month
-  function getMonthDays(): Date[] {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    const days = [];
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i));
+    for (let i = 0; i < count; i++) {
+      days.push(new Date(today.getFullYear(), today.getMonth(), today.getDate() + i));
     }
     return days;
   }
@@ -174,8 +155,8 @@ export default function ProductionView({ items }: ProductionViewProps) {
     return groupItemsByOrder(dayItems);
   }
 
-  const weekDays = getWeekDays();
-  const monthDays = getMonthDays();
+  const weekDays = getUpcomingDays(7);
+  const monthDays = getUpcomingDays(30);
   const today = new Date();
   const todayStr = dateToLocalString(today);
   const todayItems = items.filter(item => item.delivery_date === todayStr);
@@ -195,15 +176,6 @@ export default function ProductionView({ items }: ProductionViewProps) {
       orderGroup.items.every(item => item.production_status === 'decorated')
     );
   }
-
-  // Get items for today view
-  const todayViewItems = todayItems;
-  
-  // Get items for week view
-  const weekViewItems = (() => {
-    const weekDateStrings = weekDays.map(d => dateToLocalString(d));
-    return items.filter(item => item.delivery_date && weekDateStrings.includes(item.delivery_date));
-  })();
 
   return (
     <>
@@ -252,40 +224,6 @@ export default function ProductionView({ items }: ProductionViewProps) {
             >
               <div className="flex items-center justify-between gap-3">
                 <span>Today ({todayOrderGroups.length})</span>
-                {viewMode === 'today' && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowSummaryModal(true);
-                    }}
-                    className="bg-white/20 hover:bg-white/30 text-white rounded-lg p-2 flex items-center justify-center transition-all cursor-pointer"
-                    title="Сводка производства"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowSummaryModal(true);
-                      }
-                    }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                  </span>
-                )}
               </div>
             </button>
             <button
@@ -299,41 +237,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
               `}
             >
               <div className="flex items-center justify-between gap-3">
-                <span>Week View</span>
-                {viewMode === 'week' && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowSummaryModal(true);
-                    }}
-                    className="bg-white/20 hover:bg-white/30 text-white rounded-lg p-2 flex items-center justify-center transition-all cursor-pointer"
-                    title="Сводка производства"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowSummaryModal(true);
-                      }
-                    }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                  </span>
-                )}
+                <span>Next 7 days</span>
               </div>
             </button>
             <button
@@ -346,7 +250,7 @@ export default function ProductionView({ items }: ProductionViewProps) {
                 }
               `}
             >
-              Month View
+              Next 30 days
             </button>
           </div>
         </div>
@@ -415,7 +319,13 @@ export default function ProductionView({ items }: ProductionViewProps) {
                     </div>
 
                     {/* Production Status Summary */}
-                    <div className="flex-shrink-0 flex items-center gap-2">
+                    <div className="flex-shrink-0 flex flex-col items-end justify-between self-stretch gap-2">
+                      {orderGroup.delivery_time ? (
+                        <span className="flex items-center gap-1.5 bg-brown-500 text-white px-3 py-1.5 rounded-lg font-mono font-bold text-base">
+                          <Clock className="w-4 h-4" />
+                          {orderGroup.delivery_time}
+                        </span>
+                      ) : <span />}
                       <span className="text-brown-500 text-2xl">→</span>
                     </div>
                   </div>
@@ -480,10 +390,16 @@ export default function ProductionView({ items }: ProductionViewProps) {
                               : 'border-2 border-cream-300 hover:border-brown-400 hover:bg-cream-50'
                           }`}
                         >
-                          <div className="mb-4">
+                          <div className="mb-4 flex items-start justify-between gap-2">
                             <span className="text-lg font-mono font-bold text-charcoal-600">
                               {orderGroup.order_number}
                             </span>
+                            {orderGroup.delivery_time && (
+                              <span className="flex items-center gap-1.5 bg-brown-500 text-white px-3 py-1 rounded-lg font-mono font-bold text-base">
+                                <Clock className="w-4 h-4" />
+                                {orderGroup.delivery_time}
+                              </span>
+                            )}
                           </div>
                           <div className="space-y-3">
                             {orderGroup.items.map((item, idx) => (
@@ -586,10 +502,16 @@ export default function ProductionView({ items }: ProductionViewProps) {
                               : 'border border-cream-300 hover:border-brown-400 hover:bg-cream-50'
                           }`}
                         >
-                          <div className="mb-1">
+                          <div className="mb-1 flex items-start justify-between gap-1">
                             <span className="text-[10px] font-mono font-semibold text-charcoal-500">
                               {orderGroup.order_number}
                             </span>
+                            {orderGroup.delivery_time && (
+                              <span className="flex items-center gap-0.5 bg-brown-500 text-white px-1.5 py-0.5 rounded font-mono font-bold text-[10px]">
+                                <Clock className="w-2.5 h-2.5" />
+                                {orderGroup.delivery_time}
+                              </span>
+                            )}
                           </div>
                           <div className="space-y-1">
                             {orderGroup.items.map((item, idx) => (
@@ -636,15 +558,6 @@ export default function ProductionView({ items }: ProductionViewProps) {
         <OrderItemsModal
           orderGroup={selectedOrderGroup}
           onClose={() => setSelectedOrderGroup(null)}
-        />
-      )}
-
-      {/* Production Summary Modal */}
-      {showSummaryModal && (
-        <ProductionSummaryModal
-          items={viewMode === 'today' ? todayViewItems : weekViewItems}
-          viewMode={viewMode}
-          onClose={() => setShowSummaryModal(false)}
         />
       )}
 

@@ -36,16 +36,20 @@ const QUICK_CLIENTS: QuickClient[] = [
     icon: 'ramen',
     useItemBuilder: true,
     quickProducts: [
-      { name: 'Matcha Cake', price: 3 },
-      { name: 'Mango Cheesecake', price: 3 },
+      { name: 'Matcha Cake', price: 72 },
+      { name: 'Mango Cheesecake', price: 30 },
       { name: 'Pasticcini Drago', price: 5 },
     ],
   },
   {
-    id: '5b8862a9-9ed1-4d60-85b2-9d13b69b0e3c',
-    name: 'Divora',
-    icon: 'mobile',
-    useItemBuilder: false,
+    id: '436d282e-5d77-4e70-b767-91fcbcf8a2b7',
+    name: 'Noizu',
+    icon: 'ramen',
+    useItemBuilder: true,
+    quickProducts: [
+      { name: 'Chocolate Cake', price: 3.3 },
+      { name: 'Matcha Tiramisu', price: 3.5 },
+    ],
   },
   {
     id: '380d7bbd-5fa3-459a-a76c-be035c777a09',
@@ -55,6 +59,7 @@ const QUICK_CLIENTS: QuickClient[] = [
     quickProducts: [
       { name: 'Matcha Crepe Cake', price: 40 },
       { name: 'Japanese Cheesecake', price: 30 },
+      { name: 'San Sebastian Cheesecake', price: 40 },
     ],
   },
 ];
@@ -194,18 +199,22 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
 
       const totalAmount = useItemBuilder ? calculateTotal() : parseFloat(amount);
 
-      // Create immediate order with pre-existing client ID
+      // Vitrina is a shelf sale fulfilled on the spot (skips production).
+      // Business clients (Noizu, Toku, Kohi) go through as normal pickup orders
+      // so they appear in the production view and get invoiced later.
+      const isImmediate = !useItemBuilder;
+
       const orderData = {
         client_id: selectedClient,
-        customer_name: 'Quick Sale',
+        customer_name: useItemBuilder ? selectedClientConfig?.name ?? 'Quick Sale' : 'Quick Sale',
         customer_phone: '+41000000000',
         delivery_date: deliveryDate,
-        delivery_type: 'immediate',
-        paid: true,
-        payment_method: 'cash',
-        channel: 'walk_in',
+        delivery_type: isImmediate ? 'immediate' : 'pickup',
+        paid: isImmediate,
+        payment_method: isImmediate ? 'cash' : null,
+        channel: isImmediate ? 'walk_in' : 'restaurant',
         total_amount: totalAmount,
-        is_immediate: true,
+        is_immediate: isImmediate,
         order_items: orderItems,
       };
 
