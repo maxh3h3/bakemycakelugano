@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import {
   TOKU_RAMEN_CLIENT_ID,
   DIVORAA_CLIENT_ID,
@@ -35,6 +36,9 @@ interface FinancialTransaction {
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdminRole(['owner']);
+    if (auth instanceof NextResponse) return auth;
+
     const { searchParams } = new URL(request.url);
     const breakdownFilter =
       (searchParams.get('breakdownFilter') as 'month' | 'year' | 'last_year' | 'period') || 'month';

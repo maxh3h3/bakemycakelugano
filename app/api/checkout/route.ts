@@ -1,32 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { urlFor } from '@/lib/sanity/image-url';
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import { DeliveryAddressSchema } from '@/lib/schemas/delivery';
+import { client as sanityClient } from '@/lib/sanity/client';
+import { resolveCheckoutDeliveryFee } from '@/lib/delivery-server';
+
+const MAX_QUANTITY_PER_ITEM = 50;
+
+interface CatalogProduct {
+  _id: string;
+  name_en?: string;
+  name_it?: string;
+  price: number;
+  sizes?: { value: string; priceModifier?: number }[];
+  image?: SanityImageSource;
+  flavours?: { _id: string; name_en?: string; name_it?: string }[];
+}
+
+class CheckoutValidationError extends Error {}
+
+/**
+ * Rebuild the cart from the catalog. Prices, product names and images come from
+ * Sanity; the client only chooses product, size, flavour, quantity and writing.
+ * Any unitPrice / productName sent in the request is ignored.
+ */
+async function priceItems(requestedItems: any[], locale: string) {
+  const ids = [...new Set(requestedItems.map((item) => String(item?.productId ?? '')))];
+  const products: CatalogProduct[] = await sanityClient.fetch(
+    `*[_type == "product" && available == true && _id in $ids]{
+      _id, name_en, name_it, price,
+      "sizes": sizes[]{ value, priceModifier },
+      "image": images[0],
+      "flavours": availableFlavours[]->{ _id, name_en, name_it }
+    }`,
+    { ids }
+  );
+  const byId = new Map(products.map((p) => [p._id, p]));
+  const localized = (doc: { name_en?: string; name_it?: string }) =>
+    (locale === 'it' ? doc.name_it || doc.name_en : doc.name_en || doc.name_it) || '';
+
+  return requestedItems.map((item) => {
+    const product = byId.get(String(item?.productId ?? ''));
+    if (!product) {
+      throw new CheckoutValidationError(`Unknown or unavailable product: ${item?.productId}`);
+    }
+
+    const quantity = Number(item.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY_PER_ITEM) {
+      throw new CheckoutValidationError(`Invalid quantity for ${product._id}`);
+    }
+
+    let unitPrice = product.price;
+    if (item.weight_kg && product.sizes?.length) {
+      const size = product.sizes.find((s) => s.value === item.weight_kg);
+      if (!size) {
+        throw new CheckoutValidationError(`Invalid size ${item.weight_kg} for ${product._id}`);
+      }
+      unitPrice += size.priceModifier || 0;
+    }
+
+    const flavour = item.selectedFlavour
+      ? product.flavours?.find((f) => f._id === item.selectedFlavour)
+      : undefined;
+
+    return {
+      productId: product._id,
+      productName: localized(product),
+      productImageUrl: product.image ?? null,
+      quantity,
+      unitPrice,
+      weight_kg: item.weight_kg || null,
+      selectedFlavour: item.selectedFlavour || null,
+      flavourName: flavour ? localized(flavour) : item.flavourName || null,
+      writingOnCake: item.writingOnCake || null,
+    };
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerInfo, deliveryInfo, specialInstructions, items, locale } = body;
+    const { customerInfo, deliveryInfo, specialInstructions, items: requestedItems, locale } = body;
 
     // Validate request
-    if (!customerInfo || !deliveryInfo || !items || items.length === 0) {
+    if (!customerInfo || !deliveryInfo || !Array.isArray(requestedItems) || requestedItems.length === 0) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
+    let items: Awaited<ReturnType<typeof priceItems>>;
+    try {
+      items = await priceItems(requestedItems, locale);
+    } catch (error) {
+      if (error instanceof CheckoutValidationError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
+    }
+
+    // Delivery fee is computed here too — the fee field in the request is ignored
+    const { fee: deliveryFee, requiresContact } = await resolveCheckoutDeliveryFee(deliveryInfo);
+
     // Calculate totals
-    const subtotal = items.reduce((sum: number, item: any) => {
+    const subtotal = items.reduce((sum, item) => {
       return sum + (item.unitPrice * item.quantity);
     }, 0);
 
     const DISCOUNT_PERCENTAGE = 0.10;
     const discountAmount = subtotal * DISCOUNT_PERCENTAGE;
     const discountedSubtotal = subtotal - discountAmount;
-    const deliveryFee = deliveryInfo.fee || 0;
     const totalAmount = discountedSubtotal + deliveryFee;
 
     // Simplify items for metadata (Stripe has 500 char limit per field)
@@ -44,7 +131,7 @@ export async function POST(request: NextRequest) {
     }));
 
     // Prepare line items with delivery fee if applicable
-    const lineItems = [
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       ...items.map((item: any) => {
         // Build description with size and flavour
         const descriptionParts: string[] = [];
@@ -128,7 +215,7 @@ export async function POST(request: NextRequest) {
         deliveryAddressPostalCode: deliveryInfo.postalCode || '',
         deliveryAddressCountry: deliveryInfo.country || '',
         deliveryFee: deliveryFee.toString(),
-        deliveryRequiresContact: deliveryInfo.requiresContact ? 'true' : 'false',
+        deliveryRequiresContact: requiresContact ? 'true' : 'false',
         specialInstructions: specialInstructions || '',
         orderItems: JSON.stringify(simplifiedItems), // Simplified, no image objects
         discountPercentage: '10',
