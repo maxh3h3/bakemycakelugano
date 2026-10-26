@@ -55,3 +55,4 @@ pnpm-debug.log*
 .supabase/
 
 .mcp.json
+supabase/.temp/
