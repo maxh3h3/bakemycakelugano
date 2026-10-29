@@ -1,4 +1,6 @@
 import { defineType, defineField } from 'sanity';
+import { SizeValueInput } from '../lib/SizeValueInput';
+import { SIZE_VALUE_PATTERN } from '../lib/sizeValue';
 
 export default defineType({
   name: 'product',
@@ -60,6 +62,13 @@ export default defineType({
       title: 'Size Options',
       type: 'array',
       description: 'Available sizes for this product (e.g., for cakes). Leave empty if product has no size variations.',
+      // The website and checkout pick a size by its value, so two sizes with the same value collapse into the first one
+      validation: (Rule) =>
+        Rule.custom((sizes?: { value?: string }[]) => {
+          const values = (sizes || []).map((s) => s.value);
+          const dupes = values.filter((v, i) => v && values.indexOf(v) !== i);
+          return dupes.length ? `Size values must be unique (duplicated: "${dupes[0]}")` : true;
+        }),
       of: [
         {
           type: 'object',
@@ -82,8 +91,14 @@ export default defineType({
               name: 'value',
               title: 'Size Value',
               type: 'string',
-              description: 'Internal identifier (e.g., "1kg", "2kg")',
-              validation: (Rule) => Rule.required(),
+              description: 'Weight or count shown to the cooks on the order (e.g., "1.5 kg", "450 g", "12 pcs", "5 kg (2 tiers)"). Cleaned automatically; must be different for every size.',
+              components: { input: SizeValueInput },
+              validation: (Rule) =>
+                Rule.required().custom((value?: string) =>
+                  !value || SIZE_VALUE_PATTERN.test(value)
+                    ? true
+                    : `Use the format "1.5 kg", "450 g", "12 pcs" or "5 kg (2 tiers)"`
+                ),
             },
             {
               name: 'priceModifier',
