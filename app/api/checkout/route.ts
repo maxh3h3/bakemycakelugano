@@ -7,6 +7,7 @@ import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import { DeliveryAddressSchema } from '@/lib/schemas/delivery';
 import { client as sanityClient } from '@/lib/sanity/client';
 import { resolveCheckoutDeliveryFee } from '@/lib/delivery-server';
+import { SIZE_VALUE_GROQ } from '@/sanity/lib/sizeValue';
 
 const MAX_QUANTITY_PER_ITEM = 50;
 
@@ -32,7 +33,7 @@ async function priceItems(requestedItems: any[], locale: string) {
   const products: CatalogProduct[] = await sanityClient.fetch(
     `*[_type == "product" && available == true && _id in $ids]{
       _id, name_en, name_it, price,
-      "sizes": sizes[]{ value, priceModifier },
+      "sizes": sizes[]{ ${SIZE_VALUE_GROQ}, priceModifier },
       "image": images[0],
       "flavours": availableFlavours[]->{ _id, name_en, name_it }
     }`,

@@ -1,6 +1,5 @@
 import { defineType, defineField } from 'sanity';
-import { SizeValueInput } from '../lib/SizeValueInput';
-import { SIZE_VALUE_PATTERN } from '../lib/sizeValue';
+import { PIECES, TIERS, WEIGHTS_KG, sizeValue, type SizeChoice } from '../lib/sizeValue';
 
 export default defineType({
   name: 'product',
@@ -64,15 +63,60 @@ export default defineType({
       description: 'Available sizes for this product (e.g., for cakes). Leave empty if product has no size variations.',
       // The website and checkout pick a size by its value, so two sizes with the same value collapse into the first one
       validation: (Rule) =>
-        Rule.custom((sizes?: { value?: string }[]) => {
-          const values = (sizes || []).map((s) => s.value);
+        Rule.custom((sizes?: SizeChoice[]) => {
+          const values = (sizes || []).map(sizeValue);
           const dupes = values.filter((v, i) => v && values.indexOf(v) !== i);
-          return dupes.length ? `Size values must be unique (duplicated: "${dupes[0]}")` : true;
+          return dupes.length ? `Two sizes are both "${dupes[0]}"` : true;
         }),
       of: [
         {
           type: 'object',
           fields: [
+            {
+              name: 'unit',
+              title: 'Sold by',
+              type: 'string',
+              options: {
+                list: [
+                  { title: 'Weight (cakes)', value: 'kg' },
+                  { title: 'Pieces (cupcakes, cookies…)', value: 'pcs' },
+                ],
+                layout: 'radio',
+                direction: 'horizontal',
+              },
+              initialValue: 'kg',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'weight',
+              title: 'Weight',
+              type: 'number',
+              options: { list: WEIGHTS_KG.map((kg) => ({ title: `${kg} kg`, value: kg })) },
+              hidden: ({ parent }) => parent?.unit !== 'kg',
+              validation: (Rule) =>
+                Rule.custom((weight, { parent }) =>
+                  (parent as SizeChoice)?.unit === 'kg' && weight == null ? 'Pick a weight' : true
+                ),
+            },
+            {
+              name: 'tiers',
+              title: 'Tiers',
+              type: 'number',
+              options: { list: TIERS.map((n) => ({ title: n === 1 ? 'Single tier' : `${n} tiers`, value: n })), layout: 'radio', direction: 'horizontal' },
+              initialValue: 1,
+              hidden: ({ parent }) => parent?.unit !== 'kg',
+            },
+            {
+              name: 'pieces',
+              title: 'Pieces',
+              type: 'number',
+              options: { list: PIECES.map((n) => ({ title: `${n} pcs`, value: n })) },
+              hidden: ({ parent }) => parent?.unit !== 'pcs',
+              validation: (Rule) =>
+                Rule.custom((pieces, { parent }) =>
+                  (parent as SizeChoice)?.unit === 'pcs' && pieces == null ? 'Pick the number of pieces' : true
+                ),
+            },
             {
               name: 'label_en',
               title: 'Size Label (English)',
@@ -88,19 +132,6 @@ export default defineType({
               validation: (Rule) => Rule.required(),
             },
             {
-              name: 'value',
-              title: 'Size Value',
-              type: 'string',
-              description: 'Weight or count shown to the cooks on the order (e.g., "1.5 kg", "450 g", "12 pcs", "5 kg (2 tiers)"). Cleaned automatically; must be different for every size.',
-              components: { input: SizeValueInput },
-              validation: (Rule) =>
-                Rule.required().custom((value?: string) =>
-                  !value || SIZE_VALUE_PATTERN.test(value)
-                    ? true
-                    : `Use the format "1.5 kg", "450 g", "12 pcs" or "5 kg (2 tiers)"`
-                ),
-            },
-            {
               name: 'priceModifier',
               title: 'Price Adjustment (CHF)',
               type: 'number',
@@ -112,12 +143,15 @@ export default defineType({
           preview: {
             select: {
               label_en: 'label_en',
-              label_it: 'label_it',
               priceModifier: 'priceModifier',
+              unit: 'unit',
+              weight: 'weight',
+              pieces: 'pieces',
+              tiers: 'tiers',
             },
-            prepare({ label_en, label_it, priceModifier }) {
+            prepare({ label_en, priceModifier, ...choice }) {
               return {
-                title: `${label_en} / ${label_it}`,
+                title: `${sizeValue(choice) ?? '⚠️ no size picked'} · ${label_en ?? ''}`,
                 subtitle: priceModifier > 0 ? `+${priceModifier} CHF` : 'Base price',
               };
             },

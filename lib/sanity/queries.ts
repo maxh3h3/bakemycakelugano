@@ -1,4 +1,5 @@
 import { client } from './client';
+import { SIZE_VALUE_GROQ } from '@/sanity/lib/sizeValue';
 
 type Locale = 'en' | 'it';
 
@@ -23,7 +24,7 @@ function getLocalizedFields(locale: Locale = 'en') {
         "label": label${nameSuffix},
         label_en,
         label_it,
-        value,
+        ${SIZE_VALUE_GROQ},
         priceModifier
       },
       images,
