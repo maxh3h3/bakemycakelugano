@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         // Build description with size and flavour
         const descriptionParts: string[] = [];
         if (item.weight_kg) {
-          descriptionParts.push(`Weight: ${item.weight_kg}`);
+          descriptionParts.push(`${locale === 'it' ? 'Formato' : 'Size'}: ${item.weight_kg}`);
         }
         if (item.flavourName) {
           descriptionParts.push(`Flavour: ${item.flavourName}`);

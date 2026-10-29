@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Product } from '@/types/sanity';
+import { SIZE_VALUE_PATTERN } from '@/sanity/lib/sizeValue';
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  weight_kg?: string; // Weight value (e.g., "1kg")
+  weight_kg?: string; // Size value (e.g., "1.5 kg", "12 pcs")
   selectedFlavour?: string; // Flavour ID
   writingOnCake?: string; // Custom text to write on cake
 }
@@ -105,6 +106,16 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'cart-storage',
+      // v1: sizes moved to "1.5 kg" / "12 pcs". Drop items saved with an old typed size,
+      // which checkout would reject; everything else in the cart stays.
+      version: 1,
+      migrate: (persisted) => {
+        const state = persisted as { items?: CartItem[] };
+        return {
+          ...state,
+          items: (state.items ?? []).filter((item) => !item.weight_kg || SIZE_VALUE_PATTERN.test(item.weight_kg)),
+        } as CartStore;
+      },
     }
   )
 );

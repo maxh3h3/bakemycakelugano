@@ -13,6 +13,9 @@ export interface SizeChoice {
   tiers?: number;
 }
 
+// Every value sizeValue / SIZE_VALUE_GROQ can produce
+export const SIZE_VALUE_PATTERN = /^\d+(\.\d+)? (kg|pcs)( \(\d+ tiers\))?$/;
+
 // Same output as SIZE_VALUE_GROQ, for validation in the Studio
 export function sizeValue({ unit, weight, pieces, tiers }: SizeChoice): string | null {
   if (unit === 'pcs' && pieces != null) return `${pieces} pcs`;

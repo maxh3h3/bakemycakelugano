@@ -152,7 +152,11 @@ function buildConfirmationText(
       const price = formatCurrency(item.subtotal, order.currency);
       lines.push(`• ${item.product_name} × ${item.quantity} ${L.qty} — ${price}`);
       if (item.flavour_name) lines.push(`  ${L.flavour}: ${item.flavour_name}`);
-      if (item.weight_kg) lines.push(`  ${L.weight}: ${item.weight_kg} kg`);
+      // Website orders already carry the unit ("1.5 kg", "12 pcs"); manual orders may be a bare number
+      if (item.weight_kg) {
+        const weight = /^\d+([.,]\d+)?$/.test(item.weight_kg.trim()) ? `${item.weight_kg.trim()} kg` : item.weight_kg;
+        lines.push(`  ${L.weight}: ${weight}`);
+      }
       if (item.writing_on_cake.trim()) lines.push(`  ${L.writing}: "${item.writing_on_cake.trim()}"`);
     });
   }
