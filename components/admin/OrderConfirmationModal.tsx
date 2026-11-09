@@ -49,6 +49,7 @@ const LABELS = {
     writing: 'Надпись',
     weight: 'Вес',
     diameter: 'Диаметр',
+    notes: 'Примечания',
     total: 'Итого',
     footer: 'С уважением, Bake My Cake 🎂',
     editWriting: 'Надпись на торте',
@@ -72,6 +73,7 @@ const LABELS = {
     writing: 'Writing',
     weight: 'Weight',
     diameter: 'Diameter',
+    notes: 'Notes',
     total: 'Total',
     footer: 'With love, Bake My Cake 🎂',
     editWriting: 'Writing on cake',
@@ -95,6 +97,7 @@ const LABELS = {
     writing: 'Scritta',
     weight: 'Peso',
     diameter: 'Diametro',
+    notes: 'Note',
     total: 'Totale',
     footer: 'Con affetto, Bake My Cake 🎂',
     editWriting: 'Scritta sulla torta',
@@ -159,6 +162,12 @@ function buildConfirmationText(
       }
       if (item.writing_on_cake.trim()) lines.push(`  ${L.writing}: "${item.writing_on_cake.trim()}"`);
     });
+  }
+
+  const notes = order.customer_notes?.trim();
+  if (notes) {
+    lines.push('');
+    lines.push(`📝 ${L.notes}: ${notes}`);
   }
 
   lines.push('');
