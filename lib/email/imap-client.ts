@@ -44,14 +44,25 @@ function getImapClient(): ImapFlow {
   });
 }
 
-function findPartNumber(node: any, mimeType: string): string | null {
+/**
+ * IMAP part number of a body node. A single-part message (no multipart
+ * wrapper, e.g. a plain HTML reply from bluewin or Gmail) is a root node with
+ * no `part` from imapflow, but IMAP addresses its body as part "1". Missing
+ * this stored ~10% of inbound emails with an empty body.
+ */
+function partNumber(node: any, isRoot: boolean): string | null {
+  return node.part || (isRoot && !node.childNodes ? '1' : null);
+}
+
+function findPartNumber(node: any, mimeType: string, isRoot = true): string | null {
   if (!node) return null;
-  if (node.type === mimeType && node.part) return node.part;
-  if (node.childNodes) {
-    for (const child of node.childNodes) {
-      const found = findPartNumber(child, mimeType);
-      if (found) return found;
-    }
+  if (node.type === mimeType && node.disposition !== 'attachment') {
+    const part = partNumber(node, isRoot);
+    if (part) return part;
+  }
+  for (const child of node.childNodes ?? []) {
+    const found = findPartNumber(child, mimeType, false);
+    if (found) return found;
   }
   return null;
 }
@@ -65,23 +76,22 @@ export interface AttachmentMeta {
   url: string | null; // null until downloaded to storage
 }
 
-function collectAttachments(node: any, uid: number, out: AttachmentMeta[] = []): AttachmentMeta[] {
+function collectAttachments(node: any, uid: number, out: AttachmentMeta[] = [], isRoot = true): AttachmentMeta[] {
   if (!node) return out;
   const isAttachment = node.disposition === 'attachment' || node.disposition === 'inline';
   const isMedia = node.type?.startsWith('image/') || node.type === 'application/pdf';
-  if (isAttachment && isMedia && node.part) {
+  const part = partNumber(node, isRoot);
+  if (isAttachment && isMedia && part) {
     out.push({
-      name: node.dispositionParameters?.filename || node.parameters?.name || `attachment-${node.part}`,
+      name: node.dispositionParameters?.filename || node.parameters?.name || `attachment-${part}`,
       contentType: node.type,
       size: node.size || 0,
-      part: node.part,
+      part,
       uid,
       url: null,
     });
   }
-  if (node.childNodes) {
-    for (const child of node.childNodes) collectAttachments(child, uid, out);
-  }
+  for (const child of node.childNodes ?? []) collectAttachments(child, uid, out, false);
   return out;
 }
 
@@ -123,6 +133,34 @@ async function fetchBodyParts(client: ImapFlow, uid: number): Promise<{
   }
 
   return { textBody, htmlBody, attachments };
+}
+
+/**
+ * Re-reads the body and attachment list of stored emails by Message-ID, for
+ * repairing rows saved with a missing body. Returns only the ones found.
+ */
+export async function refetchBodies(
+  mailbox: 'INBOX' | 'Sent',
+  messageIds: string[],
+): Promise<Map<string, { textBody: string; htmlBody: string; attachments: AttachmentMeta[] }>> {
+  const found = new Map<string, { textBody: string; htmlBody: string; attachments: AttachmentMeta[] }>();
+  const client = getImapClient();
+  await client.connect();
+  try {
+    const lock = await client.getMailboxLock(mailbox);
+    try {
+      for (const messageId of messageIds) {
+        const uids = await client.search({ header: { 'message-id': messageId } }, { uid: true });
+        if (!uids || uids.length === 0) continue;
+        found.set(messageId, await fetchBodyParts(client, uids[0]));
+      }
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout();
+  }
+  return found;
 }
 
 /**
