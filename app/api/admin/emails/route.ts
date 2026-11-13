@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { clientNamesByEmail } from '@/lib/email/client-names';
+import { contactInfo } from '@/lib/email/contacts';
 import type { EmailThreadSummary } from '@/lib/email/types';
 
 const BAKERY_EMAIL = (process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch').toLowerCase();
@@ -28,10 +28,16 @@ export async function GET() {
   }
 
   const threads = new Map<string, EmailThreadSummary>();
+  const linkedOrderIds = new Map<string, string[]>();
 
   for (const email of data) {
     const contact = (email.direction === 'inbound' ? email.from_email : email.to_email)?.toLowerCase();
     if (!contact || contact === BAKERY_EMAIL) continue;
+
+    if (email.order_id) {
+      const ids = linkedOrderIds.get(contact) ?? [];
+      if (!ids.includes(email.order_id)) linkedOrderIds.set(contact, [...ids, email.order_id]);
+    }
 
     const existing = threads.get(contact);
     if (!existing) {
@@ -44,16 +50,26 @@ export async function GET() {
         awaitingReply: email.direction === 'inbound',
         preview: (email.body_text || '').slice(0, 140).replace(/\s+/g, ' ').trim(),
         count: 1,
-        linkedOrderId: email.order_id,
+        order: null,
+        orderCount: 0,
       });
     } else {
       existing.count++;
-      existing.linkedOrderId ??= email.order_id;
     }
   }
 
-  const names = await clientNamesByEmail([...threads.keys()]);
-  for (const t of threads.values()) t.name = names.get(t.contact) ?? null;
+  try {
+    const info = await contactInfo([...threads.keys()], { linkedOrderIds });
+    for (const t of threads.values()) {
+      const c = info.get(t.contact);
+      t.name = c?.name ?? null;
+      t.order = c?.orders[0] ?? null;
+      t.orderCount = c?.orders.length ?? 0;
+    }
+  } catch (e) {
+    // The list still works without names and orders.
+    console.error('[emails] contact lookup failed:', e);
+  }
 
   return NextResponse.json({ threads: [...threads.values()] });
 }

@@ -1,10 +1,12 @@
 'use client';
 
-import { Fragment, useEffect, useRef } from 'react';
-import { ArrowLeft, Cake, Loader2, Plus, Trash2 } from 'lucide-react';
-import type { EmailThreadDetail } from '@/lib/email/types';
-import Composer from './Composer';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import type { EmailOrder, EmailThreadDetail } from '@/lib/email/types';
+import { buildConfirmationText, type ConfirmationLanguage } from '@/lib/orders/confirmation-text';
+import Composer, { type ComposerSeed } from './Composer';
 import MessageBubble from './MessageBubble';
+import OrdersPanel from './OrdersPanel';
 import { baseSubject, dayLabel, displayName, initials, isSameDay, threadTranscript } from './format';
 
 interface ThreadViewProps {
@@ -22,15 +24,22 @@ interface ThreadViewProps {
   onDownloadAttachments: (emailId: string) => void;
 }
 
-const chf = (n: number | null) =>
-  n == null ? null : new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(n);
+function confirmationFor(order: EmailOrder, lang: ConfirmationLanguage): string {
+  return buildConfirmationText(
+    order,
+    (order.items ?? []).map(i => ({ ...i, writing_on_cake: i.writing_on_cake ?? '' })),
+    lang,
+  );
+}
 
 export default function ThreadView({
   contact, detail, loading, error, extractingOrder, downloadingId,
   onBack, onRetry, onReply, onCreateOrder, onDelete, onDownloadAttachments,
 }: ThreadViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [seed, setSeed] = useState<ComposerSeed | null>(null);
   const emails = detail?.emails ?? [];
+  const orders = detail?.orders ?? [];
   const label = displayName(detail?.name ?? null, contact);
 
   // Land on the newest message when a thread opens or grows.
@@ -38,7 +47,12 @@ export default function ThreadView({
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [contact, emails.length]);
 
-  const order = detail?.order;
+  const insertConfirmation = (order: EmailOrder, lang: ConfirmationLanguage) =>
+    setSeed({
+      key: Date.now(),
+      text: confirmationFor(order, lang),
+      label: `Подтверждение заказа #${order.order_number ?? ''} — проверьте надпись и детали перед отправкой`,
+    });
 
   return (
     <div className="flex h-full min-w-0 flex-col">
@@ -55,47 +69,23 @@ export default function ThreadView({
           <a href={`mailto:${contact}`} className="block truncate text-xs text-charcoal-500 hover:text-brown-600">{contact}</a>
         </div>
         {detail && (
-          order ? (
-            <div className="hidden shrink-0 items-center gap-2 rounded-xl border border-cream-200 bg-cream-50 px-3 py-1.5 text-xs text-charcoal-700 sm:flex">
-              <Cake size={14} className="text-brown-500" />
-              <span className="font-mono font-medium text-charcoal-900">#{order.order_number}</span>
-              {order.delivery_date && (
-                <span>· {new Date(order.delivery_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
-              )}
-              {chf(order.total_amount) && <span>· {chf(order.total_amount)}</span>}
-              <span className={`rounded-md px-1.5 py-0.5 font-medium ${order.paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                {order.paid ? 'оплачен' : 'не оплачен'}
-              </span>
-            </div>
-          ) : (
-            <button
-              onClick={onCreateOrder}
-              disabled={extractingOrder || emails.length === 0}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brown-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brown-600 disabled:opacity-50"
-              title="AI заполнит заказ по переписке"
-            >
-              {extractingOrder ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              <span className="hidden sm:inline">{extractingOrder ? 'Анализ…' : 'Создать заказ'}</span>
-              <span className="sm:hidden">Заказ</span>
-            </button>
-          )
+          <button
+            onClick={onCreateOrder}
+            disabled={extractingOrder || emails.length === 0}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brown-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brown-600 disabled:opacity-50"
+            title="AI заполнит заказ по переписке"
+          >
+            {extractingOrder ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            <span className="hidden sm:inline">{extractingOrder ? 'Анализ…' : orders.length ? 'Новый заказ' : 'Создать заказ'}</span>
+            <span className="sm:hidden">Заказ</span>
+          </button>
         )}
         <button onClick={onDelete} disabled={!detail} className="shrink-0 rounded-lg p-2 text-charcoal-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40" title="Убрать переписку" aria-label="Убрать переписку">
           <Trash2 size={16} />
         </button>
       </div>
 
-      {/* Order summary on phones, under the header */}
-      {order && (
-        <div className="flex items-center gap-2 border-b border-cream-200 bg-cream-50 px-4 py-2 text-xs text-charcoal-700 sm:hidden">
-          <Cake size={13} className="text-brown-500" />
-          <span className="font-mono font-medium">#{order.order_number}</span>
-          {chf(order.total_amount) && <span>· {chf(order.total_amount)}</span>}
-          <span className={`ml-auto rounded-md px-1.5 py-0.5 font-medium ${order.paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-            {order.paid ? 'оплачен' : 'не оплачен'}
-          </span>
-        </div>
-      )}
+      {detail && <OrdersPanel orders={orders} onConfirmation={insertConfirmation} />}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto bg-cream-50/50 px-3 py-4 sm:px-5">
@@ -140,6 +130,7 @@ export default function ThreadView({
         <Composer
           key={contact}
           canSend
+          seed={seed}
           threadContext={() => threadTranscript(emails, 500)}
           onSend={onReply}
           placeholder="Ответ или заметка для AI-черновика…"

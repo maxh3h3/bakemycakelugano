@@ -111,7 +111,7 @@ export default function EmailsPage() {
       to: detail.contact,
       subject: /^re:/i.test(subject) ? subject : `Re: ${subject}`,
       body,
-      orderId: detail.order?.id ?? null,
+      orderId: detail.orders.find(o => o.state === 'open')?.id ?? null,
       inReplyToMessageId: lastWithId?.message_id ?? null,
       attachments: await filesToPayload(files),
     });

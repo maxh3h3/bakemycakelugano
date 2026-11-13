@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Loader2, PenSquare, Search, X, Cake } from 'lucide-react';
 import type { EmailThreadSummary } from '@/lib/email/types';
 import { displayName, initials, listDate } from './format';
+import { OrderBadge, orderDate } from './OrderMeta';
 
 type Filter = 'all' | 'awaiting';
 
@@ -135,12 +136,17 @@ export default function ThreadList({ threads, loading, error, selected, onSelect
                       <span className="mt-0.5 flex items-center gap-1.5 text-xs text-charcoal-500">
                         {t.latestDirection === 'outbound' && <span className="shrink-0">Вы:</span>}
                         <span className="truncate">{t.preview || '—'}</span>
-                        {t.linkedOrderId && (
-                          <span className="ml-auto flex shrink-0 items-center gap-1 rounded-md bg-cream-100 px-1.5 py-0.5 text-brown-700" title="Связано с заказом">
-                            <Cake size={11} /> заказ
-                          </span>
-                        )}
                       </span>
+                      {t.order && (
+                        <span className="mt-1.5 flex items-center gap-1.5 text-xs">
+                          <Cake size={12} className={t.order.state === 'closed' ? 'shrink-0 text-charcoal-500' : 'shrink-0 text-brown-500'} />
+                          <span className={t.order.state === 'closed' ? 'text-charcoal-500' : 'font-medium text-charcoal-900'}>
+                            {orderDate(t.order)}
+                          </span>
+                          <OrderBadge order={t.order} />
+                          {t.orderCount > 1 && <span className="ml-auto shrink-0 text-charcoal-500">+{t.orderCount - 1}</span>}
+                        </span>
+                      )}
                     </span>
                   </button>
                 </li>

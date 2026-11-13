@@ -8,7 +8,15 @@ import { fileSize } from './format';
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // matches the send route
 
+/** Ready-made text (e.g. an order confirmation) placed in the box for review. */
+export interface ComposerSeed {
+  key: number;   // a new key re-applies the seed
+  text: string;
+  label: string; // shown above the draft
+}
+
 interface ComposerProps {
+  seed?: ComposerSeed | null;
   /** False while a new email has no valid recipient yet. */
   canSend: boolean;
   /** Thread text (or "new email to …") the AI drafts against. */
@@ -18,9 +26,10 @@ interface ComposerProps {
   placeholder: string;
 }
 
-export default function Composer({ canSend, threadContext, onSend, placeholder }: ComposerProps) {
+export default function Composer({ seed, canSend, threadContext, onSend, placeholder }: ComposerProps) {
   const [note, setNote] = useState('');
-  const [draft, setDraft] = useState<string | null>(null); // AI draft under review
+  const [draft, setDraft] = useState<string | null>(null); // draft under review (AI or seeded)
+  const [draftLabel, setDraftLabel] = useState<string | null>(null); // set for seeded drafts
   const [files, setFiles] = useState<File[]>([]);
   const [drafting, setDrafting] = useState(false);
   const [sending, setSending] = useState(false);
@@ -38,10 +47,23 @@ export default function Composer({ canSend, threadContext, onSend, placeholder }
     const el = textRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, reviewing ? 320 : 180)}px`;
+    // A long draft (e.g. an order confirmation) may not push the conversation off a phone screen.
+    const cap = reviewing ? Math.min(320, Math.round(window.innerHeight * 0.4)) : 180;
+    el.style.height = `${Math.min(el.scrollHeight, cap)}px`;
   }, [text, reviewing]);
 
+  // A seed replaces whatever draft is open; the owner's note is kept.
+  useEffect(() => {
+    if (!seed) return;
+    setDraft(seed.text);
+    setDraftLabel(seed.label);
+    setError(null);
+    requestAnimationFrame(() => textRef.current?.focus());
+  }, [seed]);
+
   const setText = (value: string) => (reviewing ? setDraft(value) : setNote(value));
+
+  const closeDraft = () => { setDraft(null); setDraftLabel(null); };
 
   const addFiles = (list: FileList | null) => {
     const picked = Array.from(list ?? []);
@@ -56,6 +78,7 @@ export default function Composer({ canSend, threadContext, onSend, placeholder }
     setError(null);
     try {
       setDraft(await emailApi.draft(note, threadContext()));
+      setDraftLabel(null);
       requestAnimationFrame(() => textRef.current?.focus());
     } catch (e) {
       setError(`AI не ответил: ${(e as Error).message}`);
@@ -71,7 +94,7 @@ export default function Composer({ canSend, threadContext, onSend, placeholder }
     try {
       await onSend(body.trim(), files);
       setNote('');
-      setDraft(null);
+      closeDraft();
       setFiles([]);
     } catch (e) {
       setError(`Не отправлено: ${(e as Error).message}`);
@@ -92,13 +115,15 @@ export default function Composer({ canSend, threadContext, onSend, placeholder }
       {reviewing && (
         <div className="mb-2 flex items-center gap-2 rounded-xl bg-cream-100 px-3 py-2 text-xs text-brown-700">
           <Sparkles size={13} className="shrink-0" />
-          <span className="font-medium">Черновик AI — проверьте и при необходимости поправьте</span>
+          <span className="font-medium">{draftLabel ?? 'Черновик AI — проверьте и при необходимости поправьте'}</span>
           <span className="ml-auto flex shrink-0 gap-1">
-            <button onClick={generateDraft} disabled={busy} className="flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-cream-200 disabled:opacity-50" title="Сгенерировать заново">
-              {drafting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />} Заново
-            </button>
-            <button onClick={() => setDraft(null)} disabled={busy} className="flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-cream-200 disabled:opacity-50" title="Вернуться к заметке">
-              <ArrowLeft size={12} /> К заметке
+            {!draftLabel && (
+              <button onClick={generateDraft} disabled={busy} className="flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-cream-200 disabled:opacity-50" title="Сгенерировать заново">
+                {drafting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />} Заново
+              </button>
+            )}
+            <button onClick={closeDraft} disabled={busy} className="flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-cream-200 disabled:opacity-50" title={draftLabel ? 'Убрать' : 'Вернуться к заметке'}>
+              {draftLabel ? <X size={12} /> : <ArrowLeft size={12} />} {draftLabel ? 'Убрать' : 'К заметке'}
             </button>
           </span>
         </div>
