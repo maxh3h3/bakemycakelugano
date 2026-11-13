@@ -1,4 +1,5 @@
 import { ImapFlow } from 'imapflow';
+import { knownMessageIds } from './store-email';
 
 export interface FetchedEmail {
   uid: number;
@@ -145,29 +146,28 @@ export async function appendToSent(rawMime: string): Promise<void> {
 }
 
 /**
- * Fetches emails received in the last WINDOW_MINUTES from INBOX.
- * Skips system/no-reply senders. Deduplication happens in the DB via message_id UNIQUE.
+ * Fetches INBOX emails that arrived in the last `lookbackDays` and are not yet
+ * in order_emails. Skips system/no-reply senders.
+ *
+ * The window is wide on purpose: a message is picked up on any run until it is
+ * stored, so slow delivery (Outlook/greylisting), a wrong sender clock or the
+ * poller being down (deploy, IMAP login failing) no longer loses it. SINCE uses
+ * the server's arrival date, not the sender's Date header.
  */
-const WINDOW_MINUTES = 5;
-
-export async function fetchRecentEmails(): Promise<FetchedEmail[]> {
+export async function fetchNewEmails(lookbackDays = 3): Promise<FetchedEmail[]> {
   const client = getImapClient();
   const emails: FetchedEmail[] = [];
   const bakeryEmail = (process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch').toLowerCase();
-  const cutoff = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
 
   await client.connect();
   try {
     const lock = await client.getMailboxLock('INBOX');
     try {
-      const candidates: { uid: number; from: string; to: string; subject: string; messageId: string | null; inReplyTo: string | null; date: Date }[] = [];
+      const uidValidity = client.mailbox ? String(client.mailbox.uidValidity) : '0';
+      const candidates: { uid: number; from: string; to: string; subject: string; messageId: string; inReplyTo: string | null; date: Date }[] = [];
 
-      for await (const msg of client.fetch({ since: today }, { envelope: true }, { uid: true })) {
-        const emailDate = msg.envelope?.date || new Date(0);
-        if (emailDate < cutoff) continue;
+      for await (const msg of client.fetch({ since }, { envelope: true }, { uid: true })) {
         const fromAddr = (msg.envelope?.from?.[0]?.address || '').toLowerCase();
         if (fromAddr === bakeryEmail || shouldSkipSender(fromAddr)) continue;
         candidates.push({
@@ -175,13 +175,17 @@ export async function fetchRecentEmails(): Promise<FetchedEmail[]> {
           from: msg.envelope?.from?.[0]?.address || '',
           to: msg.envelope?.to?.[0]?.address || '',
           subject: msg.envelope?.subject || '(no subject)',
-          messageId: (msg.envelope as any)?.messageId || null,
-          inReplyTo: (msg.envelope as any)?.inReplyTo || null,
-          date: emailDate,
+          // A few senders omit Message-ID; a stable stand-in keeps dedup working.
+          messageId: msg.envelope?.messageId || `<imap-${uidValidity}-${msg.uid}@bakemycakelugano.ch>`,
+          inReplyTo: msg.envelope?.inReplyTo || null,
+          date: msg.envelope?.date || new Date(),
         });
       }
 
-      for (const env of candidates) {
+      // Only download bodies for messages we have not stored yet.
+      const known = await knownMessageIds(candidates.map(c => c.messageId));
+
+      for (const env of candidates.filter(c => !known.has(c.messageId))) {
         try {
           const { textBody, htmlBody, attachments } = await fetchBodyParts(client, env.uid);
           emails.push({ ...env, textBody, htmlBody, attachments });

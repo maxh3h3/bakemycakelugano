@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchRecentEmails } from '@/lib/email/imap-client';
+import { fetchNewEmails } from '@/lib/email/imap-client';
 import { storeInboundEmail } from '@/lib/email/store-email';
 
 export const runtime = 'nodejs';
@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   let stored = 0, duplicates = 0, errors = 0;
 
-  const emails = await fetchRecentEmails();
+  const days = Math.min(Math.max(Number(request.nextUrl.searchParams.get('days')) || 3, 1), 90);
+  const emails = await fetchNewEmails(days);
 
   for (const email of emails) {
     const result = await storeInboundEmail(email);
