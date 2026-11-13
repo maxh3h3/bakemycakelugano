@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
 
   if (sendError) {
     console.error('[send] Resend error:', sendError);
-    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+    // Pass Resend's reason through so the composer shows something actionable.
+    return NextResponse.json({ error: `Resend: ${sendError.message || 'send failed'}` }, { status: 502 });
   }
 
   // Store first: if the sync saw the Sent copy before this row existed, it
