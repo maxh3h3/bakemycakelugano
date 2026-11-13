@@ -16,11 +16,15 @@ export async function knownMessageIds(messageIds: string[]): Promise<Set<string>
   return known;
 }
 
-export async function storeInboundEmail(email: FetchedEmail): Promise<'stored' | 'duplicate' | 'error'> {
-  if (!email.messageId) return 'error';
+const NOTIFY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Stores one synced email (either half). Pings Telegram only for customer
+ * emails from the last 24 h, so catch-ups and backfills stay quiet.
+ */
+export async function storeEmail(email: FetchedEmail): Promise<'stored' | 'duplicate' | 'error'> {
   const { error } = await supabaseAdmin.from('order_emails').insert({
-    direction: 'inbound',
+    direction: email.direction,
     from_email: email.from,
     to_email: email.to,
     subject: email.subject,
@@ -39,10 +43,12 @@ export async function storeInboundEmail(email: FetchedEmail): Promise<'stored' |
     return 'error';
   }
 
-  await sendTelegramMessage({
-    text: `📧 <b>Новое письмо</b>\n👤 ${email.from}\n💬 ${email.subject}`,
-    parse_mode: 'HTML',
-  });
+  if (email.direction === 'inbound' && Date.now() - email.date.getTime() < NOTIFY_MAX_AGE_MS) {
+    await sendTelegramMessage({
+      text: `📧 <b>Новое письмо</b>\n👤 ${email.from}\n💬 ${email.subject}`,
+      parse_mode: 'HTML',
+    });
+  }
 
   return 'stored';
 }

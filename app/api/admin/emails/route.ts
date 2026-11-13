@@ -11,6 +11,7 @@ export async function GET() {
   const { data, error } = await (supabaseAdmin as any)
     .from('order_emails')
     .select('id, direction, from_email, to_email, subject, body_text, email_date, order_id')
+    .is('hidden_at', null)
     .order('email_date', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -26,8 +27,8 @@ export async function GET() {
   }>();
 
   for (const email of data || []) {
-    const contact = email.direction === 'inbound' ? email.from_email : email.to_email;
-    if (!contact || contact.toLowerCase() === BAKERY_EMAIL.toLowerCase()) continue;
+    const contact = (email.direction === 'inbound' ? email.from_email : email.to_email)?.toLowerCase();
+    if (!contact || contact === BAKERY_EMAIL.toLowerCase()) continue;
 
     if (!threadMap.has(contact)) {
       threadMap.set(contact, {

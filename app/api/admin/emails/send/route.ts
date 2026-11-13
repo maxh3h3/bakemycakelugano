@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
@@ -60,15 +61,21 @@ export async function POST(request: NextRequest) {
     resendAttachments.push({ filename: att.filename, content: fileBuffer });
   }
 
+  // One Message-ID for the sent email, its Sent-folder copy and the DB row, so
+  // the Sent-folder sync recognises the copy instead of storing it twice.
+  const messageId = `<${randomUUID()}@bakemycakelugano.ch>`;
+  const recipient = String(to).trim().toLowerCase();
+
   // Send via Resend
   const { data: sent, error: sendError } = await resend.emails.send({
     from: emailConfig.from,
-    to,
+    to: recipient,
     subject: subject || 'Re: Bake My Cake',
     text: body,
-    headers: inReplyToMessageId
-      ? { 'In-Reply-To': inReplyToMessageId, References: inReplyToMessageId }
-      : undefined,
+    headers: {
+      'Message-ID': messageId,
+      ...(inReplyToMessageId ? { 'In-Reply-To': inReplyToMessageId, References: inReplyToMessageId } : {}),
+    },
     attachments: resendAttachments.length > 0 ? resendAttachments : undefined,
   });
 
@@ -77,14 +84,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
   }
 
+  // Store first: if the sync saw the Sent copy before this row existed, it
+  // would win the message_id and this row (order link, attachments) would fail.
+  const { error: insertError } = await supabaseAdmin.from('order_emails').insert({
+    order_id: orderId || null,
+    direction: 'outbound',
+    from_email: emailConfig.from,
+    to_email: recipient,
+    subject: subject || 'Re: Bake My Cake',
+    body_text: body,
+    message_id: messageId,
+    resend_id: (sent as any)?.id || null,
+    in_reply_to: inReplyToMessageId || null,
+    email_date: new Date().toISOString(),
+    attachments: storedAttachments,
+  } as any);
+  if (insertError) console.error('[send] DB insert failed:', insertError.message);
+
   // Append to Infomaniak Sent folder so owner sees it in her mail client
   const sentDate = new Date().toUTCString();
   const htmlBody = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6;max-width:600px">${body.replace(/\n/g, '<br>')}</body></html>`;
   const headers = [
     `From: ${emailConfig.from}`,
-    `To: ${to}`,
+    `To: ${recipient}`,
     `Subject: ${subject || 'Re: Bake My Cake'}`,
     `Date: ${sentDate}`,
+    `Message-ID: ${messageId}`,
     ...(inReplyToMessageId ? [`In-Reply-To: ${inReplyToMessageId}`, `References: ${inReplyToMessageId}`] : []),
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset=utf-8',
@@ -95,20 +120,6 @@ export async function POST(request: NextRequest) {
   appendToSent(rawMime).catch(err =>
     console.error('[send] IMAP append failed (non-fatal):', err)
   );
-
-  // Store outbound email with attachment URLs
-  await supabaseAdmin.from('order_emails').insert({
-    order_id: orderId || null,
-    direction: 'outbound',
-    from_email: emailConfig.from,
-    to_email: to,
-    subject: subject || 'Re: Bake My Cake',
-    body_text: body,
-    resend_id: (sent as any)?.id || null,
-    in_reply_to: inReplyToMessageId || null,
-    email_date: new Date().toISOString(),
-    attachments: storedAttachments,
-  } as any);
 
   return NextResponse.json({ success: true });
 }

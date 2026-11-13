@@ -1,8 +1,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { default: cron } = await import('node-cron');
-    const { fetchNewEmails } = await import('./lib/email/imap-client');
-    const { storeInboundEmail } = await import('./lib/email/store-email');
+    const { syncMailboxes } = await import('./lib/email/sync');
     const { sendTelegramMessage } = await import('./lib/telegram/client');
 
     // A failing poll (e.g. IMAP password changed) used to stay silent for hours.
@@ -14,10 +13,7 @@ export async function register() {
       if (!process.env.IMAP_HOST || !process.env.IMAP_PASSWORD) return;
 
       try {
-        const emails = await fetchNewEmails(lookbackDays);
-        for (const email of emails) {
-          await storeInboundEmail(email);
-        }
+        await syncMailboxes(lookbackDays);
         if (failing) {
           failing = false;
           await sendTelegramMessage({ text: '✅ Почта снова синхронизируется' });
@@ -39,7 +35,7 @@ export async function register() {
     void pollEmails(30);
     cron.schedule('*/2 * * * *', () => pollEmails(3));
 
-    console.log('[email-poll] scheduler started — polling every 2 min (3-day lookback)');
+    console.log('[email-poll] scheduler started — INBOX + Sent every 2 min (3-day lookback)');
 
     // Agenda notifications: daily digest + hourly "~1h prior" reminders.
     // node-cron's timezone option handles Milan DST, so these fire at the

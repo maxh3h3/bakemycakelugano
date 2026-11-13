@@ -16,6 +16,7 @@ export async function GET(
       .from('order_emails')
       .select('id, direction, from_email, to_email, subject, body_text, body_html, message_id, in_reply_to, email_date, created_at')
       .eq('order_id', orderId)
+      .is('hidden_at', null)
       .order('email_date', { ascending: true, nullsFirst: false }),
     supabaseAdmin
       .from('orders')

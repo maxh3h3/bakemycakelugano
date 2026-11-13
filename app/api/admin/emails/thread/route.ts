@@ -9,13 +9,14 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdminRole(['owner']);
   if (auth instanceof NextResponse) return auth;
 
-  const contact = request.nextUrl.searchParams.get('contact');
+  const contact = request.nextUrl.searchParams.get('contact')?.toLowerCase();
   if (!contact) return NextResponse.json({ error: 'contact param required' }, { status: 400 });
 
   const { data, error } = await (supabaseAdmin as any)
     .from('order_emails')
     .select('id, direction, from_email, to_email, subject, body_text, body_html, message_id, in_reply_to, email_date, order_id, attachments')
     .or(`from_email.eq.${contact},to_email.eq.${contact}`)
+    .is('hidden_at', null)
     .order('email_date', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

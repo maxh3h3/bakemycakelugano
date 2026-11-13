@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   // Load current attachment metadata
   const { data: emailRow, error } = await supabaseAdmin
     .from('order_emails')
-    .select('id, attachments')
+    .select('id, attachments, direction')
     .eq('id', emailId)
     .single();
 
@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
   const updated = [...metas];
 
   try {
-    const lock = await client.getMailboxLock('INBOX');
+    // Attachment uids belong to the folder the email was synced from.
+    const folder = (emailRow as any).direction === 'outbound' ? 'Sent' : 'INBOX';
+    const lock = await client.getMailboxLock(folder);
     try {
       for (const att of pending) {
         try {

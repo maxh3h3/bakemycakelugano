@@ -3,7 +3,8 @@ import { knownMessageIds } from './store-email';
 
 export interface FetchedEmail {
   uid: number;
-  messageId: string | null;
+  direction: Direction;
+  messageId: string;
   inReplyTo: string | null;
   from: string;
   to: string;
@@ -146,15 +147,27 @@ export async function appendToSent(rawMime: string): Promise<void> {
 }
 
 /**
- * Fetches INBOX emails that arrived in the last `lookbackDays` and are not yet
- * in order_emails. Skips system/no-reply senders.
+ * The two halves of every conversation: what customers send (INBOX) and what
+ * the bakery sends (Sent), whichever app it was written in.
+ */
+export const MAILBOXES = {
+  INBOX: 'inbound',
+  Sent: 'outbound',
+} as const;
+export type Mailbox = keyof typeof MAILBOXES;
+export type Direction = (typeof MAILBOXES)[Mailbox];
+
+/**
+ * Fetches emails that arrived in `mailbox` in the last `lookbackDays` and are
+ * not yet in order_emails.
  *
  * The window is wide on purpose: a message is picked up on any run until it is
  * stored, so slow delivery (Outlook/greylisting), a wrong sender clock or the
  * poller being down (deploy, IMAP login failing) no longer loses it. SINCE uses
  * the server's arrival date, not the sender's Date header.
  */
-export async function fetchNewEmails(lookbackDays = 3): Promise<FetchedEmail[]> {
+export async function fetchNewEmails(mailbox: Mailbox, lookbackDays = 3): Promise<FetchedEmail[]> {
+  const direction = MAILBOXES[mailbox];
   const client = getImapClient();
   const emails: FetchedEmail[] = [];
   const bakeryEmail = (process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch').toLowerCase();
@@ -162,21 +175,34 @@ export async function fetchNewEmails(lookbackDays = 3): Promise<FetchedEmail[]> 
 
   await client.connect();
   try {
-    const lock = await client.getMailboxLock('INBOX');
+    const lock = await client.getMailboxLock(mailbox);
     try {
       const uidValidity = client.mailbox ? String(client.mailbox.uidValidity) : '0';
-      const candidates: { uid: number; from: string; to: string; subject: string; messageId: string; inReplyTo: string | null; date: Date }[] = [];
+      const candidates: Omit<FetchedEmail, 'textBody' | 'htmlBody' | 'attachments'>[] = [];
 
       for await (const msg of client.fetch({ since }, { envelope: true }, { uid: true })) {
-        const fromAddr = (msg.envelope?.from?.[0]?.address || '').toLowerCase();
-        if (fromAddr === bakeryEmail || shouldSkipSender(fromAddr)) continue;
+        const from = (msg.envelope?.from?.[0]?.address || '').toLowerCase();
+        const to = (msg.envelope?.to?.[0]?.address || '').toLowerCase();
+        let messageId = msg.envelope?.messageId || null;
+
+        if (direction === 'inbound') {
+          if (from === bakeryEmail || shouldSkipSender(from)) continue;
+          // A few senders omit Message-ID; a stable stand-in keeps dedup working.
+          messageId ??= `<imap-${uidValidity}-${msg.uid}@bakemycakelugano.ch>`;
+        } else {
+          if (!to || to === bakeryEmail) continue;
+          // Every mail app sets a Message-ID. Copies without one are admin-UI
+          // sends appended before UI sends carried an ID; those rows exist.
+          if (!messageId) continue;
+        }
+
         candidates.push({
           uid: msg.uid,
-          from: msg.envelope?.from?.[0]?.address || '',
-          to: msg.envelope?.to?.[0]?.address || '',
+          direction,
+          from,
+          to,
           subject: msg.envelope?.subject || '(no subject)',
-          // A few senders omit Message-ID; a stable stand-in keeps dedup working.
-          messageId: msg.envelope?.messageId || `<imap-${uidValidity}-${msg.uid}@bakemycakelugano.ch>`,
+          messageId,
           inReplyTo: msg.envelope?.inReplyTo || null,
           date: msg.envelope?.date || new Date(),
         });
