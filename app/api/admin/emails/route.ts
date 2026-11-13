@@ -1,52 +1,59 @@
 import { NextResponse } from 'next/server';
 import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { clientNamesByEmail } from '@/lib/email/client-names';
+import type { EmailThreadSummary } from '@/lib/email/types';
 
-const BAKERY_EMAIL = process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch';
+const BAKERY_EMAIL = (process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch').toLowerCase();
 
+// GET /api/admin/emails — one summary per contact, newest first
 export async function GET() {
   const auth = await requireAdminRole(['owner']);
   if (auth instanceof NextResponse) return auth;
 
-  const { data, error } = await (supabaseAdmin as any)
-    .from('order_emails')
-    .select('id, direction, from_email, to_email, subject, body_text, email_date, order_id')
-    .is('hidden_at', null)
-    .order('email_date', { ascending: false });
+  // Supabase caps a response at 1000 rows, so page through all of them.
+  const PAGE = 1000;
+  const data: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data: page, error } = await (supabaseAdmin as any)
+      .from('order_emails')
+      .select('direction, from_email, to_email, subject, body_text, email_date, order_id')
+      .is('hidden_at', null)
+      .order('email_date', { ascending: false })
+      .order('id')
+      .range(from, from + PAGE - 1);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    data.push(...page);
+    if (page.length < PAGE) break;
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const threads = new Map<string, EmailThreadSummary>();
 
-  // Group by contact email (the non-bakery side of each email)
-  const threadMap = new Map<string, {
-    contact: string;
-    latestSubject: string;
-    latestDate: string;
-    preview: string;
-    count: number;
-    linkedOrderId: string | null;
-  }>();
-
-  for (const email of data || []) {
+  for (const email of data) {
     const contact = (email.direction === 'inbound' ? email.from_email : email.to_email)?.toLowerCase();
-    if (!contact || contact === BAKERY_EMAIL.toLowerCase()) continue;
+    if (!contact || contact === BAKERY_EMAIL) continue;
 
-    if (!threadMap.has(contact)) {
-      threadMap.set(contact, {
+    const existing = threads.get(contact);
+    if (!existing) {
+      threads.set(contact, {
         contact,
-        latestSubject: email.subject || '(no subject)',
+        name: null,
+        latestSubject: email.subject || '(без темы)',
         latestDate: email.email_date,
-        preview: (email.body_text || '').slice(0, 100).replace(/\s+/g, ' '),
+        latestDirection: email.direction,
+        awaitingReply: email.direction === 'inbound',
+        preview: (email.body_text || '').slice(0, 140).replace(/\s+/g, ' ').trim(),
         count: 1,
         linkedOrderId: email.order_id,
       });
     } else {
-      threadMap.get(contact)!.count++;
-      if (!threadMap.get(contact)!.linkedOrderId && email.order_id) {
-        threadMap.get(contact)!.linkedOrderId = email.order_id;
-      }
+      existing.count++;
+      existing.linkedOrderId ??= email.order_id;
     }
   }
 
-  const threads = Array.from(threadMap.values());
-  return NextResponse.json({ threads });
+  const names = await clientNamesByEmail([...threads.keys()]);
+  for (const t of threads.values()) t.name = names.get(t.contact) ?? null;
+
+  return NextResponse.json({ threads: [...threads.values()] });
 }

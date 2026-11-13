@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { clientNamesByEmail } from '@/lib/email/client-names';
 
 const BAKERY_EMAIL = process.env.BAKERY_OWNER_EMAIL || 'info@bakemycakelugano.ch';
 
@@ -33,5 +34,7 @@ export async function GET(request: NextRequest) {
     order = orderData;
   }
 
-  return NextResponse.json({ emails: data || [], order, contact });
+  const name = (await clientNamesByEmail([contact])).get(contact) ?? null;
+
+  return NextResponse.json({ emails: data || [], order, contact, name });
 }

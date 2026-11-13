@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { validateSession, getUserRole } from '@/lib/auth/session';
 import AdminHeader from '@/components/admin/AdminHeader';
-import EmailsPageClient from '@/components/admin/EmailsPageClient';
+import EmailsPage from '@/components/admin/emails/EmailsPage';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,13 +16,14 @@ export default async function AdminEmailsPage() {
   return (
     <div className="min-h-screen bg-cream-50">
       <AdminHeader role="owner" />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-heading font-bold text-charcoal-900">Email</h1>
-            <p className="text-charcoal-500 text-sm mt-1">Incoming customer emails and order threads</p>
+      <main className="container mx-auto px-2 py-3 sm:px-6 md:py-8 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {/* On phones the thread list carries its own heading. */}
+          <div className="mb-6 hidden md:block">
+            <h1 className="font-heading text-2xl font-bold text-charcoal-900">Email</h1>
+            <p className="mt-1 text-sm text-charcoal-500">Переписка с клиентами — входящие и ваши ответы из любой почты</p>
           </div>
-          <EmailsPageClient />
+          <EmailsPage />
         </div>
       </main>
     </div>
