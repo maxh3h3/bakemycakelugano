@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminRole } from '@/lib/auth/require-admin-role';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { deleteClient } from '@/lib/clients/utils';
+import { parsePriceList } from '@/lib/clients/price-list';
 
 /**
  * GET /api/admin/clients/[id]
@@ -80,6 +81,7 @@ export async function GET(
       totalSpent: client.total_spent,
       notes: client.notes,
       clientType: client.client_type || 'individual',
+      priceList: client.price_list ?? [],
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     };
@@ -121,10 +123,11 @@ export async function PATCH(
       preferred_contact,
       notes,
       client_type,
+      price_list,
     } = body;
 
     // Validate at least name or one contact method is being updated
-    if (!name && !email && !phone && !instagram_handle && !preferred_contact && notes === undefined && client_type === undefined) {
+    if (!name && !email && !phone && !instagram_handle && !preferred_contact && notes === undefined && client_type === undefined && price_list === undefined) {
       return NextResponse.json(
         { success: false, error: 'No fields to update' },
         { status: 400 }
@@ -141,6 +144,13 @@ export async function PATCH(
     if (preferred_contact !== undefined) updates.preferred_contact = preferred_contact || null;
     if (notes !== undefined) updates.notes = notes?.trim() || null;
     if (client_type !== undefined) updates.client_type = client_type;
+    if (price_list !== undefined) {
+      const parsed = parsePriceList(price_list);
+      if ('error' in parsed) {
+        return NextResponse.json({ success: false, error: parsed.error }, { status: 400 });
+      }
+      updates.price_list = parsed.items;
+    }
 
     // Update client
     const { data: client, error: updateError } = await (supabaseAdmin as any)
@@ -186,6 +196,7 @@ export async function PATCH(
       totalSpent: client.total_spent,
       notes: client.notes,
       clientType: client.client_type || 'individual',
+      priceList: client.price_list ?? [],
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     };

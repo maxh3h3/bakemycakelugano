@@ -3,66 +3,28 @@
 import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import DatePicker from '@/components/products/DatePicker';
-import { X, User, Soup, Smartphone, Coffee } from 'lucide-react';
+import { X, User, Briefcase } from 'lucide-react';
+import type { PriceListItem } from '@/lib/clients/price-list';
 
 interface QuickSaleModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-interface QuickProduct {
-  name: string;
-  price: number;
-}
-
 interface QuickClient {
   id: string;
   name: string;
-  icon: string;
   useItemBuilder: boolean;
-  quickProducts?: QuickProduct[];
+  priceList: PriceListItem[];
 }
 
-const QUICK_CLIENTS: QuickClient[] = [
-  {
-    id: '06efda69-8386-4365-a2f7-3bcf5bdc483e',
-    name: 'Витрина',
-    icon: 'walkin',
-    useItemBuilder: false,
-  },
-  {
-    id: '9323a8bb-6ec4-481c-b040-aa762dc626bd',
-    name: 'Toku Ramen',
-    icon: 'ramen',
-    useItemBuilder: true,
-    quickProducts: [
-      { name: 'Matcha Cake', price: 72 },
-      { name: 'Mango Cheesecake', price: 30 },
-      { name: 'Pasticcini Drago', price: 5 },
-    ],
-  },
-  {
-    id: '436d282e-5d77-4e70-b767-91fcbcf8a2b7',
-    name: 'Noizu',
-    icon: 'ramen',
-    useItemBuilder: true,
-    quickProducts: [
-      { name: 'Chocolate Cake', price: 3.3 },
-      { name: 'Matcha Tiramisu', price: 3.5 },
-    ],
-  },
-  {
-    id: '380d7bbd-5fa3-459a-a76c-be035c777a09',
-    name: 'Kohi House',
-    icon: 'coffee',
-    useItemBuilder: true,
-    quickProducts: [
-      { name: 'Matcha Crepe Cake', price: 40 },
-      { name: 'Japanese Cheesecake', price: 30 },
-      { name: 'San Sebastian Cheesecake', price: 40 },
-    ],
-  },
-];
+// The shelf: a walk-in sale (amount + description), paid on the spot.
+const VITRINA: QuickClient = {
+  id: '06efda69-8386-4365-a2f7-3bcf5bdc483e',
+  name: 'Витрина',
+  useItemBuilder: false,
+  priceList: [],
+};
 
 interface OrderItem {
   product_name: string;
@@ -80,10 +42,37 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
 
   const [items, setItems] = useState<OrderItem[]>([{ product_name: '', quantity: 1, unit_price: 0 }]);
 
-  const selectedClientConfig = QUICK_CLIENTS.find(c => c.id === selectedClient);
+  // Business clients come from the DB: every business client with a price list
+  // (edited on the client card in Клиенты).
+  const [quickClients, setQuickClients] = useState<QuickClient[]>([VITRINA]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/clients/quick-sale')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) throw new Error(data.error);
+        const business: QuickClient[] = data.clients
+          .filter((c: { id: string }) => c.id !== VITRINA.id)
+          .map((c: { id: string; name: string; priceList: PriceListItem[] }) => ({
+            id: c.id,
+            name: c.name,
+            useItemBuilder: true,
+            priceList: c.priceList,
+          }));
+        setQuickClients([VITRINA, ...business]);
+      })
+      .catch((err) => {
+        console.error('Error loading quick sale clients:', err);
+        setError('Не удалось загрузить клиентов');
+      })
+      .finally(() => setIsLoadingClients(false));
+  }, []);
+
+  const selectedClientConfig = quickClients.find(c => c.id === selectedClient);
   const useItemBuilder = selectedClientConfig?.useItemBuilder ?? false;
 
-  const addQuickProduct = (product: QuickProduct) => {
+  const addQuickProduct = (product: PriceListItem) => {
     const existingIndex = items.findIndex(
       item => item.product_name.trim().toLowerCase() === product.name.toLowerCase()
     );
@@ -291,7 +280,7 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
               Клиент <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {QUICK_CLIENTS.map((client) => (
+              {quickClients.map((client) => (
                 <button
                   key={client.id}
                   type="button"
@@ -302,18 +291,19 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
                       : 'bg-white text-charcoal-700 border-cream-300 hover:border-brown-300 hover:bg-cream-50'
                   }`}
                 >
-                  {client.icon === 'walkin' ? (
-                    <User className="w-8 h-8" />
-                  ) : client.icon === 'ramen' ? (
-                    <Soup className="w-8 h-8" />
-                  ) : client.icon === 'coffee' ? (
-                    <Coffee className="w-8 h-8" />
+                  {client.useItemBuilder ? (
+                    <Briefcase className="w-8 h-8" />
                   ) : (
-                    <Smartphone className="w-8 h-8" />
+                    <User className="w-8 h-8" />
                   )}
                   <span className="text-sm">{client.name}</span>
                 </button>
               ))}
+              {isLoadingClients && (
+                <div className="flex items-center justify-center px-4 py-4 rounded-xl border-2 border-dashed border-cream-300 text-sm text-charcoal-500">
+                  Загрузка…
+                </div>
+              )}
             </div>
           </div>
 
@@ -333,11 +323,11 @@ export default function QuickSaleModal({ onClose, onSuccess }: QuickSaleModalPro
                 </button>
               </div>
 
-              {selectedClientConfig?.quickProducts && (
+              {selectedClientConfig && selectedClientConfig.priceList.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold text-charcoal-500 mb-2">Быстрый выбор</p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedClientConfig.quickProducts.map((product) => (
+                    {selectedClientConfig.priceList.map((product) => (
                       <button
                         key={product.name}
                         type="button"

@@ -7,6 +7,7 @@ import DatePicker from '@/components/products/DatePicker';
 import t from '@/lib/admin-translations-extended';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import InvoicePDF from './pdf/InvoicePDF';
+import PriceListEditor from './PriceListEditor';
 import { Briefcase, X, FileDown, Download } from 'lucide-react';
 
 interface OrderItem {
@@ -401,6 +402,11 @@ export default function ClientDetailModal({ client, onClose, onUpdate, onDelete 
               </div>
             )}
           </div>
+
+          {/* Price list (business clients) — feeds the quick sale modal */}
+          {client.clientType === 'business' && (
+            <PriceListEditor client={client} onUpdate={onUpdate} />
+          )}
 
           {/* Order History */}
           <div className="bg-white border-2 border-cream-200 rounded-xl p-6">

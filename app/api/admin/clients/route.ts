@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
       totalSpent: client.total_spent,
       notes: client.notes,
       clientType: client.client_type || 'individual',
+      priceList: client.price_list ?? [],
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     }));
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
       totalSpent: client.total_spent,
       notes: client.notes,
       clientType: client.client_type || 'individual',
+      priceList: client.price_list ?? [],
       createdAt: client.created_at,
       updatedAt: client.updated_at,
     };

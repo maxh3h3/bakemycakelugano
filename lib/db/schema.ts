@@ -9,6 +9,9 @@ export const clients = pgTable('clients', {
   
   // Client classification
   clientType: text('client_type').default('individual'), // 'individual' or 'business'
+
+  // Agreed positions for business clients, shown in the quick sale modal (migration 048)
+  priceList: jsonb('price_list').$type<{ name: string; price: number }[]>().default([]),
   
   // Contact methods (at least one required - enforced at application level)
   email: text('email'),
